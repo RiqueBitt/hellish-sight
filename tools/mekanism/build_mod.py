@@ -197,7 +197,7 @@ def machine_tex(folder, mid, tint=None):
                 break
     return out
 
-POWER = '{ {"minecraft:redstone", 400}, {"minecraft:redstone_block", 3600}, {"mekanism:energy_tablet", 8000}, {"minecraft:coal", 200}, {"minecraft:charcoal", 200}, {"mekanism:bio_fuel", 100} }'
+POWER = '{ {"minecraft:redstone", 400}, {"minecraft:redstone_block", 3600}, {"minecraft:coal", 200}, {"minecraft:charcoal", 200}, {"mekanism:bio_fuel", 100} }'
 
 def recipe_list(rs):
     parts = []
@@ -344,7 +344,7 @@ for tier, cap, tr in CUBE_TIERS:
     p_side = put('%s_energy_cube' % tier, im)
     p_front = put('%s_energy_cube_front' % tier, front)
     energy_blocks.append(('%s_energy_cube' % tier, '%s Energy Cube' % tier.title(), {'side': p_side, 'front': p_front, 'frontActive': p_front, 'top': p_side, 'bottom': p_side},
-        'kind = "storage", energyCapacity = %d, transfer = %d, power = { {"mekanism:energy_tablet", 8000}, {"minecraft:redstone", 400}, {"minecraft:redstone_block", 3600} }' % (cap, tr)))
+        'kind = "storage", energyCapacity = %d, transfer = %d, power = { {"minecraft:redstone", 400}, {"minecraft:redstone_block", 3600} }' % (cap, tr)))
 CABLE_TIERS = [('basic', 8000), ('advanced', 128000), ('elite', 1024000), ('ultimate', 8192000)]
 for tier, tr in CABLE_TIERS:
     src = Image.open(os.path.join(M, 'block/models/multipart/opaque/%s_universal_cable_vertical.png' % tier)).convert('RGBA')
