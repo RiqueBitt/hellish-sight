@@ -1,4 +1,7 @@
 #include "stdafx.h"
+#ifdef _WINDOWS64
+#include "Client/MainMenu/MainMenu.h"
+#endif
 #include "../../../Minecraft.World/Mth.h"
 #include "../../../Minecraft.World/StringHelpers.h"
 #include "../../../Minecraft.World/Random.h"
@@ -263,6 +266,21 @@ void UIScene_MainMenu::handleInput(int iPad, int key, bool repeat, bool pressed,
 #endif
 
 	ui.AnimateKeyPress(m_iPad, key, repeat, pressed, released);
+
+#ifdef _WINDOWS64
+	if (HSMainMenu::enabled() && iPad == 0)
+	{
+		bool hsHandled = false;
+		const int act = HSMainMenu::handleInput(iPad, key, pressed, repeat, hsHandled);
+		if (act >= 0 && act < eControl_Count)
+		{
+			ProfileManager.SetPrimaryPad(iPad);
+			ProfileManager.SetLockedProfile(-1);
+			handlePress(static_cast<F64>(act), 0);
+		}
+		if (hsHandled) { handled = true; return; }
+	}
+#endif
 
 	switch(key)
 	{
@@ -2188,3 +2206,16 @@ int UIScene_MainMenu::SelectNetworkModeReturned(void *pParam,int iPad,C4JStorage
 	return 0;
 }
 #endif //__PSVITA__
+
+// Hellish Sight: the Flash menu keeps its logic, the new screen is drawn instead of it
+void UIScene_MainMenu::render(S32 width, S32 height, C4JRender::eViewportType viewport)
+{
+#ifdef _WINDOWS64
+	if (HSMainMenu::enabled() && viewport == C4JRender::VIEWPORT_TYPE_FULLSCREEN)
+	{
+		HSMainMenu::render(m_iPad, width, height, m_splash);
+		return;
+	}
+#endif
+	UIScene::render(width, height, viewport);
+}

@@ -133,6 +133,9 @@ public:
 	virtual void handleReload();
 	// INPUT
 	virtual void handleInput(int iPad, int key, bool repeat, bool pressed, bool released, bool &handled);
+	// Hellish Sight: redesigned title screen (RubyLauncher/Client/MainMenu)
+	virtual void render(S32 width, S32 height, C4JRender::eViewportType viewport);
+	void HS_Press(int control) { handlePress(static_cast<F64>(control), 0); }
 
 	virtual void handleUnlockFullVersion();
 
