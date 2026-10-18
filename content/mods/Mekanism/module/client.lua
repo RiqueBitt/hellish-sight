@@ -152,6 +152,25 @@ function main()
     registerItem("upgrade_muffling", "Muffling Upgrade", "res/muffling.png", ItemDefinition.new({ base = EBaseItem.Default }))
     registerItem("configurator", "Configurator", "res/configurator.png", ItemDefinition.new({ base = EBaseItem.Default, maxStacksize = 1 }))
     registerItem("energy_tablet", "Energy Tablet", "res/energy_tablet.png", ItemDefinition.new({ base = EBaseItem.Default, maxDamage = 1000 }))
+    registerItem("seismic_reader", "Seismic Reader", "res/seismic_reader.png", ItemDefinition.new({ base = EBaseItem.Default, maxStacksize = 1 }))
+    registerItem("qio_drive_base", "QIO Drive", "res/qio_drive_base.png", ItemDefinition.new({ base = EBaseItem.Default, maxStacksize = 1 }))
+    registerItem("qio_drive_hyper_dense", "Hyper-Dense QIO Drive", "res/qio_drive_hyper_dense.png", ItemDefinition.new({ base = EBaseItem.Default, maxStacksize = 1 }))
+    registerItem("qio_drive_time_dilating", "Time-Dilating QIO Drive", "res/qio_drive_time_dilating.png", ItemDefinition.new({ base = EBaseItem.Default, maxStacksize = 1 }))
+    registerItem("qio_drive_supermassive", "Supermassive QIO Drive", "res/qio_drive_supermassive.png", ItemDefinition.new({ base = EBaseItem.Default, maxStacksize = 1 }))
+    registerItem("module_electrolytic_breathing_unit", "Electrolytic Breathing Unit", "res/electrolytic_breathing_unit.png", ItemDefinition.new({ base = EBaseItem.Default, maxStacksize = 8 }))
+    registerItem("module_inhalation_purification_unit", "Inhalation Purification Unit", "res/inhalation_purification_unit.png", ItemDefinition.new({ base = EBaseItem.Default, maxStacksize = 8 }))
+    registerItem("module_vision_enhancement_unit", "Vision Enhancement Unit", "res/vision_enhancement_unit.png", ItemDefinition.new({ base = EBaseItem.Default, maxStacksize = 8 }))
+    registerItem("module_nutritional_injection_unit", "Nutritional Injection Unit", "res/nutritional_injection_unit.png", ItemDefinition.new({ base = EBaseItem.Default, maxStacksize = 8 }))
+    registerItem("module_jetpack_unit", "Jetpack Unit", "res/jetpack_unit.png", ItemDefinition.new({ base = EBaseItem.Default, maxStacksize = 8 }))
+    registerItem("module_gravitational_modulating_unit", "Gravitational Modulating Unit", "res/gravitational_modulating_unit.png", ItemDefinition.new({ base = EBaseItem.Default, maxStacksize = 8 }))
+    registerItem("module_locomotive_boosting_unit", "Locomotive Boosting Unit", "res/locomotive_boosting_unit.png", ItemDefinition.new({ base = EBaseItem.Default, maxStacksize = 8 }))
+    registerItem("module_hydraulic_propulsion_unit", "Hydraulic Propulsion Unit", "res/hydraulic_propulsion_unit.png", ItemDefinition.new({ base = EBaseItem.Default, maxStacksize = 8 }))
+    registerItem("module_magnetic_attraction_unit", "Magnetic Attraction Unit", "res/magnetic_attraction_unit.png", ItemDefinition.new({ base = EBaseItem.Default, maxStacksize = 8 }))
+    registerItem("module_excavation_escalation_unit", "Excavation Escalation Unit", "res/excavation_escalation_unit.png", ItemDefinition.new({ base = EBaseItem.Default, maxStacksize = 8 }))
+    registerItem("module_attack_amplification_unit", "Attack Amplification Unit", "res/attack_amplification_unit.png", ItemDefinition.new({ base = EBaseItem.Default, maxStacksize = 8 }))
+    registerItem("module_base", "Module Base", "res/module_base.png", ItemDefinition.new({ base = EBaseItem.Default }))
+    registerItem("portable_teleporter", "Portable Teleporter", "res/portable_teleporter.png", ItemDefinition.new({ base = EBaseItem.Default, maxDamage = 1000 }))
+    registerItem("upgrade_filter", "Filter Upgrade", "res/upgrade_filter.png", ItemDefinition.new({ base = EBaseItem.Default }))
 
     -- tools and armour (Mekanism Tools)
     local osmiumTier = registerItemTier("osmium", { level = 2, uses = 1024, speed = 4, damage = 4, ench = 14 })
@@ -249,6 +268,11 @@ function main()
     registerItemRefill("free_runners", "energy", 50)
     registerItemRefill("atomic_disassembler", "energy", 50)
     registerItemRefill("scuba_mask", "oxygen", 10)
+    registerSuitPiece("mekasuit_helmet", "helmet")
+    registerSuitPiece("mekasuit_bodyarmor", "chest")
+    registerSuitPiece("mekasuit_pants", "legs")
+    registerSuitPiece("mekasuit_boots", "boots")
+    registerSuitPiece("atomic_disassembler", "tool")
 
     -- chemicals, machine tools and rechargeable items
     registerChemical("hydrogen", { name = "Hidrogênio", color = 0xFFFFFF, gas = true })
@@ -275,6 +299,7 @@ function main()
     registerChemical("plutonium", { name = "Plutônio", color = 0x1F919C, gas = true })
     registerChemical("polonium", { name = "Polônio", color = 0x1B1B19, gas = true })
     registerChemical("antimatter", { name = "Antimatéria", color = 0xA464B3, gas = true })
+    registerChemical("superheated_sodium", { name = "Sódio Superaquecido", color = 0xD19469, gas = false })
     registerChemical("dirty_iron_slurry", { name = "Polpa Suja de Iron", color = 0x6B5A40, gas = false })
     registerChemical("clean_iron_slurry", { name = "Polpa Limpa de Iron", color = 0xB0A080, gas = false })
     registerChemical("dirty_gold_slurry", { name = "Polpa Suja de Gold", color = 0x6B5A40, gas = false })
@@ -294,6 +319,25 @@ function main()
     registerMachineTool("upgrade_muffling", "upgrade_muffling")
     registerMachineTool("configurator", "configurator")
     registerItemRefill("energy_tablet", "energy", 100)
+    registerMachineTool("seismic_reader", "seismic_reader")
+    registerQioDrive("qio_drive_base", 16000)
+    registerQioDrive("qio_drive_hyper_dense", 128000)
+    registerQioDrive("qio_drive_time_dilating", 1024000)
+    registerQioDrive("qio_drive_supermassive", 16384000)
+    registerMekaModule("module_electrolytic_breathing_unit", "electrolytic_breathing", { slots = { "helmet" }, maxLevel = 1 })
+    registerMekaModule("module_inhalation_purification_unit", "inhalation_purification", { slots = { "helmet" }, maxLevel = 1 })
+    registerMekaModule("module_vision_enhancement_unit", "vision_enhancement", { slots = { "helmet" }, maxLevel = 1 })
+    registerMekaModule("module_nutritional_injection_unit", "nutritional_injection", { slots = { "helmet" }, maxLevel = 1 })
+    registerMekaModule("module_jetpack_unit", "jetpack_unit", { slots = { "chest" }, maxLevel = 1 })
+    registerMekaModule("module_gravitational_modulating_unit", "gravitational_modulating", { slots = { "chest" }, maxLevel = 1 })
+    registerMekaModule("module_locomotive_boosting_unit", "locomotive_boosting", { slots = { "legs" }, maxLevel = 4 })
+    registerMekaModule("module_hydraulic_propulsion_unit", "hydraulic_propulsion", { slots = { "boots" }, maxLevel = 4 })
+    registerMekaModule("module_magnetic_attraction_unit", "magnetic_attraction", { slots = { "boots" }, maxLevel = 4 })
+    registerMekaModule("module_excavation_escalation_unit", "excavation_escalation", { slots = { "tool" }, maxLevel = 4 })
+    registerMekaModule("module_attack_amplification_unit", "attack_amplification", { slots = { "tool" }, maxLevel = 4 })
+    registerMachineTool("portable_teleporter", "portable_teleporter")
+    registerItemRefill("portable_teleporter", "energy", 100)
+    registerMachineTool("upgrade_filter", "upgrade_filter")
 
     -- machines: input slot (top), power / infusion slot (bottom), output (right)
     registerMachine("enrichment_chamber", "Enrichment Chamber", { front = "res/enrichment_chamber_front.png", frontActive = "res/enrichment_chamber_frontActive.png", side = "res/enrichment_chamber_side.png", top = "res/enrichment_chamber_top.png", bottom = "res/enrichment_chamber_bottom.png" }, {
@@ -636,8 +680,7 @@ function main()
     registerMachine("isotopic_centrifuge", "Isotopic Centrifuge", { side = "res/isotopic_centrifuge_side.png", front = "res/isotopic_centrifuge_front.png", frontActive = "res/isotopic_centrifuge_front_on.png", top = "res/isotopic_centrifuge_top.png", bottom = "res/mek_steel_side.png" }, {
         hardness = 3.5, energyCapacity = 80000, power = POWER, energyPerTick = 200, processTicks = 20, recipes = {
             { "", "", 1, chemIn = { "mekanism:uranium_hexafluoride", 200 }, chemOut = { "mekanism:fissile_fuel", 100 } },
-            { "", "", 1, chemIn = { "mekanism:nuclear_waste", 100 }, chemOut = { "mekanism:plutonium", 10 } },
-            { "", "", 1, chemIn = { "minecraft:water", 1000 }, chemOut = { "mekanism:heavy_water", 10 } }
+            { "", "", 1, chemIn = { "mekanism:nuclear_waste", 100 }, chemOut = { "mekanism:plutonium", 10 } }
         }
     })
     registerMachine("solar_neutron_activator", "Solar Neutron Activator", { side = "res/solar_neutron_activator_side.png", front = "res/solar_neutron_activator_front.png", frontActive = "res/solar_neutron_activator_front_on.png", top = "res/solar_neutron_activator_top.png", bottom = "res/mek_steel_side.png" }, {
@@ -720,7 +763,7 @@ function main()
         kind = "miner", energyCapacity = 100000, energyPerTick = 200, processTicks = 20, radius = 16, power = POWER
     })
     registerMachine("teleporter", "Teleporter", { side = "res/teleporter.png", front = "res/teleporter.png", top = "res/teleporter.png", bottom = "res/teleporter.png" }, {
-        kind = "teleporter", energyCapacity = 5000000, energyPerTick = 1000, power = POWER
+        kind = "teleporter", portalFrame = "teleporter_frame", energyCapacity = 5000000, energyPerTick = 1000, power = POWER
     })
     registerMachine("gas_burning_generator", "Gas-Burning Generator", { side = "res/gas_burning_generator_side.png", front = "res/gas_burning_generator_front.png", frontActive = "res/gas_burning_generator_front_on.png", top = "res/gas_burning_generator_top.png", bottom = "res/mek_steel_side.png" }, {
         kind = "generator", fuelChem = { "mekanism:ethylene", 1 }, generation = 480, transfer = 960, energyCapacity = 400000
@@ -741,25 +784,60 @@ function main()
         }
     })
     registerMachine("thermoelectric_boiler", "Thermoelectric Boiler Controller", { side = "res/boiler_controller.png", front = "res/boiler_controller.png", top = "res/boiler_controller.png", bottom = "res/boiler_controller.png" }, {
-        energyCapacity = 2000000, energyPerTick = 400, processTicks = 4, tankCapacity = 256000, multiblock = { frame = { "boiler_casing", "boiler_valve", "structural_glass" }, inner = { ["superheating_element"] = { speed = 1.0 }, ["pressure_disperser"] = { speed = 0.2 } }, interiorAir = true, min = 3, max = 18, speedPerVolume = 0.02 }, recipes = {
-            { "", "", 1, chemIn = { "minecraft:water", 100 }, chemOut = { "mekanism:steam", 100 } }
-        }
+        kind = "boiler", heatCapacity = 1000, conductance = 0.2, tankCapacity = 256000, transfer = 16000, multiblock = { frame = { "boiler_casing", "boiler_valve", "structural_glass" }, inner = { ["superheating_element"] = { speed = 1.0 }, ["pressure_disperser"] = { speed = 0.2 } }, interiorAir = true, min = 3, max = 18 }
     })
     registerMachine("turbine_valve", "Industrial Turbine Valve", { side = "res/turbine_valve.png", front = "res/turbine_valve.png", top = "res/turbine_valve.png", bottom = "res/turbine_valve.png" }, {
         kind = "generator", fuelChem = { "mekanism:steam", 100 }, exhaustChem = { "minecraft:water", 90 }, generation = 400, transfer = 0, energyCapacity = 4000000, tankCapacity = 256000, multiblock = { frame = { "turbine_casing", "turbine_vent", "structural_glass" }, inner = { ["turbine_rotor"] = { speed = 0.5, transfer = 4000 }, ["electromagnetic_coil"] = { speed = 0.5, transfer = 8000 }, ["pressure_disperser"] = { speed = 0.1 }, ["saturating_condenser"] = { speed = 0.2 } }, interiorAir = true, min = 3, max = 18 }
     })
     registerMachine("fission_reactor_controller", "Fission Reactor Controller", { side = "res/fission_reactor_controller.png", front = "res/fission_reactor_controller.png", top = "res/fission_reactor_controller.png", bottom = "res/fission_reactor_controller.png" }, {
-        energyCapacity = 0, needsPower = false, processTicks = 20, tankCapacity = 512000, multiblock = { frame = { "fission_reactor_casing", "fission_reactor_port", "reactor_glass" }, inner = { ["fission_fuel_assembly"] = { speed = 1.0 } }, interiorAir = true, min = 3, max = 18 }, recipes = {
-            { "", "", 1, chemIn = { "mekanism:fissile_fuel", 10 }, chemIn2 = { "minecraft:water", 1000 }, chemOut = { "mekanism:steam", 1000 }, chemOut2 = { "mekanism:nuclear_waste", 10 } }
-        }
+        kind = "fission", fuelChem = { "mekanism:fissile_fuel", 1 }, burnRateMax = 1, maxTemperature = 1200, heatCapacity = 1000, tankCapacity = 1000000, transfer = 64000, multiblock = { frame = { "fission_reactor_casing", "fission_reactor_port", "reactor_glass" }, inner = { ["fission_fuel_assembly"] = { speed = 1.0 } }, interiorAir = true, min = 3, max = 18 }
     })
     registerMachine("fusion_reactor_controller", "Fusion Reactor Controller", { side = "res/fusion_reactor_controller.png", front = "res/fusion_reactor_controller.png", top = "res/fusion_reactor_controller.png", bottom = "res/fusion_reactor_controller.png" }, {
-        kind = "generator", fuelChem = { "mekanism:dt_fuel", 2 }, generation = 40000, transfer = 80000, energyCapacity = 100000000, tankCapacity = 64000, multiblock = { frame = { "reactor_frame", "reactor_port", "reactor_glass" }, interiorAir = true, min = 5, max = 9 }
+        kind = "fusion", fuelChem = { "mekanism:dt_fuel", 2 }, generation = 40000, transfer = 200000, energyCapacity = 200000000, ignitionEnergy = 50000000, tankCapacity = 64000, multiblock = { frame = { "reactor_frame", "reactor_port", "reactor_glass" }, interiorAir = true, min = 5, max = 9 }
     })
     registerMachine("sps_port", "SPS Port (Supercritical Phase Shifter)", { side = "res/sps_port.png", front = "res/sps_port.png", top = "res/sps_port.png", bottom = "res/sps_port.png" }, {
         energyCapacity = 10000000, energyPerTick = 20000, processTicks = 100, tankCapacity = 64000, multiblock = { frame = { "sps_casing", "structural_glass" }, interiorAir = true, min = 5, max = 5 }, recipes = {
             { "", "", 1, chemIn = { "mekanism:polonium", 2000 }, chemOut = { "mekanism:antimatter", 1 } }
         }
+    })
+    registerMachine("resistive_heater", "Resistive Heater", { side = "res/resistive_heater_side.png", top = "res/resistive_heater_top.png", bottom = "res/resistive_heater_bottom.png", front = "res/resistive_heater_side.png" }, {
+        kind = "heater", energyCapacity = 200000, energyPerTick = 1000, heatCapacity = 100, conductance = 0.5, power = POWER
+    })
+    registerMachine("fuelwood_heater", "Fuelwood Heater", { front = "res/fuelwood_heater_front.png", frontActive = "res/fuelwood_heater_frontActive.png", side = "res/fuelwood_heater_side.png", top = "res/fuelwood_heater_top.png", bottom = "res/fuelwood_heater_bottom.png" }, {
+        kind = "heater", furnaceFuels = true, heatPerTick = 400, heatCapacity = 100, conductance = 0.5
+    })
+    registerMachine("basic_thermodynamic_conductor", "Basic Thermodynamic Conductor", { side = "res/basic_thermodynamic_conductor.png" }, {
+        kind = "conductor", conductance = 0.1, heatCapacity = 50, hardness = 1.0, upgrades = false
+    })
+    registerMachine("advanced_thermodynamic_conductor", "Advanced Thermodynamic Conductor", { side = "res/advanced_thermodynamic_conductor.png" }, {
+        kind = "conductor", conductance = 0.2, heatCapacity = 50, hardness = 1.0, upgrades = false
+    })
+    registerMachine("elite_thermodynamic_conductor", "Elite Thermodynamic Conductor", { side = "res/elite_thermodynamic_conductor.png" }, {
+        kind = "conductor", conductance = 0.4, heatCapacity = 50, hardness = 1.0, upgrades = false
+    })
+    registerMachine("ultimate_thermodynamic_conductor", "Ultimate Thermodynamic Conductor", { side = "res/ultimate_thermodynamic_conductor.png" }, {
+        kind = "conductor", conductance = 0.8, heatCapacity = 50, hardness = 1.0, upgrades = false
+    })
+    registerMachine("seismic_vibrator", "Seismic Vibrator", { side = "res/seismic_vibrator_side.png", front = "res/seismic_vibrator_front.png", frontActive = "res/seismic_vibrator_front_on.png", top = "res/seismic_vibrator_top.png", bottom = "res/mek_steel_side.png" }, {
+        kind = "seismic", energyCapacity = 20000, energyPerTick = 50, power = POWER
+    })
+    registerMachine("qio_drive_array", "QIO Drive Array", { front = "res/qio_drive_array_front.png", side = "res/qio_drive_array_side.png", top = "res/qio_drive_array_top.png", bottom = "res/qio_drive_array_bottom.png" }, {
+        kind = "qio_drive", upgrades = false
+    })
+    registerMachine("qio_dashboard", "QIO Dashboard", { side = "res/qio_dashboard_side.png", front = "res/qio_dashboard_front.png", frontActive = "res/qio_dashboard_front_on.png", top = "res/qio_dashboard_top.png", bottom = "res/mek_steel_side.png" }, {
+        kind = "qio_dashboard", upgrades = false
+    })
+    registerMachine("qio_importer", "QIO Importer", { side = "res/qio_importer_side.png", front = "res/qio_importer_front.png", frontActive = "res/qio_importer_front_on.png", top = "res/qio_importer_top.png", bottom = "res/mek_steel_side.png" }, {
+        kind = "qio_importer", upgrades = false
+    })
+    registerMachine("qio_exporter", "QIO Exporter", { side = "res/qio_exporter_side.png", front = "res/qio_exporter_front.png", frontActive = "res/qio_exporter_front_on.png", top = "res/qio_exporter_top.png", bottom = "res/mek_steel_side.png" }, {
+        kind = "qio_exporter", upgrades = false
+    })
+    registerMachine("quantum_entangloporter", "Quantum Entangloporter", { side = "res/quantum_entangloporter_side.png", front = "res/quantum_entangloporter_front.png", frontActive = "res/quantum_entangloporter_front_on.png", top = "res/quantum_entangloporter_top.png", bottom = "res/mek_steel_side.png" }, {
+        kind = "entangloporter", energyCapacity = 10000000, tankCapacity = 64000, transfer = 1000000, upgrades = false
+    })
+    registerMachine("modification_station", "Modification Station", { side = "res/modification_station_side.png", front = "res/modification_station_front.png", frontActive = "res/modification_station_front_on.png", top = "res/modification_station_top.png", bottom = "res/mek_steel_side.png" }, {
+        kind = "modification_station", energyCapacity = 100000, energyPerTick = 100, processTicks = 100, power = POWER
     })
 
     -- factories (process several items at once)
@@ -1616,6 +1694,38 @@ function main()
     registerShapedRecipe("mekasuit_pants", {"PCP", "P P", "P P"}, { P = "mekanism:alloy_atomic", C = "mekanism:ultimate_control_circuit" }, "mekanism:mekasuit_pants", { count = 1, group = ERecipeGroup.Armour })
     registerShapedRecipe("mekasuit_boots", {"P P", "RCR"}, { P = "mekanism:alloy_atomic", C = "mekanism:ultimate_control_circuit", R = "mekanism:free_runners" }, "mekanism:mekasuit_boots", { count = 1, group = ERecipeGroup.Armour })
     registerShapedRecipe("atomic_disassembler", {"AEA", "ACA", " O "}, { A = "mekanism:alloy_atomic", E = "mekanism:energy_tablet", C = "mekanism:ultimate_control_circuit", O = "mekanism:ingot_refined_obsidian" }, "mekanism:atomic_disassembler", { count = 1, group = ERecipeGroup.Tool })
+    registerShapedRecipe("resistive_heater", {"CRC", "CEC", "CRC"}, { C = "mekanism:ingot_copper", R = "minecraft:redstone", E = "mekanism:energy_tablet" }, "mekanism:resistive_heater", { count = 1, group = ERecipeGroup.Mechanism })
+    registerShapedRecipe("fuelwood_heater", {"III", "ICI", "IFI"}, { I = "minecraft:iron_ingot", C = "mekanism:basic_control_circuit", F = "minecraft:furnace" }, "mekanism:fuelwood_heater", { count = 1, group = ERecipeGroup.Mechanism })
+    registerShapedRecipe("basic_thermodynamic_conductor", {"CIC"}, { C = "mekanism:ingot_copper", I = "minecraft:iron_ingot" }, "mekanism:basic_thermodynamic_conductor", { count = 8, group = ERecipeGroup.Mechanism })
+    registerShapedRecipe("advanced_thermodynamic_conductor", {"CCC", "CAC", "CCC"}, { C = "mekanism:basic_thermodynamic_conductor", A = "mekanism:alloy_infused" }, "mekanism:advanced_thermodynamic_conductor", { count = 8, group = ERecipeGroup.Mechanism })
+    registerShapedRecipe("elite_thermodynamic_conductor", {"CCC", "CAC", "CCC"}, { C = "mekanism:advanced_thermodynamic_conductor", A = "mekanism:alloy_reinforced" }, "mekanism:elite_thermodynamic_conductor", { count = 8, group = ERecipeGroup.Mechanism })
+    registerShapedRecipe("ultimate_thermodynamic_conductor", {"CCC", "CAC", "CCC"}, { C = "mekanism:elite_thermodynamic_conductor", A = "mekanism:alloy_atomic" }, "mekanism:ultimate_thermodynamic_conductor", { count = 8, group = ERecipeGroup.Mechanism })
+    registerShapedRecipe("seismic_vibrator", {"ICI", "IMI", "IOI"}, { I = "mekanism:ingot_steel", C = "mekanism:basic_control_circuit", M = "mekanism:steel_casing", O = "minecraft:obsidian" }, "mekanism:seismic_vibrator", { count = 1, group = ERecipeGroup.Mechanism })
+    registerShapedRecipe("seismic_reader", {"SLS", "STS", "SSS"}, { S = "mekanism:ingot_steel", L = "minecraft:lapis_lazuli", T = "mekanism:energy_tablet" }, "mekanism:seismic_reader", { count = 1, group = ERecipeGroup.Tool })
+    registerShapedRecipe("qio_drive_array", {"ACA", "DMD", "ACA"}, { A = "mekanism:alloy_atomic", C = "mekanism:ultimate_control_circuit", D = "minecraft:diamond", M = "mekanism:steel_casing" }, "mekanism:qio_drive_array", { count = 1, group = ERecipeGroup.Mechanism })
+    registerShapedRecipe("qio_dashboard", {"GGG", "ACA", "SSS"}, { G = "mekanism:structural_glass", A = "mekanism:alloy_atomic", C = "mekanism:ultimate_control_circuit", S = "mekanism:ingot_steel" }, "mekanism:qio_dashboard", { count = 1, group = ERecipeGroup.Mechanism })
+    registerShapedRecipe("qio_importer", {"ATA", "SCS"}, { A = "mekanism:alloy_reinforced", T = "minecraft:hopper", S = "mekanism:ingot_steel", C = "mekanism:elite_control_circuit" }, "mekanism:qio_importer", { count = 1, group = ERecipeGroup.Mechanism })
+    registerShapedRecipe("qio_exporter", {"SCS", "ATA"}, { A = "mekanism:alloy_reinforced", T = "minecraft:hopper", S = "mekanism:ingot_steel", C = "mekanism:elite_control_circuit" }, "mekanism:qio_exporter", { count = 1, group = ERecipeGroup.Mechanism })
+    registerShapedRecipe("qio_drive_base", {"ACA", "DTD", "ACA"}, { A = "mekanism:alloy_reinforced", C = "mekanism:elite_control_circuit", D = "minecraft:diamond", T = "mekanism:teleportation_core" }, "mekanism:qio_drive_base", { count = 1, group = ERecipeGroup.Tool })
+    registerShapedRecipe("qio_drive_hyper_dense", {"XDX", "DCD", "XDX"}, { X = "mekanism:alloy_atomic", D = "mekanism:qio_drive_base", C = "mekanism:ultimate_control_circuit" }, "mekanism:qio_drive_hyper_dense", { count = 1, group = ERecipeGroup.Tool })
+    registerShapedRecipe("qio_drive_time_dilating", {"XDX", "DCD", "XDX"}, { X = "mekanism:pellet_polonium", D = "mekanism:qio_drive_hyper_dense", C = "mekanism:ultimate_control_circuit" }, "mekanism:qio_drive_time_dilating", { count = 1, group = ERecipeGroup.Tool })
+    registerShapedRecipe("qio_drive_supermassive", {"XDX", "DCD", "XDX"}, { X = "mekanism:pellet_antimatter", D = "mekanism:qio_drive_time_dilating", C = "mekanism:ultimate_control_circuit" }, "mekanism:qio_drive_supermassive", { count = 1, group = ERecipeGroup.Tool })
+    registerShapedRecipe("quantum_entangloporter", {"OTO", "ACA", "OTO"}, { O = "mekanism:ingot_refined_obsidian", T = "mekanism:teleportation_core", A = "mekanism:alloy_atomic", C = "mekanism:ultimate_energy_cube" }, "mekanism:quantum_entangloporter", { count = 1, group = ERecipeGroup.Mechanism })
+    registerShapedRecipe("modification_station", {"ICI", "RMR", "SSS"}, { I = "mekanism:ingot_osmium", C = "mekanism:ultimate_control_circuit", R = "mekanism:alloy_reinforced", M = "mekanism:steel_casing", S = "mekanism:ingot_steel" }, "mekanism:modification_station", { count = 1, group = ERecipeGroup.Mechanism })
+    registerShapedRecipe("module_base", {"RCR", "RAR", "RRR"}, { R = "mekanism:ingot_refined_obsidian", C = "mekanism:ultimate_control_circuit", A = "mekanism:alloy_atomic" }, "mekanism:module_base", { count = 1, group = ERecipeGroup.Tool })
+    registerShapedRecipe("module_electrolytic_breathing_unit", {" X ", "ABA", " P "}, { X = "mekanism:electrolytic_separator", A = "mekanism:alloy_atomic", B = "mekanism:module_base", P = "mekanism:pellet_polonium" }, "mekanism:module_electrolytic_breathing_unit", { count = 1, group = ERecipeGroup.Tool })
+    registerShapedRecipe("module_inhalation_purification_unit", {" X ", "ABA", " P "}, { X = "minecraft:milk_bucket", A = "mekanism:alloy_atomic", B = "mekanism:module_base", P = "mekanism:pellet_polonium" }, "mekanism:module_inhalation_purification_unit", { count = 1, group = ERecipeGroup.Tool })
+    registerShapedRecipe("module_vision_enhancement_unit", {" X ", "ABA", " P "}, { X = "minecraft:golden_carrot", A = "mekanism:alloy_atomic", B = "mekanism:module_base", P = "mekanism:pellet_polonium" }, "mekanism:module_vision_enhancement_unit", { count = 1, group = ERecipeGroup.Tool })
+    registerShapedRecipe("module_nutritional_injection_unit", {" X ", "ABA", " P "}, { X = "minecraft:cooked_beef", A = "mekanism:alloy_atomic", B = "mekanism:module_base", P = "mekanism:pellet_polonium" }, "mekanism:module_nutritional_injection_unit", { count = 1, group = ERecipeGroup.Tool })
+    registerShapedRecipe("module_jetpack_unit", {" X ", "ABA", " P "}, { X = "mekanism:jetpack", A = "mekanism:alloy_atomic", B = "mekanism:module_base", P = "mekanism:pellet_polonium" }, "mekanism:module_jetpack_unit", { count = 1, group = ERecipeGroup.Tool })
+    registerShapedRecipe("module_gravitational_modulating_unit", {" X ", "ABA", " P "}, { X = "minecraft:nether_star", A = "mekanism:alloy_atomic", B = "mekanism:module_base", P = "mekanism:pellet_polonium" }, "mekanism:module_gravitational_modulating_unit", { count = 1, group = ERecipeGroup.Tool })
+    registerShapedRecipe("module_locomotive_boosting_unit", {" X ", "ABA", " P "}, { X = "minecraft:sugar", A = "mekanism:alloy_atomic", B = "mekanism:module_base", P = "mekanism:pellet_polonium" }, "mekanism:module_locomotive_boosting_unit", { count = 1, group = ERecipeGroup.Tool })
+    registerShapedRecipe("module_hydraulic_propulsion_unit", {" X ", "ABA", " P "}, { X = "minecraft:piston", A = "mekanism:alloy_atomic", B = "mekanism:module_base", P = "mekanism:pellet_polonium" }, "mekanism:module_hydraulic_propulsion_unit", { count = 1, group = ERecipeGroup.Tool })
+    registerShapedRecipe("module_magnetic_attraction_unit", {" X ", "ABA", " P "}, { X = "minecraft:iron_block", A = "mekanism:alloy_atomic", B = "mekanism:module_base", P = "mekanism:pellet_polonium" }, "mekanism:module_magnetic_attraction_unit", { count = 1, group = ERecipeGroup.Tool })
+    registerShapedRecipe("module_excavation_escalation_unit", {" X ", "ABA", " P "}, { X = "minecraft:diamond_pickaxe", A = "mekanism:alloy_atomic", B = "mekanism:module_base", P = "mekanism:pellet_polonium" }, "mekanism:module_excavation_escalation_unit", { count = 1, group = ERecipeGroup.Tool })
+    registerShapedRecipe("module_attack_amplification_unit", {" X ", "ABA", " P "}, { X = "minecraft:diamond_sword", A = "mekanism:alloy_atomic", B = "mekanism:module_base", P = "mekanism:pellet_polonium" }, "mekanism:module_attack_amplification_unit", { count = 1, group = ERecipeGroup.Tool })
+    registerShapedRecipe("portable_teleporter", {" E ", "CTC", " E "}, { E = "mekanism:energy_tablet", C = "mekanism:basic_control_circuit", T = "mekanism:teleportation_core" }, "mekanism:portable_teleporter", { count = 1, group = ERecipeGroup.Tool })
+    registerShapedRecipe("upgrade_filter", {" G ", "ADA", " G "}, { G = "minecraft:glass", A = "mekanism:alloy_infused", D = "mekanism:dust_tin" }, "mekanism:upgrade_filter", { count = 1, group = ERecipeGroup.Mechanism })
     registerSmeltingRecipe("smelt_osmium_ore", "mekanism:osmium_ore", "mekanism:ingot_osmium", { count = 1, xp = 0.7 })
     registerSmeltingRecipe("smelt_tin_ore", "mekanism:tin_ore", "mekanism:ingot_tin", { count = 1, xp = 0.7 })
     registerSmeltingRecipe("smelt_copper_ore", "mekanism:copper_ore", "mekanism:ingot_copper", { count = 1, xp = 0.7 })
@@ -1632,5 +1742,5 @@ function main()
     registerSmeltingRecipe("smelt_dust_gold", "mekanism:dust_gold", "minecraft:gold_ingot", { count = 1, xp = 0.3 })
     registerSmeltingRecipe("smelt_enriched_iron", "mekanism:enriched_iron", "minecraft:iron_ingot", { count = 1, xp = 0.1 })
 
-    log("Mekanism: 49 blocks, 149 items, 9 machines, 12 energy blocks registered")
+    log("Mekanism: 49 blocks, 168 items, 9 machines, 12 energy blocks registered")
 end

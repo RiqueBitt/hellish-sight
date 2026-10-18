@@ -15,6 +15,7 @@
 #include "Facing.h"
 #include "Mth.h"
 #include "Material.h"
+#include "FoodData.h"
 #include "MobEffect.h"
 #include "MobEffectInstance.h"
 #include "ContainerOpenPacket.h"
@@ -487,6 +488,20 @@ namespace ModMachines
 			}
 			if (moduleLevel(helmet, "electrolytic_breathing") > 0 && player->isUnderLiquid(Material::water)) drain(helmet, 1);
 		}
+		if (usable(helmet) && moduleLevel(helmet, "nutritional_injection") > 0 && (tick % 100) == 0 && player->getFoodData()->needsFood())
+		{
+			applyEffect(player, MobEffect::saturation, 0, 2);
+			drain(helmet, 2);
+		}
+		// held tool (atomic disassembler)
+		shared_ptr<ItemInstance> held = player->inventory->getSelected();
+		if (usable(held) && suitPieceSlot(held->id) == ArmorSlot_Tool && (tick % 20) == 0)
+		{
+			const int dig = moduleLevel(held, "excavation_escalation");
+			if (dig > 0) applyEffect(player, MobEffect::digSpeed, (std::min)(3, dig - 1), 40);
+			const int atk = moduleLevel(held, "attack_amplification");
+			if (atk > 0) applyEffect(player, MobEffect::damageBoost, (std::min)(3, atk - 1), 40);
+		}
 		// chest: gravitational modulating (creative-style flight)
 		const bool gravity = usable(chest) && moduleLevel(chest, "gravitational_modulating") > 0;
 		std::set<int> &flying = moduleFlight();
@@ -738,14 +753,14 @@ void ModMachineTileEntity::tickFission(ModMachineDef *d)
 			if (fuel.amount <= 0) { fuel.amount = 0; fuel.name.clear(); }
 			waste.name = "mekanism:nuclear_waste";
 			waste.amount += burn;
-			addHeat(burn * 200000.0);
+			addHeat(burn * 20000.0);
 			burning = true;
 		}
 	}
 	// coolant: water boils into steam, sodium becomes superheated sodium
 	const ModChemAmount &cool = m_tanks[TANK_IN1];
 	if (cool.name == "minecraft:water") boilCoolant(1000000, 20, TANK_IN1, "minecraft:water", TANK_OUT0, "mekanism:steam");
-	else if (cool.name == "mekanism:sodium") boilCoolant(1000000, 5, TANK_IN1, "mekanism:sodium", TANK_OUT0, "mekanism:superheated_sodium");
+	else if (cool.name == "mekanism:sodium") boilCoolant(1000000, 50, TANK_IN1, "mekanism:sodium", TANK_OUT0, "mekanism:superheated_sodium");
 	m_temp -= (m_temp - 300.0) * 0.0002;
 
 	// damage and meltdown

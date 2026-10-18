@@ -501,7 +501,7 @@ CHEMS = [('hydrogen', 'Hidrogênio', 0xFFFFFF, True), ('oxygen', 'Oxigênio', 0x
          ('uranium_oxide', 'Óxido de Urânio', 0xE1F573, True), ('uranium_hexafluoride', 'Hexafluoreto de Urânio', 0x809960, True),
          ('fissile_fuel', 'Combustível Físsil', 0x2E332F, True), ('nuclear_waste', 'Resíduo Nuclear', 0x4F412A, True),
          ('plutonium', 'Plutônio', 0x1F919C, True), ('polonium', 'Polônio', 0x1B1B19, True),
-         ('antimatter', 'Antimatéria', 0xA464B3, True)]
+         ('antimatter', 'Antimatéria', 0xA464B3, True), ('superheated_sodium', 'Sódio Superaquecido', 0xD19469, False)]
 SLURRY_METALS = ['iron', 'gold', 'osmium', 'tin', 'copper', 'lead', 'uranium']
 for m in SLURRY_METALS:
     CHEMS.append(('dirty_%s_slurry' % m, 'Polpa Suja de %s' % m.title(), 0x6B5A40, False))
@@ -686,8 +686,7 @@ proc('pressurized_reaction_chamber', 'Pressurized Reaction Chamber', (200, 120, 
     R('minecraft:coal', 'mekanism:enriched_carbon', 2, chemIn=('minecraft:water', 50), chemIn2=('mekanism:oxygen', 50), chemOut=('mekanism:hydrogen', 50))], ticks=100)
 proc('isotopic_centrifuge', 'Isotopic Centrifuge', (120, 200, 90), [
     R(chemIn=('mekanism:uranium_hexafluoride', 200), chemOut=('mekanism:fissile_fuel', 100)),
-    R(chemIn=('mekanism:nuclear_waste', 100), chemOut=('mekanism:plutonium', 10)),
-    R(chemIn=('minecraft:water', 1000), chemOut=('mekanism:heavy_water', 10))], per=200, ticks=20)
+    R(chemIn=('mekanism:nuclear_waste', 100), chemOut=('mekanism:plutonium', 10))], per=200, ticks=20)
 proc('solar_neutron_activator', 'Solar Neutron Activator', (230, 200, 90), [
     R(chemIn=('mekanism:lithium', 100), chemOut=('mekanism:tritium', 100)),
     R(chemIn=('mekanism:nuclear_waste', 100), chemOut=('mekanism:polonium', 10))], per=60, ticks=20)
@@ -733,7 +732,7 @@ extra_machines.append(('digital_miner', 'Digital Miner', panel_tex('digital_mine
     'kind = "miner", energyCapacity = 100000, energyPerTick = 200, processTicks = 20, radius = 16, power = POWER'))
 tp = tex_hq(os.path.join(M, 'block/teleporter.png'), 'teleporter', opaque=True)
 extra_machines.append(('teleporter', 'Teleporter', {'side': tp, 'front': tp, 'top': tp, 'bottom': tp},
-    'kind = "teleporter", energyCapacity = 5000000, energyPerTick = 1000, power = POWER'))
+    'kind = "teleporter", portalFrame = "teleporter_frame", energyCapacity = 5000000, energyPerTick = 1000, power = POWER'))
 extra_machines.append(('gas_burning_generator', 'Gas-Burning Generator', panel_tex('gas_burning_generator', (230, 150, 60)),
     'kind = "generator", fuelChem = { "mekanism:ethylene", 1 }, generation = 480, transfer = 960, energyCapacity = 400000'))
 extra_machines.append(('chargepad', 'Chargepad', panel_tex('chargepad', (230, 210, 80)),
@@ -784,20 +783,19 @@ extra_machines.append(('thermal_evaporation_controller', 'Thermal Evaporation Co
        ',\n            '.join([R(chemIn=('minecraft:water', 100), chemOut=('mekanism:brine', 10)), R(chemIn=('mekanism:brine', 100), chemOut=('mekanism:lithium', 10))]))))
 bv = tex_hq(os.path.join(M, 'block/boiler_valve_output_steam.png'), 'boiler_controller', opaque=True)
 extra_machines.append(('thermoelectric_boiler', 'Thermoelectric Boiler Controller', {'side': bv, 'front': bv, 'top': bv, 'bottom': bv},
-    'energyCapacity = 2000000, energyPerTick = 400, processTicks = 4, tankCapacity = 256000, multiblock = { frame = %s, inner = { ["superheating_element"] = { speed = 1.0 }, ["pressure_disperser"] = { speed = 0.2 } }, interiorAir = true, min = 3, max = 18, speedPerVolume = 0.02 }, recipes = {\n            %s\n        }'
-    % (frame_list('boiler_casing', 'boiler_valve', 'structural_glass'), R(chemIn=('minecraft:water', 100), chemOut=('mekanism:steam', 100)))))
+    'kind = "boiler", heatCapacity = 1000, conductance = 0.2, tankCapacity = 256000, transfer = 16000, multiblock = { frame = %s, inner = { ["superheating_element"] = { speed = 1.0 }, ["pressure_disperser"] = { speed = 0.2 } }, interiorAir = true, min = 3, max = 18 }'
+    % frame_list('boiler_casing', 'boiler_valve', 'structural_glass')))
 tv = tex_hq(os.path.join(G, 'block/turbine_valve.png'), 'turbine_valve', opaque=True)
 extra_machines.append(('turbine_valve', 'Industrial Turbine Valve', {'side': tv, 'front': tv, 'top': tv, 'bottom': tv},
     'kind = "generator", fuelChem = { "mekanism:steam", 100 }, exhaustChem = { "minecraft:water", 90 }, generation = 400, transfer = 0, energyCapacity = 4000000, tankCapacity = 256000, multiblock = { frame = %s, inner = { ["turbine_rotor"] = { speed = 0.5, transfer = 4000 }, ["electromagnetic_coil"] = { speed = 0.5, transfer = 8000 }, ["pressure_disperser"] = { speed = 0.1 }, ["saturating_condenser"] = { speed = 0.2 } }, interiorAir = true, min = 3, max = 18 }'
     % frame_list('turbine_casing', 'turbine_vent', 'structural_glass')))
 fc = tex_hq(os.path.join(G, 'block/fission_reactor_logic_adapter.png'), 'fission_reactor_controller', opaque=True)
 extra_machines.append(('fission_reactor_controller', 'Fission Reactor Controller', {'side': fc, 'front': fc, 'top': fc, 'bottom': fc},
-    'energyCapacity = 0, needsPower = false, processTicks = 20, tankCapacity = 512000, multiblock = { frame = %s, inner = { ["fission_fuel_assembly"] = { speed = 1.0 } }, interiorAir = true, min = 3, max = 18 }, recipes = {\n            %s\n        }'
-    % (frame_list('fission_reactor_casing', 'fission_reactor_port', 'reactor_glass'),
-       R(chemIn=('mekanism:fissile_fuel', 10), chemIn2=('minecraft:water', 1000), chemOut=('mekanism:steam', 1000), chemOut2=('mekanism:nuclear_waste', 10)))))
+    'kind = "fission", fuelChem = { "mekanism:fissile_fuel", 1 }, burnRateMax = 1, maxTemperature = 1200, heatCapacity = 1000, tankCapacity = 1000000, transfer = 64000, multiblock = { frame = %s, inner = { ["fission_fuel_assembly"] = { speed = 1.0 } }, interiorAir = true, min = 3, max = 18 }'
+    % frame_list('fission_reactor_casing', 'fission_reactor_port', 'reactor_glass')))
 rc = tex_hq(os.path.join(G, 'block/reactor_controller.png'), 'fusion_reactor_controller', opaque=True)
 extra_machines.append(('fusion_reactor_controller', 'Fusion Reactor Controller', {'side': rc, 'front': rc, 'top': rc, 'bottom': rc},
-    'kind = "generator", fuelChem = { "mekanism:dt_fuel", 2 }, generation = 40000, transfer = 80000, energyCapacity = 100000000, tankCapacity = 64000, multiblock = { frame = %s, interiorAir = true, min = 5, max = 9 }'
+    'kind = "fusion", fuelChem = { "mekanism:dt_fuel", 2 }, generation = 40000, transfer = 200000, energyCapacity = 200000000, ignitionEnergy = 50000000, tankCapacity = 64000, multiblock = { frame = %s, interiorAir = true, min = 5, max = 9 }'
     % frame_list('reactor_frame', 'reactor_port', 'reactor_glass')))
 sp = tex_hq(os.path.join(M, 'block/sps_port.png'), 'sps_port', opaque=True)
 extra_machines.append(('sps_port', 'SPS Port (Supercritical Phase Shifter)', {'side': sp, 'front': sp, 'top': sp, 'bottom': sp},
@@ -895,6 +893,111 @@ for piece, rows in (('mekasuit_helmet', ['PCP', 'PSP']), ('mekasuit_bodyarmor', 
     keys = {k: v for k, v in keys.items() if any(k in r for r in rows)}
     shaped(piece, rows, keys, 'mekanism:' + piece, 1, 'Armour')
 shaped('atomic_disassembler', ['AEA', 'ACA', ' O '], {'A': 'mekanism:alloy_atomic', 'E': 'mekanism:energy_tablet', 'C': C('ultimate'), 'O': 'mekanism:ingot_refined_obsidian'}, 'mekanism:atomic_disassembler', 1, 'Tool')
+
+
+# ---- heat: heaters and thermodynamic conductors ---------------------------------------------
+rh = {'side': tex_hq(os.path.join(M, 'block/models/resistive_heater_sides.png'), 'resistive_heater_side', opaque=True),
+      'top': tex_hq(os.path.join(M, 'block/models/resistive_heater_top.png'), 'resistive_heater_top', opaque=True),
+      'bottom': tex_hq(os.path.join(M, 'block/models/resistive_heater_bottom.png'), 'resistive_heater_bottom', opaque=True)}
+rh['front'] = rh['side']
+extra_machines.append(('resistive_heater', 'Resistive Heater', rh,
+    'kind = "heater", energyCapacity = 200000, energyPerTick = 1000, heatCapacity = 100, conductance = 0.5, power = POWER'))
+fw = machine_tex('fuelwood_heater', 'fuelwood_heater')
+if not fw:
+    fw = panel_tex('fuelwood_heater', (200, 90, 40))
+extra_machines.append(('fuelwood_heater', 'Fuelwood Heater', fw,
+    'kind = "heater", furnaceFuels = true, heatPerTick = 400, heatCapacity = 100, conductance = 0.5'))
+for tier, cond in (('basic', 0.1), ('advanced', 0.2), ('elite', 0.4), ('ultimate', 0.8)):
+    src = os.path.join(M, 'block/models/multipart/%s_thermodynamic_conductor.png' % tier)
+    p = tex_hq(src, '%s_thermodynamic_conductor' % tier, opaque=True)
+    extra_machines.append(('%s_thermodynamic_conductor' % tier, '%s Thermodynamic Conductor' % tier.title(), {'side': p},
+        'kind = "conductor", conductance = %.1f, heatCapacity = 50, hardness = 1.0, upgrades = false' % cond))
+
+# ---- seismic vibrator + reader ----------------------------------------------------------------
+extra_machines.append(('seismic_vibrator', 'Seismic Vibrator', panel_tex('seismic_vibrator', (180, 120, 60)),
+    'kind = "seismic", energyCapacity = 20000, energyPerTick = 50, power = POWER'))
+items.append(('seismic_reader', 'Seismic Reader', tex('item/seismic_reader.png'), "ItemDefinition.new({ base = EBaseItem.Default, maxStacksize = 1 })"))
+lua_extra.append('    registerMachineTool("seismic_reader", "seismic_reader")')
+
+# ---- QIO ------------------------------------------------------------------------------------------
+qda = {}
+for key, fn in (('front', 'front'), ('side', 'side'), ('top', 'top'), ('bottom', 'bottom')):
+    f = os.path.join(M, 'block/qio_drive_array/%s.png' % fn)
+    if os.path.exists(f):
+        qda[key] = tex_hq(f, 'qio_drive_array_' + fn, opaque=True)
+if 'side' not in qda:
+    qda = panel_tex('qio_drive_array', (120, 80, 200))
+extra_machines.append(('qio_drive_array', 'QIO Drive Array', qda, 'kind = "qio_drive", upgrades = false'))
+extra_machines.append(('qio_dashboard', 'QIO Dashboard', panel_tex('qio_dashboard', (140, 90, 220)), 'kind = "qio_dashboard", upgrades = false'))
+extra_machines.append(('qio_importer', 'QIO Importer', panel_tex('qio_importer', (90, 200, 120)), 'kind = "qio_importer", upgrades = false'))
+extra_machines.append(('qio_exporter', 'QIO Exporter', panel_tex('qio_exporter', (220, 120, 90)), 'kind = "qio_exporter", upgrades = false'))
+for drv, label, cap in (('base', 'QIO Drive', 16000), ('hyper_dense', 'Hyper-Dense QIO Drive', 128000),
+                        ('time_dilating', 'Time-Dilating QIO Drive', 1024000), ('supermassive', 'Supermassive QIO Drive', 16384000)):
+    items.append(('qio_drive_%s' % drv, label, tex('item/qio_drive_%s.png' % drv), "ItemDefinition.new({ base = EBaseItem.Default, maxStacksize = 1 })"))
+    lua_extra.append('    registerQioDrive("qio_drive_%s", %d)' % (drv, cap))
+
+# ---- quantum entangloporter, modification station ---------------------------------------------------
+extra_machines.append(('quantum_entangloporter', 'Quantum Entangloporter', panel_tex('quantum_entangloporter', (60, 180, 200)),
+    'kind = "entangloporter", energyCapacity = 10000000, tankCapacity = 64000, transfer = 1000000, upgrades = false'))
+extra_machines.append(('modification_station', 'Modification Station', panel_tex('modification_station', (200, 200, 220)),
+    'kind = "modification_station", energyCapacity = 100000, energyPerTick = 100, processTicks = 100, power = POWER'))
+
+# ---- MekaSuit modules -----------------------------------------------------------------------------------
+MODULES = [('electrolytic_breathing', 'Electrolytic Breathing Unit', ['helmet'], 1),
+           ('inhalation_purification', 'Inhalation Purification Unit', ['helmet'], 1),
+           ('vision_enhancement', 'Vision Enhancement Unit', ['helmet'], 1),
+           ('nutritional_injection', 'Nutritional Injection Unit', ['helmet'], 1),
+           ('jetpack', 'Jetpack Unit', ['chest'], 1),
+           ('gravitational_modulating', 'Gravitational Modulating Unit', ['chest'], 1),
+           ('locomotive_boosting', 'Locomotive Boosting Unit', ['legs'], 4),
+           ('hydraulic_propulsion', 'Hydraulic Propulsion Unit', ['boots'], 4),
+           ('magnetic_attraction', 'Magnetic Attraction Unit', ['boots'], 4),
+           ('excavation_escalation', 'Excavation Escalation Unit', ['tool'], 4),
+           ('attack_amplification', 'Attack Amplification Unit', ['tool'], 4)]
+for mod, label, slots, lv in MODULES:
+    iid = 'module_%s_unit' % mod
+    items.append((iid, label, tex('item/module/%s_unit.png' % mod), "ItemDefinition.new({ base = EBaseItem.Default, maxStacksize = 8 })"))
+    name = 'jetpack_unit' if mod == 'jetpack' else mod
+    lua_extra.append('    registerMekaModule("%s", "%s", { slots = { %s }, maxLevel = %d })' % (iid, name, ', '.join('"%s"' % x for x in slots), lv))
+items.append(('module_base', 'Module Base', tex('item/module_base.png'), mat('Default')))
+for piece, slot in (('mekasuit_helmet', 'helmet'), ('mekasuit_bodyarmor', 'chest'), ('mekasuit_pants', 'legs'), ('mekasuit_boots', 'boots'), ('atomic_disassembler', 'tool')):
+    wear_lua.append('    registerSuitPiece("%s", "%s")' % (piece, slot))
+
+# ---- portable teleporter, filter upgrade ------------------------------------------------------------------
+items.append(('portable_teleporter', 'Portable Teleporter', tex('item/portable_teleporter.png'), "ItemDefinition.new({ base = EBaseItem.Default, maxDamage = 1000 })"))
+lua_extra.append('    registerMachineTool("portable_teleporter", "portable_teleporter")')
+lua_extra.append('    registerItemRefill("portable_teleporter", "energy", 100)')
+items.append(('upgrade_filter', 'Filter Upgrade', tex('item/upgrade/filter.png', 'upgrade_filter'), mat('Default')))
+lua_extra.append('    registerMachineTool("upgrade_filter", "upgrade_filter")')
+
+# ---- recipes for the new blocks / items -----------------------------------------------------------------------
+shaped('resistive_heater', ['CRC', 'CEC', 'CRC'], {'C': 'mekanism:ingot_copper', 'R': 'minecraft:redstone', 'E': 'mekanism:energy_tablet'}, 'mekanism:resistive_heater')
+shaped('fuelwood_heater', ['III', 'ICI', 'IFI'], {'I': 'minecraft:iron_ingot', 'C': C('basic'), 'F': 'minecraft:furnace'}, 'mekanism:fuelwood_heater')
+shaped('basic_thermodynamic_conductor', ['CIC'], {'C': 'mekanism:ingot_copper', 'I': 'minecraft:iron_ingot'}, 'mekanism:basic_thermodynamic_conductor', 8)
+for lo, hi, alloy in (('basic', 'advanced', 'alloy_infused'), ('advanced', 'elite', 'alloy_reinforced'), ('elite', 'ultimate', 'alloy_atomic')):
+    shaped('%s_thermodynamic_conductor' % hi, ['CCC', 'CAC', 'CCC'], {'C': 'mekanism:%s_thermodynamic_conductor' % lo, 'A': 'mekanism:' + alloy}, 'mekanism:%s_thermodynamic_conductor' % hi, 8)
+shaped('seismic_vibrator', ['ICI', 'IMI', 'IOI'], {'I': 'mekanism:ingot_steel', 'C': C('basic'), 'M': 'mekanism:steel_casing', 'O': 'minecraft:obsidian'}, 'mekanism:seismic_vibrator')
+shaped('seismic_reader', ['SLS', 'STS', 'SSS'], {'S': 'mekanism:ingot_steel', 'L': 'minecraft:lapis_lazuli', 'T': 'mekanism:energy_tablet'}, 'mekanism:seismic_reader', 1, 'Tool')
+shaped('qio_drive_array', ['ACA', 'DMD', 'ACA'], {'A': 'mekanism:alloy_atomic', 'C': C('ultimate'), 'D': 'minecraft:diamond', 'M': 'mekanism:steel_casing'}, 'mekanism:qio_drive_array')
+shaped('qio_dashboard', ['GGG', 'ACA', 'SSS'], {'G': 'mekanism:structural_glass', 'A': 'mekanism:alloy_atomic', 'C': C('ultimate'), 'S': 'mekanism:ingot_steel'}, 'mekanism:qio_dashboard')
+shaped('qio_importer', ['ATA', 'SCS'], {'A': 'mekanism:alloy_reinforced', 'T': 'minecraft:hopper', 'S': 'mekanism:ingot_steel', 'C': C('elite')}, 'mekanism:qio_importer')
+shaped('qio_exporter', ['SCS', 'ATA'], {'A': 'mekanism:alloy_reinforced', 'T': 'minecraft:hopper', 'S': 'mekanism:ingot_steel', 'C': C('elite')}, 'mekanism:qio_exporter')
+shaped('qio_drive_base', ['ACA', 'DTD', 'ACA'], {'A': 'mekanism:alloy_reinforced', 'C': C('elite'), 'D': 'minecraft:diamond', 'T': 'mekanism:teleportation_core'}, 'mekanism:qio_drive_base', 1, 'Tool')
+for lo, hi, x in (('base', 'hyper_dense', 'mekanism:alloy_atomic'), ('hyper_dense', 'time_dilating', 'mekanism:pellet_polonium'), ('time_dilating', 'supermassive', 'mekanism:pellet_antimatter')):
+    shaped('qio_drive_%s' % hi, ['XDX', 'DCD', 'XDX'], {'X': x, 'D': 'mekanism:qio_drive_%s' % lo, 'C': C('ultimate')}, 'mekanism:qio_drive_%s' % hi, 1, 'Tool')
+shaped('quantum_entangloporter', ['OTO', 'ACA', 'OTO'], {'O': 'mekanism:ingot_refined_obsidian', 'T': 'mekanism:teleportation_core', 'A': 'mekanism:alloy_atomic', 'C': 'mekanism:ultimate_energy_cube'}, 'mekanism:quantum_entangloporter')
+shaped('modification_station', ['ICI', 'RMR', 'SSS'], {'I': 'mekanism:ingot_osmium', 'C': C('ultimate'), 'R': 'mekanism:alloy_reinforced', 'M': 'mekanism:steel_casing', 'S': 'mekanism:ingot_steel'}, 'mekanism:modification_station')
+shaped('module_base', ['RCR', 'RAR', 'RRR'], {'R': 'mekanism:ingot_refined_obsidian', 'C': C('ultimate'), 'A': 'mekanism:alloy_atomic'}, 'mekanism:module_base', 1, 'Tool')
+MOD_KEY = {'electrolytic_breathing': 'mekanism:electrolytic_separator', 'inhalation_purification': 'minecraft:milk_bucket',
+           'vision_enhancement': 'minecraft:golden_carrot', 'nutritional_injection': 'minecraft:cooked_beef',
+           'jetpack': 'mekanism:jetpack', 'gravitational_modulating': 'minecraft:nether_star',
+           'locomotive_boosting': 'minecraft:sugar', 'hydraulic_propulsion': 'minecraft:piston',
+           'magnetic_attraction': 'minecraft:iron_block', 'excavation_escalation': 'minecraft:diamond_pickaxe',
+           'attack_amplification': 'minecraft:diamond_sword'}
+for mod, label, slots, lv in MODULES:
+    shaped('module_%s_unit' % mod, [' X ', 'ABA', ' P '], {'X': MOD_KEY[mod], 'A': 'mekanism:alloy_atomic', 'B': 'mekanism:module_base', 'P': 'mekanism:pellet_polonium'}, 'mekanism:module_%s_unit' % mod, 1, 'Tool')
+shaped('portable_teleporter', [' E ', 'CTC', ' E '], {'E': 'mekanism:energy_tablet', 'C': C('basic'), 'T': 'mekanism:teleportation_core'}, 'mekanism:portable_teleporter', 1, 'Tool')
+shaped('upgrade_filter', [' G ', 'ADA', ' G '], {'G': 'minecraft:glass', 'A': 'mekanism:alloy_infused', 'D': 'mekanism:dust_tin'}, 'mekanism:upgrade_filter')
 
 # ---------------------------------------------------------------------------------
 # Lua
@@ -1000,7 +1103,22 @@ open(os.path.join(OUT, 'README.txt'), 'w').write(
     '  Thermoelectric Boiler (Superheating Elements dentro), Industrial Turbine (Turbine Valve,\n'
     '  rotores e bobinas dentro), Fission Reactor (Fuel Assemblies dentro), Fusion Reactor (5x5x5 a 9x9x9)\n'
     '  e SPS (5x5x5).\n'
-    '* Teleporter: fique em cima e agache para ir ao proximo teleporter da mesma frequencia.\n'
+    '  Canos, cabos e tubos de um multibloco ligam no controlador (Port/Valve/Controller).\n'
+    '* Teleporter: monte a moldura 4x5 de Teleporter Frames com o Teleporter no meio da fileira de\n'
+    '  baixo (buraco 2x3). Com energia aparece o portal; entre nele para ir ao proximo teleporter da\n'
+    '  mesma frequencia. Portable Teleporter: clique num teleporter para gravar a frequencia e use no ar.\n'
+    '* A tela de cada maquina mostra barras de energia, tanques e temperatura ao lado e o status escrito.\n'
+    '* Calor: Resistive Heater (FE) e Fuelwood Heater (combustivel) esquentam blocos vizinhos e o\n'
+    '  Thermoelectric Boiler encostado neles; Thermodynamic Conductors levam o calor. O boiler tambem\n'
+    '  aceita Sodio Superaquecido do reator de fissao. Agua pesada: Electric Pump com Filter Upgrade.\n'
+    '* Reator de fissao: Configurator na frente liga/desliga, nas outras faces muda a taxa de queima.\n'
+    '  Redstone no controlador = SCRAM. Sem refrigerante (agua ou sodio) ele esquenta, ganha dano e\n'
+    '  DERRETE (explode) em 100%.\n'
+    '* Reator de fusao: carregue 50M FE no controlador e encha de combustivel D-T para acender o plasma.\n'
+    '* QIO: Drive Array com drives + Dashboard (abre como bau), Importer e Exporter (item de filtro no\n'
+    '  slot de cima); tudo pela mesma frequencia. Quantum Entangloporter: mesma frequencia, faces de saida\n'
+    '  marcadas com o Configurator. Seismic Vibrator + Seismic Reader mostram os blocos abaixo.\n'
+    '* Modification Station: peca da MekaSuit em cima, modulo embaixo; a peca pronta sai na direita.\n'
     '* Jetpack: segure pular; recarregue com hidrogenio num Chemical Tank (slot de baixo).\n'
     '  Energy Tablet, MekaSuit, Free Runners e Atomic Disassembler recarregam num Energy Cube.\n')
 print('blocks', len(blocks), 'items', len(items) + len(TIERS) * 9, 'machines', len(machines), 'textures', len(used))

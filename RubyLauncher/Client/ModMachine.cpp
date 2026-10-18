@@ -76,7 +76,7 @@ namespace
 
 	bool isConnectorKind(int kind)
 	{
-		return kind == MachineKind_Cable || kind == MachineKind_Pipe || kind == MachineKind_Transporter;
+		return kind == MachineKind_Cable || kind == MachineKind_Pipe || kind == MachineKind_Transporter || kind == MachineKind_Conductor;
 	}
 
 	// generic "put this stack into that inventory"; returns how many items went in

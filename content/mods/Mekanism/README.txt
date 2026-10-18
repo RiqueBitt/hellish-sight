@@ -26,6 +26,21 @@ Guia rapido (pt-BR)
   Thermoelectric Boiler (Superheating Elements dentro), Industrial Turbine (Turbine Valve,
   rotores e bobinas dentro), Fission Reactor (Fuel Assemblies dentro), Fusion Reactor (5x5x5 a 9x9x9)
   e SPS (5x5x5).
-* Teleporter: fique em cima e agache para ir ao proximo teleporter da mesma frequencia.
+  Canos, cabos e tubos de um multibloco ligam no controlador (Port/Valve/Controller).
+* Teleporter: monte a moldura 4x5 de Teleporter Frames com o Teleporter no meio da fileira de
+  baixo (buraco 2x3). Com energia aparece o portal; entre nele para ir ao proximo teleporter da
+  mesma frequencia. Portable Teleporter: clique num teleporter para gravar a frequencia e use no ar.
+* A tela de cada maquina mostra barras de energia, tanques e temperatura ao lado e o status escrito.
+* Calor: Resistive Heater (FE) e Fuelwood Heater (combustivel) esquentam blocos vizinhos e o
+  Thermoelectric Boiler encostado neles; Thermodynamic Conductors levam o calor. O boiler tambem
+  aceita Sodio Superaquecido do reator de fissao. Agua pesada: Electric Pump com Filter Upgrade.
+* Reator de fissao: Configurator na frente liga/desliga, nas outras faces muda a taxa de queima.
+  Redstone no controlador = SCRAM. Sem refrigerante (agua ou sodio) ele esquenta, ganha dano e
+  DERRETE (explode) em 100%.
+* Reator de fusao: carregue 50M FE no controlador e encha de combustivel D-T para acender o plasma.
+* QIO: Drive Array com drives + Dashboard (abre como bau), Importer e Exporter (item de filtro no
+  slot de cima); tudo pela mesma frequencia. Quantum Entangloporter: mesma frequencia, faces de saida
+  marcadas com o Configurator. Seismic Vibrator + Seismic Reader mostram os blocos abaixo.
+* Modification Station: peca da MekaSuit em cima, modulo embaixo; a peca pronta sai na direita.
 * Jetpack: segure pular; recarregue com hidrogenio num Chemical Tank (slot de baixo).
   Energy Tablet, MekaSuit, Free Runners e Atomic Disassembler recarregam num Energy Cube.
