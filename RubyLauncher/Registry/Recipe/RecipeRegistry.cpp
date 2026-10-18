@@ -342,7 +342,7 @@ void RecipeRegistry::finalize()
 		}
 
 		const int inputId = input->id;
-		if (furnace->isFurnaceItem(inputId))
+		if (furnace->isFurnaceItem(inputId, input->getAuxValue()))
 		{
 			Loader::_debugPrint("smelting recipe " + context + ": overriding an existing smelting recipe for input '" + pending.input + "'");
 		}

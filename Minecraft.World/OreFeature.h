@@ -10,7 +10,6 @@ private:
 	int data;
 	int count;
 	int targetTile;
-	int data = 0;	// Ruby Launcher: block metadata for mod ores
 
 	void _init(int tile, int data, int count, int targetTile);
 public:

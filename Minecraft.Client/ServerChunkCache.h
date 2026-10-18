@@ -62,7 +62,6 @@ public:
 
 #endif
 	virtual ChunkTable *getChunkTable() { return &m_table; }	// Hellish Sight
-	virtual LevelChunk **getCache() { return cache; }		// 4J added
 #ifdef MINECRAFT_SERVER_BUILD
 	void regenerateChunk(int x, int z);
 #endif
