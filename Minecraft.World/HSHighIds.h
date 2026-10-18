@@ -35,6 +35,16 @@ public:
 
 	bool any() const { return m_any.load(std::memory_order_relaxed); }
 
+	// true when the 16-high section containing y holds any high byte
+	bool sectionHasAny(int y) const
+	{
+		if (!any() || y < 0 || y >= SECTIONS * 16) return false;
+		const uint8_t *s = m_sec[y >> 4].load(std::memory_order_acquire);
+		if (s == nullptr) return false;
+		for (int k = 0; k < SECTION_SIZE; k++) if (s[k] != 0) return true;
+		return false;
+	}
+
 	int get(int x, int y, int z) const
 	{
 		if (!m_any.load(std::memory_order_relaxed) || y < 0 || y >= SECTIONS * 16) return 0;
@@ -55,7 +65,7 @@ public:
 			if (m_sec[y >> 4].compare_exchange_strong(expected, fresh)) s = fresh;
 			else { delete[] fresh; s = expected; }
 		}
-		s[index(x, y, z)] = static_cast<uint8_t>(high);
+		s[index(x, y, z)] = static_cast<uint8_t>(high & 15);	// Tile::TILE_NUM_COUNT is 4096
 		if (high != 0) m_any.store(true, std::memory_order_release);
 	}
 

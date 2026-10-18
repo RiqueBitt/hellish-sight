@@ -2457,6 +2457,7 @@ bool LevelChunk::isRenderChunkEmpty(int y)
 	{
 		return true;
 	}
+	if (m_hsHigh != nullptr && m_hsHigh->sectionHasAny(y)) return false;	// Hellish Sight: mod tiles whose low byte is 0
 	if( y >= Level::COMPRESSED_CHUNK_SECTION_HEIGHT )
 	{
 		return upperBlocks->isRenderChunkEmpty( y -  Level::COMPRESSED_CHUNK_SECTION_HEIGHT );

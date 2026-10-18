@@ -260,6 +260,26 @@ void Chunk::rebuild()
 	//     so can't be seen. A large amount (> 60% in tests) of tiles that call tesselateInWorld in the unoptimised version
 	//     of this function fall into this category. By far the largest category of these are tiles in solid regions of rock.
 	bool empty = true;
+	// Hellish Sight: mod tiles (ids >= 256) only keep their low byte in tileIds, which may look like stone/dirt/air or the
+	// "invisible" marker. Mask them out of the occlusion pass below with a neutral value, then restore them afterwards.
+	std::vector<std::pair<int, unsigned char> > hsMasked;
+	if (hsHigh != nullptr)
+	{
+		const int yA = (std::max)(0, y0 - 1), yB = (std::min)(Level::maxBuildHeight, y1 + 1);
+		for (int yy = yA; yy < yB; yy++)
+		{
+			const int iy = yy >= Level::COMPRESSED_CHUNK_SECTION_HEIGHT ? yy - Level::COMPRESSED_CHUNK_SECTION_HEIGHT : yy;
+			const int off = yy >= Level::COMPRESSED_CHUNK_SECTION_HEIGHT ? Level::COMPRESSED_CHUNK_SECTION_TILES : 0;
+			for (int zz = 0; zz < 16; zz++)
+				for (int xx = 0; xx < 16; xx++)
+				{
+					if (hsHigh->get(xx, yy, zz) == 0) continue;
+					const int idx = off + ((xx << 11) | (zz << 7) | iy);
+					hsMasked.push_back(std::make_pair(idx, tileIds[idx]));
+					tileIds[idx] = 0xfe;	// non-zero, not an occluder, not the invisible marker
+				}
+		}
+	}
 	for( int yy = y0; yy < y1; yy++ )
 	{
 		for( int zz = 0; zz < 16; zz++ )
@@ -325,6 +345,7 @@ void Chunk::rebuild()
 		}
 	}
 	PIXEndNamedEvent();
+	for (size_t i = 0; i < hsMasked.size(); i++) tileIds[hsMasked[i].first] = hsMasked[i].second;	// Hellish Sight
 	// Nothing at all to do for this chunk?
 	if( empty )
 	{
@@ -380,10 +401,12 @@ void Chunk::rebuild()
 
 					// 4J - get tile from those copied into our local array in earlier optimisation
 					unsigned char tileId = tileIds[ offset + ( ( ( x - x0 ) << 11 ) | ( ( z - z0 ) << 7 ) | indexY) ];
+					// Hellish Sight: high byte of mod tile ids (positions flagged invisible never have one)
+					const int hsHi = hsHigh != nullptr ? hsHigh->get(x & 15, y, z & 15) : 0;
 					// If flagged as not visible, drop out straight away
-					if( tileId == 0xff ) continue;
+					if( tileId == 0xff && hsHi == 0 ) continue;
 //					int tileId = region->getTile(x,y,z);
-					if (tileId > 0)
+					if (tileId > 0 || hsHi > 0)
 					{
 						if (!started)
 						{
@@ -408,8 +431,8 @@ void Chunk::rebuild()
 							t->offset(static_cast<float>(-this->x), static_cast<float>(-this->y), static_cast<float>(-this->z));
 						}
 
-						int hsTileId = tileId;
-						if (hsHigh != nullptr) hsTileId |= hsHigh->get(x & 15, y, z & 15) << 8;
+						const int hsTileId = tileId | (hsHi << 8);
+						if (hsTileId >= Tile::TILE_NUM_COUNT) continue;
 						Tile *tile = Tile::tiles[hsTileId];
 						if (tile == nullptr) continue;	// unknown id (e.g. a mod that is no longer installed)
 						if (currentLayer == 0 && tile->isEntityTile())
