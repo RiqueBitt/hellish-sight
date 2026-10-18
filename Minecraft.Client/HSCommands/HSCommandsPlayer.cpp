@@ -269,13 +269,7 @@ namespace HSCommands
 		{
 			if (e->instanceof(eTYPE_PLAYER) || e->instanceof(eTYPE_LIVINGENTITY))
 			{
-				std::shared_ptr<LivingEntity> le = std::dynamic_pointer_cast<LivingEntity>(e);
-				if (le && le->instanceof(eTYPE_PLAYER))
-				{
-					std::shared_ptr<Player> p = std::dynamic_pointer_cast<Player>(le);
-					// /kill works in creative too
-					if (p) p->abilities.invulnerable = false;
-				}
+				// out_of_world damage also kills players in creative
 				e->hurt(DamageSource::outOfWorld, 3.4e38f);
 			}
 			else
