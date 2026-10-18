@@ -3,6 +3,7 @@
 #include "stdafx.h"
 #include "HSResourcePacks.h"
 #include "..\Common\HSSettings.h"
+#include "..\Common\UI\UI.h"
 #include "..\Minecraft.h"
 #include "..\Textures.h"
 #include "..\LevelRenderer.h"
