@@ -1019,7 +1019,7 @@ namespace HSRecipeViewer
 				s.filterDirty = true;
 				s.listPage = 0;
 			}
-			if (g_KBMInput.IsKeyPressed(VK_ESCAPE)) s.searchFocus = false;
+			if (g_KBMInput.IsKeyPressed(VK_ESCAPE)) { s.searchFocus = false; s.lastCancelFrame = s.frame; }
 			return;
 		}
 
@@ -1079,10 +1079,12 @@ namespace HSRecipeViewer
 			return true;
 		case ACTION_MENU_B:
 		case ACTION_MENU_CANCEL:
-			if (s.searchFocus) { if (pressed) s.searchFocus = false; return true; }
+			// Esc arrives as both B and CANCEL in the same frame: the second one must not close the container
+			if (s.lastCancelFrame == s.frame) return true;
+			if (s.searchFocus) { if (pressed) { s.searchFocus = false; s.lastCancelFrame = s.frame; } return true; }
 			if (s.viewOpen)
 			{
-				if (pressed && s.lastCancelFrame != s.frame) { s.lastCancelFrame = s.frame; closeView(); }
+				if (pressed) { s.lastCancelFrame = s.frame; closeView(); }
 				return true;
 			}
 			return false;
