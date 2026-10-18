@@ -50,6 +50,9 @@ private:
 
 	void loadUVs();
 	void allocateModTextureCells();
+	bool allocateModTextureCellsOnce();	// Hellish Sight: false when the atlas is too small
+	void growAtlas();
+	static const int MAX_ATLAS_ROWS = 256;
 	void blitResourcePack(BufferedImage *image);	// Hellish Sight (Windows client only)
 	void blitModTextures(BufferedImage *image);
 	void registerModTextureFallback(const wstring &name, const wstring &fallbackName);

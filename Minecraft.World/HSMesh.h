@@ -53,6 +53,7 @@ struct HSMesh
 	std::vector<int> glTextures;				// loaded lazily (-1 = not loaded)
 	std::vector<HSMeshPart> parts;
 	HSMeshDisplay display[HSDisplay_Count];
+	float boundsMin[3] = { 0, 0, 0 }, boundsMax[3] = { 1, 1, 1 };	// computed at load
 
 	int findPart(const std::string &name) const
 	{

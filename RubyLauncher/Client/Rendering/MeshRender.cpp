@@ -99,6 +99,8 @@ namespace HSMeshRender
 			}
 		}
 
+		int g_light = -1;	// lightmap value for non-emissive quads (-1: keep the GL state)
+
 		void drawPart(HSMesh &mesh, const HSMeshPart &part)
 		{
 			if (part.quads.empty()) return;
@@ -112,6 +114,7 @@ namespace HSMeshRender
 				if (id != bound) { textures->bind(id); bound = id; }
 				t->begin();
 				if (run.emissive) t->tex2(0x00F000F0);
+				else if (g_light >= 0) t->tex2(g_light);
 				for (int i = run.first; i < run.first + run.count; ++i) emitQuad(t, part.quads[i]);
 				t->end();
 			}
@@ -130,6 +133,22 @@ namespace HSMeshRender
 		void drawAll(HSMesh &mesh)
 		{
 			for (const HSMeshPart &p : mesh.parts) drawWithPivot(mesh, p);
+		}
+
+		// scales and centres the mesh so its largest side is `size` blocks, centred on (0.5, 0.5, 0.5)
+		void fitToBlock(const HSMesh &mesh, float size)
+		{
+			float ext = 0.0f, c[3];
+			for (int k = 0; k < 3; ++k)
+			{
+				ext = (std::max)(ext, mesh.boundsMax[k] - mesh.boundsMin[k]);
+				c[k] = (mesh.boundsMax[k] + mesh.boundsMin[k]) * 0.5f;
+			}
+			if (ext <= 1e-4f) return;
+			const float k = size / ext;
+			glTranslatef(0.5f, 0.5f, 0.5f);
+			glScalef(k, k, k);
+			glTranslatef(-c[0], -c[1], -c[2]);
 		}
 
 		void applyDisplay(const HSMeshDisplay &d)
@@ -208,6 +227,15 @@ namespace HSMeshRender
 					angle = fmodf(t * mm->spinSpeed, 360.0f);
 				}
 
+				// light: the machine block is opaque (its own light is 0), use the brightest neighbour
+				int light = 0;
+				static const int off[6][3] = { {0,1,0}, {1,0,0}, {-1,0,0}, {0,0,1}, {0,0,-1}, {0,-1,0} };
+				for (int i = 0; i < 6; ++i)
+				{
+					const int l = te->level->getLightColor(te->x + off[i][0], te->y + off[i][1], te->z + off[i][2], 0);
+					if (((l >> 20) & 0xF) + ((l >> 4) & 0xF) > ((light >> 20) & 0xF) + ((light >> 4) & 0xF)) light = l;
+				}
+				g_light = light;
 				glPushMatrix();
 				glTranslatef(static_cast<float>(x) + 0.5f, static_cast<float>(y), static_cast<float>(z) + 0.5f);
 				glRotatef(facingAngle, 0, 1, 0);
@@ -219,6 +247,7 @@ namespace HSMeshRender
 					drawWithPivot(*mesh, p, spins ? angle : 0.0f, mm->spinAxis);
 				}
 				glPopMatrix();
+				g_light = -1;
 			}
 		};
 
@@ -311,6 +340,21 @@ namespace HSMeshRender
 				mesh->parts.push_back(part);
 			}
 		}
+		{	// bounds (pivoted parts are relative to their pivot)
+			bool first = true;
+			for (const HSMeshPart &p : mesh->parts)
+				for (const HSMeshQuad &q : p.quads)
+					for (int c = 0; c < 4; ++c)
+						for (int k = 0; k < 3; ++k)
+						{
+							const float v = q.v[c][k] + (p.hasPivot ? p.pivot[k] : 0.0f);
+							if (first) { mesh->boundsMin[0] = mesh->boundsMax[0] = q.v[c][0] + (p.hasPivot ? p.pivot[0] : 0.0f);
+								mesh->boundsMin[1] = mesh->boundsMax[1] = q.v[c][1] + (p.hasPivot ? p.pivot[1] : 0.0f);
+								mesh->boundsMin[2] = mesh->boundsMax[2] = q.v[c][2] + (p.hasPivot ? p.pivot[2] : 0.0f); first = false; }
+							mesh->boundsMin[k] = (std::min)(mesh->boundsMin[k], v);
+							mesh->boundsMax[k] = (std::max)(mesh->boundsMax[k], v);
+						}
+		}
 		if (j.contains("display") && j["display"].is_object())
 		{
 			static const char *keys[HSDisplay_Count] = { "gui", "firstperson", "thirdperson", "ground" };
@@ -365,17 +409,23 @@ namespace HSMeshRender
 	{
 		HSMesh *mesh = HSMeshes::itemMesh(itemId);
 		if (mesh == nullptr) return false;
-		const HSMeshDisplay d = mesh->display[HSDisplay_Gui].present ? mesh->display[HSDisplay_Gui] : blockDisplay(Item_Gui);
+		HSMeshDisplay d = mesh->display[HSDisplay_Gui].present ? mesh->display[HSDisplay_Gui] : blockDisplay(Item_Gui);
 		glPushMatrix();
 		glTranslatef(x + 8.0f * scaleX, y + 8.0f * scaleY, 50.0f);
 		glScalef(16.0f * scaleX, -16.0f * scaleY, 16.0f);
-		applyDisplay(d);
+		glRotatef(d.rotation[0], 1, 0, 0);
+		glRotatef(d.rotation[1], 0, 1, 0);
+		glRotatef(d.rotation[2], 0, 0, 1);
+		glScalef(0.62f, 0.62f, 0.62f);		// the rotated box must stay inside the slot
 		glTranslatef(-0.5f, -0.5f, -0.5f);
+		fitToBlock(*mesh, 1.0f);
 		glDisable(GL_CULL_FACE);
 		glEnable(GL_RESCALE_NORMAL);
 		Lighting::turnOnGui();
 		glColor4f(1, 1, 1, alpha);
+		g_light = 0x00F000F0;
 		drawAll(*mesh);
+		g_light = -1;
 		Lighting::turnOff();
 		glDisable(GL_RESCALE_NORMAL);
 		glPopMatrix();
@@ -387,13 +437,19 @@ namespace HSMeshRender
 		HSMesh *mesh = HSMeshes::itemMesh(itemId);
 		if (mesh == nullptr) return false;
 		const int kind = context == Item_FirstPerson ? HSDisplay_FirstPerson : (context == Item_ThirdPerson ? HSDisplay_ThirdPerson : HSDisplay_Ground);
+		// the engine already placed a held / dropped block here (a unit cube at the origin):
+		// draw the mesh at the size of that cube, turned like the Java model asks
 		glPushMatrix();
-		// the engine's block transform includes renderTile's 90 degree turn
-		glRotatef(90, 0, 1, 0);
-		applyInverseDisplay(blockDisplay(context));
-		if (mesh->display[kind].present) applyDisplay(mesh->display[kind]);
-		else applyDisplay(blockDisplay(context));
+		if (mesh->display[kind].present)
+		{
+			const HSMeshDisplay &d = mesh->display[kind];
+			glRotatef(d.rotation[0], 1, 0, 0);
+			glRotatef(d.rotation[1], 0, 1, 0);
+			glRotatef(d.rotation[2], 0, 0, 1);
+		}
+		const float size = (context == Item_Ground) ? 1.0f : 1.25f;
 		glTranslatef(-0.5f, -0.5f, -0.5f);
+		fitToBlock(*mesh, size);
 		drawAll(*mesh);
 		glPopMatrix();
 		return true;
