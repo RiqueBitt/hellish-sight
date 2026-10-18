@@ -119,18 +119,53 @@ namespace HSMainMenu
 			return out;
 		}
 
+		// ---- layout (GUI units) ------------------------------------------------------------------
+		// Left: menu card. Right: info card + shortcuts card. Bottom: footer bar with the hint.
+		// Everything is computed from the screen size so nothing overlaps on small windows.
+		struct Metrics
+		{
+			int top, bottom;			// usable band (below the game logo, above the footer)
+			int leftX, leftW, rightX, rightW;
+			int pad, gap, bigH, rowH;
+		} M;
+
+		void computeMetrics()
+		{
+			State &s = S();
+			M.pad = 8;
+			M.gap = 4;
+			M.top = (std::max)(112, s.sh / 2 - 68);
+			M.bottom = s.sh - 26;
+			const int band = M.bottom - M.top;
+			// 1 big + 7 small rows, a header and paddings must fit the band
+			M.rowH = 20;
+			M.bigH = 28;
+			int need = M.pad * 2 + 14 + M.bigH + 7 * M.rowH + 7 * M.gap;
+			if (need > band) { M.rowH = 18; M.bigH = 24; M.gap = 3; }
+			need = M.pad * 2 + 14 + M.bigH + 7 * M.rowH + 7 * M.gap;
+			if (need > band) { M.rowH = 16; M.bigH = 20; M.gap = 2; M.pad = 6; }
+			const int margin = (std::max)(16, s.sw / 24);
+			M.leftX = margin;
+			M.leftW = (std::min)(220, (s.sw - margin * 3) / 2);
+			M.rightW = (std::min)(200, s.sw - margin * 3 - M.leftW);
+			M.rightX = s.sw - margin - M.rightW;
+		}
+
+		int infoCardHeight() { return M.pad * 2 + 14 + 3 * 12 + 30; }
+
 		void layout()
 		{
 			State &s = S();
+			computeMetrics();
 			s.buttons.clear();
 			if (s.page == Page_Main)
 			{
-				const int x = 28, w = 196;
-				int y = (std::max)(114, s.sh / 2 - 66);
+				const int x = M.leftX + M.pad, w = M.leftW - M.pad * 2;
+				int y = M.top + M.pad + 14;
 				auto add = [&](int action, const wchar_t *label, const wchar_t *hint, int iconId, bool big) {
-					const int h = big ? 26 : 19;
+					const int h = big ? M.bigH : M.rowH;
 					s.buttons.push_back({ action, label, hint, iconId, x, y, w, h, big });
-					y += h + 3;
+					y += h + M.gap;
 				};
 				add(Act_Play, L"Jogar", L"Carregar, criar ou entrar em um mundo", Tile::grass_Id, true);
 				add(Act_JavaServers, L"Servidores Java", L"Entrar em servidores Java 1.8 e Reunion", Item::compass_Id, false);
@@ -141,20 +176,22 @@ namespace HSMainMenu
 				add(Act_Leaderboards, L"Placares", L"Placares e estat\u00EDsticas", Item::goldIngot_Id, false);
 				add(Act_Exit, L"Sair do jogo", L"Fechar o Minecraft", Item::door_wood_Id, false);
 
-				// small buttons under the info card (right)
-				const int cw = 190, cx = s.sw - cw - 24;
-				int cy = (std::max)(114, s.sh / 2 - 66) + 118;
-				s.buttons.push_back({ Local_ModsFolder, L"Abrir pasta de mods", L"Abre a pasta mods no Explorador", Item::minecart_chest_Id, cx, cy, cw, 20, false });
-				cy += 24;
-				s.buttons.push_back({ Local_InputMode, L"Modo de controle", L"Autom\u00E1tico, teclado e mouse ou controle (F9)", Tile::lever_Id, cx, cy, cw, 20, false });
-				cy += 24;
-				s.buttons.push_back({ Act_Store, L"Loja", L"Pacotes de conte\u00FAdo", Item::emerald_Id, cx, cy, cw, 20, false });
+				// shortcuts card (right, under the info card)
+				const int cx = M.rightX + M.pad, cw = M.rightW - M.pad * 2;
+				int cy = M.top + infoCardHeight() + M.gap * 2 + M.pad + 14;
+				const int h = M.rowH;
+				s.buttons.push_back({ Local_ModsFolder, L"Abrir pasta de mods", L"Abre a pasta mods no Explorador", Item::minecart_chest_Id, cx, cy, cw, h, false });
+				cy += h + M.gap;
+				s.buttons.push_back({ Local_InputMode, L"Modo de controle", L"Autom\u00E1tico, teclado e mouse ou controle (F9)", Tile::lever_Id, cx, cy, cw, h, false });
+				cy += h + M.gap;
+				s.buttons.push_back({ Act_Store, L"Loja", L"Pacotes de conte\u00FAdo", Item::emerald_Id, cx, cy, cw, h, false });
 			}
 			else
 			{
 				const int w = 120;
-				s.buttons.push_back({ Local_ModsFolder, L"Abrir pasta", L"Abre a pasta mods no Explorador", Item::minecart_chest_Id, s.sw / 2 - w - 4, s.sh - 44, w, 20, false });
-				s.buttons.push_back({ Local_Back, L"Voltar", L"Voltar ao menu", Item::arrow_Id, s.sw / 2 + 4, s.sh - 44, w, 20, false });
+				const int y = s.sh - 26 - M.rowH - 6;
+				s.buttons.push_back({ Local_ModsFolder, L"Abrir pasta", L"Abre a pasta mods no Explorador", Item::minecart_chest_Id, s.sw / 2 - w - 4, y, w, M.rowH, false });
+				s.buttons.push_back({ Local_Back, L"Voltar", L"Voltar ao menu", Item::arrow_Id, s.sw / 2 + 4, y, w, M.rowH, false });
 			}
 			if (s.focus >= static_cast<int>(s.buttons.size())) s.focus = 0;
 		}
@@ -179,150 +216,236 @@ namespace HSMainMenu
 			}
 		}
 
+		// ---- drawing helpers ----------------------------------------------------------------------
+		// rounded rectangle (2 px corners)
+		void rrect(int x0, int y0, int x1, int y1, int col)
+		{
+			P().rect(x0 + 2, y0, x1 - 2, y1, col);
+			P().rect(x0 + 1, y0 + 1, x0 + 2, y1 - 1, col);
+			P().rect(x1 - 2, y0 + 1, x1 - 1, y1 - 1, col);
+			P().rect(x0, y0 + 2, x0 + 1, y1 - 2, col);
+			P().rect(x1 - 1, y0 + 2, x1, y1 - 2, col);
+		}
+
+		void rgradient(int x0, int y0, int x1, int y1, int top, int bottom)
+		{
+			P().gradient(x0 + 2, y0, x1 - 2, y1, top, bottom);
+			P().gradient(x0, y0 + 2, x0 + 2, y1 - 2, top, bottom);
+			P().gradient(x1 - 2, y0 + 2, x1, y1 - 2, top, bottom);
+		}
+
+		// glass card: shadow, translucent body, light top edge, accent line, small header
+		void card(int x, int y, int w, int h, const wchar_t *title)
+		{
+			rrect(x + 2, y + 3, x + w + 2, y + h + 3, 0x50000000);					// drop shadow
+			rgradient(x, y, x + w, y + h, 0xC8181A20, 0xD80E0F13);						// body
+			P().rect(x + 2, y, x + w - 2, y + 1, 0x30FFFFFF);							// top highlight
+			P().gradient(x + 2, y + h - 1, x + w - 2, y + h, 0x00000000, 0x40000000);
+			if (title != nullptr)
+			{
+				text(title, x + M.pad, y + M.pad - 1, 0xFF8A8F99);
+				P().gradient(x + M.pad, y + M.pad + 9, x + w - M.pad, y + M.pad + 10, 0x60FF6A1E, 0x00FF6A1E);
+			}
+		}
+
 		void drawButton(const Button &b, int index)
 		{
 			State &s = S();
 			const bool focused = index == s.focus;
 			float &anim = s.hoverAnim[index & 15];
 			anim += ((focused ? 1.0f : 0.0f) - anim) * 0.25f;
-			const int slide = static_cast<int>(anim * 6.0f);
-			const int x = b.x + slide;
-			const int bg = lerpColor(0xB0141418, 0xE02A1A1A, anim);
-			P().rect(x, b.y, x + b.w, b.y + b.h, bg);
-			// accent bar + glow
-			const int accent = b.action == Act_Play ? 0xFFFF5A1E : 0xFFC8321E;
-			P().rect(x, b.y, x + 3, b.y + b.h, lerpColor(0xFF5A1E14, accent, anim));
-			if (anim > 0.05f) P().gradient(x + 3, b.y, x + 3 + static_cast<int>(40 * anim), b.y + b.h, (static_cast<int>(0x60 * anim) << 24) | 0xFF5A1E, 0x00FF5A1E);
-			P().rect(x, b.y + b.h - 1, x + b.w, b.y + b.h, 0x40FFFFFF);
-			const int iconY = b.y + (b.h - 16) / 2;
-			icon(b.iconId, x + 8, iconY);
-			const int textCol = lerpColor(0xFFD8D8D8, 0xFFFFFFFF, anim);
-			if (b.big)
+			const int x = b.x, y = b.y, w = b.w, h = b.h;
+			const bool primary = b.action == Act_Play;
+
+			if (primary)
 			{
-				bigText(b.label, static_cast<float>(x + 30), static_cast<float>(b.y + 7), 1.6f, textCol, 0xFF3A0A00);
+				// filled accent button
+				const int top = lerpColor(0xFFE0501E, 0xFFFF7A2E, anim), bottom = lerpColor(0xFFA0300E, 0xFFD04A14, anim);
+				rgradient(x, y, x + w, y + h, top, bottom);
+				P().rect(x + 2, y, x + w - 2, y + 1, 0x60FFFFFF);
+				P().rect(x + 2, y + h - 1, x + w - 2, y + h, 0x60000000);
 			}
 			else
 			{
-				text(b.label, x + 30, b.y + (b.h - 8) / 2, textCol);
+				const int bg = lerpColor(0x00FFFFFF, 0x24FFFFFF, anim);
+				if ((bg >> 24) & 0xFF) rrect(x, y, x + w, y + h, bg);
+				// accent pill on the left (grows on focus)
+				const int pillH = 4 + static_cast<int>((h - 8) * anim);
+				const int py = y + (h - pillH) / 2;
+				if (anim > 0.02f) rrect(x, py, x + 3, py + pillH, lerpColor(0x00FF6A1E, 0xFFFF6A1E, anim));
 			}
-		}
 
-		void drawLogo(const std::wstring &splash)
-		{
-			State &s = S();
-			const float t = (GetTickCount() - s.start) / 1000.0f;
-			const int x = 28, y = (std::max)(16, s.sh / 2 - 150);
-			// "HELLISH" with a fire gradient made of two passes
-			const std::wstring title = L"HELLISH";
-			const float k = 4.0f;
-			bigText(title, static_cast<float>(x), static_cast<float>(y), k, 0xFFFF6A1E, 0xFF2A0500);
+			const int slide = static_cast<int>(anim * 3.0f);
+			const int iconY = y + (h - 16) / 2;
+			const int iconX = x + 7 + (primary ? 0 : slide);
 			glPushMatrix();
-			glTranslatef(static_cast<float>(x), static_cast<float>(y), 0);
-			glScalef(k, k, 1);
-			// bright top half
-			font()->draw(title, 0, 0, 0x60FFE070);
+			if (!b.big && h < 18)
+			{	// small rows: 12 px icons
+				glTranslatef(static_cast<float>(iconX), static_cast<float>(y + (h - 12) / 2), 0);
+				glScalef(0.75f, 0.75f, 1);
+				icon(b.iconId, 0, 0);
+			}
+			else icon(b.iconId, iconX, iconY);
 			glPopMatrix();
-			bigText(L"SIGHT", static_cast<float>(x + 4), static_cast<float>(y + 34), 2.6f, 0xFFFFC040, 0xFF3A1000);
-			text(L"MINECRAFT \u2022 LEGACY EDITION", x + 4, y + 62, 0xFFB0B0B0);
 
-			if (!splash.empty())
+			const int tx = x + 30 + (primary ? 0 : slide);
+			const int textCol = primary ? 0xFFFFFFFF : lerpColor(0xFFC8CCD4, 0xFFFFFFFF, anim);
+			if (b.big)
 			{
-				const float pulse = 1.0f + 0.06f * sinf(t * 6.0f);
-				glPushMatrix();
-				glTranslatef(static_cast<float>(x + 170), static_cast<float>(y + 44), 0);
-				glRotatef(-14.0f, 0, 0, 1);
-				glScalef(pulse, pulse, 1);
-				const int w = font()->width(splash);
-				font()->drawShadow(splash, -w / 2, -4, 0xFFFFFF00);
-				glPopMatrix();
+				const float k = h >= 26 ? 1.5f : 1.25f;
+				bigText(b.label, static_cast<float>(tx), static_cast<float>(y + (h - 8 * k) / 2), k, textCol, 0x80300800);
+			}
+			else
+			{
+				text(b.label, tx, y + (h - 8) / 2, textCol);
+			}
+			// chevron on the focused row
+			if (anim > 0.3f && !primary)
+			{
+				const int a = static_cast<int>(255 * anim);
+				text(L">", x + w - 12, y + (h - 8) / 2, (a << 24) | 0xFF8A4A);
 			}
 		}
 
 		void drawEmbers()
 		{
 			State &s = S();
-			if (s.embers.size() < 40 && (rand() % 3) == 0)
-				s.embers.push_back({ static_cast<float>(rand() % (std::max)(1, s.sw)), static_cast<float>(s.sh + 4), 0.3f + (rand() % 100) / 120.0f, 1.0f });
+			if (s.embers.size() < 50 && (rand() % 3) == 0)
+				s.embers.push_back({ static_cast<float>(rand() % (std::max)(1, s.sw)), static_cast<float>(s.sh + 4), 0.25f + (rand() % 100) / 140.0f, 1.0f });
 			for (size_t i = 0; i < s.embers.size();)
 			{
 				State::Ember &e = s.embers[i];
 				e.y -= e.vy;
 				e.x += sinf(e.y * 0.05f) * 0.3f;
-				e.life -= 0.004f;
+				e.life -= 0.0035f;
 				if (e.y < -4 || e.life <= 0) { s.embers.erase(s.embers.begin() + i); continue; }
-				const int a = static_cast<int>(200 * e.life);
+				const int a = static_cast<int>(170 * e.life);
 				const int col = (a << 24) | (e.life > 0.5f ? 0xFFA030 : 0xFF4010);
-				P().rect(static_cast<int>(e.x), static_cast<int>(e.y), static_cast<int>(e.x) + 2, static_cast<int>(e.y) + 2, col);
+				const int size = e.life > 0.7f ? 2 : 1;
+				P().rect(static_cast<int>(e.x), static_cast<int>(e.y), static_cast<int>(e.x) + size, static_cast<int>(e.y) + size, col);
 				++i;
 			}
 		}
 
+
 		void drawInfoCard()
 		{
 			State &s = S();
-			const int w = 190, x = s.sw - w - 24, y = (std::max)(114, s.sh / 2 - 66);
-			const int h = 110;
-			P().rect(x, y, x + w, y + h, 0xC0141418);
-			P().rect(x, y, x + w, y + 2, 0xFFC8321E);
-			text(L"Hellish Sight 2.0", x + 8, y + 8, 0xFFFFC040);
+			const int x = M.rightX, y = M.top, w = M.rightW, h = infoCardHeight();
+			card(x, y, w, h, L"HELLISH SIGHT 2.0");
+			const int ix = x + M.pad;
+			int iy = y + M.pad + 15;
 			const std::vector<RubyModInfo> mods = RubyLoader::getInstalledMods();
 			int loaded = 0;
 			for (const RubyModInfo &m : mods) if (m.loaded) ++loaded;
-			text(L"Mods carregados: " + std::to_wstring(loaded) + L" / " + std::to_wstring(mods.size()), x + 8, y + 24, 0xFFE0E0E0);
+			auto row = [&](const std::wstring &label, const std::wstring &value, int col) {
+				text(label, ix, iy, 0xFF8A8F99);
+				text(value, x + w - M.pad - font()->width(value), iy, col);
+				iy += 12;
+			};
+			row(L"Mods", std::to_wstring(loaded) + L" / " + std::to_wstring(mods.size()), loaded == static_cast<int>(mods.size()) ? 0xFF7CE07C : 0xFFFFC040);
 			static const wchar_t *modes[] = { L"Autom\u00E1tico", L"Teclado e mouse", L"Controle" };
-			text(std::wstring(L"Controle: ") + modes[HSPcInput::mode()], x + 8, y + 38, 0xFFE0E0E0);
+			row(L"Controle", modes[HSPcInput::mode()], 0xFFE0E0E0);
+			row(L"Edi\u00E7\u00E3o", L"Legacy Console", 0xFFE0E0E0);
+
 			static const wchar_t *tips[] = {
-				L"R / U sobre um item: receitas e usos",
-				L"Bot\u00E3o do meio: pegar o bloco",
-				L"F7 liga os shaders, F8 o LOD",
+				L"R / U sobre um item mostra receitas e usos",
+				L"Bot\u00E3o do meio do mouse pega o bloco",
+				L"F7 liga os shaders e F8 o LOD",
 				L"F9 troca entre teclado e controle",
 				L"Ctrl+Q solta a pilha inteira",
 				L"Use /help para ver os comandos",
+				L"Ctrl+F busca itens na lista de receitas",
 			};
 			const int tipCount = sizeof(tips) / sizeof(tips[0]);
 			const int tip = static_cast<int>((GetTickCount() - s.start) / 6000) % tipCount;
-			text(L"Dica:", x + 8, y + 60, 0xFFFFC040);
+			iy += 4;
+			P().rect(ix, iy - 2, x + w - M.pad, iy - 1, 0x20FFFFFF);
+			text(L"DICA", ix, iy + 1, 0xFFFF8A4A);
 			std::wstring t = tips[tip];
-			// wrap in two lines
-			if (font()->width(t) > w - 16)
+			const int maxW = w - M.pad * 2 - 30;
+			int ty = iy + 1;
+			while (!t.empty() && ty < y + h - 8)
 			{
 				size_t cut = t.size();
-				while (cut > 0 && (t[cut - 1] != L' ' || font()->width(t.substr(0, cut)) > w - 16)) --cut;
-				if (cut == 0) cut = t.size() / 2;
-				text(t.substr(0, cut), x + 8, y + 74, 0xFFD0D0D0);
-				text(t.substr(cut), x + 8, y + 86, 0xFFD0D0D0);
+				while (cut > 0 && font()->width(t.substr(0, cut)) > maxW)
+				{
+					size_t sp = t.rfind(L' ', cut - 1);
+					cut = (sp == std::wstring::npos || sp == 0) ? cut - 1 : sp;
+				}
+				if (cut == 0) cut = 1;
+				text(t.substr(0, cut), ix + 30, ty, 0xFFD0D4DC);
+				t = t.substr(cut);
+				while (!t.empty() && t[0] == L' ') t.erase(0, 1);
+				ty += 10;
 			}
-			else text(t, x + 8, y + 74, 0xFFD0D0D0);
+		}
+
+		void drawShortcutsCard()
+		{
+			const int x = M.rightX, y = M.top + infoCardHeight() + M.gap * 2;
+			const int h = M.pad * 2 + 14 + 3 * M.rowH + 2 * M.gap;
+			card(x, y, M.rightW, h, L"ATALHOS");
+		}
+
+		void drawMenuCard()
+		{
+			const int h = M.pad * 2 + 14 + M.bigH + 7 * M.rowH + 7 * M.gap - M.gap;
+			card(M.leftX, M.top, M.leftW, h, L"MENU");
+		}
+
+		void drawFooter(const std::wstring &hint)
+		{
+			State &s = S();
+			const int y = s.sh - 18;
+			P().gradient(0, y - 6, s.sw, s.sh, 0x00000000, 0xA0000000);
+			text(L"Hellish Sight 2.0", 8, y + 4, 0x90FFFFFF);
+			const std::wstring legal = L"N\u00E3o oficial \u2022 Minecraft \u00E9 da Mojang";
+			text(legal, s.sw - 8 - font()->width(legal), y + 4, 0x70FFFFFF);
+			if (!hint.empty())
+			{
+				std::wstring h = hint;
+				const int maxW = s.sw - 2 * 130;
+				while (h.size() > 4 && font()->width(h) > maxW) h.resize(h.size() - 1);
+				text(h, (s.sw - font()->width(h)) / 2, y + 4, 0xFFFFC890);
+			}
 		}
 
 		void drawModsPage()
 		{
 			State &s = S();
-			const int w = (std::min)(420, s.sw - 40), x = (s.sw - w) / 2, y = 28, h = s.sh - 84;
+			const int w = (std::min)(440, s.sw - 40), x = (s.sw - w) / 2, y = 24, h = s.sh - 24 - 26 - M.rowH - 14;
 			P().rect(0, 0, s.sw, s.sh, 0xC0000000);
-			P().rect(x, y, x + w, y + h, 0xFA141418);
-			P().rect(x, y, x + w, y + 2, 0xFFC8321E);
-			const std::wstring title = L"Mods instalados";
-			text(title, x + (w - font()->width(title)) / 2, y + 8, 0xFFFFC040);
+			card(x, y, w, h, L"MODS INSTALADOS");
 			const std::vector<RubyModInfo> mods = RubyLoader::getInstalledMods();
-			const int rowH = 24, top = y + 26, rows = (h - 32) / rowH;
+			const int rowH = 26, top = y + M.pad + 16, rows = (std::max)(1, (h - 16 - M.pad * 2) / rowH);
 			s.modsScroll = (std::max)(0, (std::min)(s.modsScroll, static_cast<int>(mods.size()) - rows));
 			for (int i = 0; i < rows && s.modsScroll + i < static_cast<int>(mods.size()); ++i)
 			{
 				const RubyModInfo &m = mods[s.modsScroll + i];
 				const int ry = top + i * rowH;
-				P().rect(x + 6, ry, x + w - 6, ry + rowH - 2, (i & 1) ? 0x40000000 : 0x60000000);
-				P().rect(x + 6, ry, x + 8, ry + rowH - 2, m.loaded ? 0xFF3CC83C : 0xFFC83C3C);
+				rrect(x + M.pad, ry, x + w - M.pad, ry + rowH - 3, 0x18FFFFFF);
+				rrect(x + M.pad, ry + 4, x + M.pad + 3, ry + rowH - 7, m.loaded ? 0xFF3CC83C : 0xFFC83C3C);
 				const std::wstring name = RubyPaths::toWide(m.name.empty() ? m.folderName : m.name);
-				text(name, x + 14, ry + 3, 0xFFFFFFFF);
+				text(name, x + M.pad + 10, ry + 4, 0xFFFFFFFF);
 				std::wstring info = (m.version.empty() ? L"" : L"v" + RubyPaths::toWide(m.version) + L"   ") + (m.modId.empty() ? L"" : RubyPaths::toWide(m.modId));
-				const std::wstring status = m.loaded ? L"carregado" : (m.error.empty() ? L"desativado" : L"erro: " + RubyPaths::toWide(m.error));
-				text(info, x + 14, ry + 13, 0xFF909090);
-				std::wstring st = status;
+				text(info, x + M.pad + 10, ry + 14, 0xFF8A8F99);
+				std::wstring st = m.loaded ? L"Carregado" : (m.error.empty() ? L"Desativado" : L"Erro: " + RubyPaths::toWide(m.error));
 				while (st.size() > 4 && font()->width(st) > w / 2) st.resize(st.size() - 1);
-				text(st, x + w - 12 - font()->width(st), ry + 3, m.loaded ? 0xFF7CE07C : 0xFFFF7070);
+				const int sw2 = font()->width(st) + 10;
+				const int bx = x + w - M.pad - 6 - sw2;
+				rrect(bx, ry + 5, bx + sw2, ry + 17, m.loaded ? 0x403CC83C : 0x40C83C3C);
+				text(st, bx + 5, ry + 7, m.loaded ? 0xFF9CF09C : 0xFFFF9090);
 			}
-			if (mods.empty()) text(L"Nenhum mod na pasta mods", x + 14, top + 4, 0xFFA0A0A0);
+			if (mods.empty()) text(L"Nenhum mod na pasta mods", x + M.pad + 4, top + 4, 0xFFA0A0A0);
+			if (static_cast<int>(mods.size()) > rows)
+			{	// scroll bar
+				const int trackY = top, trackH = rows * rowH - 3;
+				const int thumbH = (std::max)(10, trackH * rows / static_cast<int>(mods.size()));
+				const int thumbY = trackY + (trackH - thumbH) * s.modsScroll / (std::max)(1, static_cast<int>(mods.size()) - rows);
+				P().rect(x + w - 4, trackY, x + w - 2, trackY + trackH, 0x20FFFFFF);
+				P().rect(x + w - 4, thumbY, x + w - 2, thumbY + thumbH, 0xA0FF6A1E);
+			}
 		}
 
 		void openModsFolder()
@@ -384,32 +507,27 @@ namespace HSMainMenu
 		glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 		glDisable(GL_CULL_FACE);
 
-		// readable left side over the panorama
-		P().gradient(0, 0, s.sw, s.sh, 0x30000000, 0x90000000);
-		glPushMatrix();
-		P().gradient(0, 0, 250, s.sh, 0x30000000, 0x60000000);
-		glPopMatrix();
+		// darken the panorama, stronger at the bottom and on the left where the menu is
+		P().gradient(0, 0, s.sw, s.sh, 0x40000000, 0x98000000);
+		P().gradient(0, 0, M.leftX + M.leftW + 60, s.sh, 0x30000000, 0x30000000);
 		drawEmbers();
 
+		std::wstring hint;
+		if (s.focus >= 0 && s.focus < static_cast<int>(s.buttons.size())) hint = s.buttons[s.focus].hint;
 		if (s.page == Page_Main)
 		{
 			(void)splash;	// the Minecraft / Hellish Sight logo layer (with its splash) is drawn above
+			drawMenuCard();
 			drawInfoCard();
+			drawShortcutsCard();
 			for (size_t i = 0; i < s.buttons.size(); ++i) drawButton(s.buttons[i], static_cast<int>(i));
-			if (s.focus >= 0 && s.focus < static_cast<int>(s.buttons.size()))
-			{
-				const std::wstring &hint = s.buttons[s.focus].hint;
-				text(hint, 28, s.sh - 24, 0xFFB0B0B0);
-			}
 		}
 		else
 		{
 			drawModsPage();
 			for (size_t i = 0; i < s.buttons.size(); ++i) drawButton(s.buttons[i], static_cast<int>(i));
 		}
-		text(L"Hellish Sight 2.0  \u2022  Minecraft LCE", 4, s.sh - 10, 0x80FFFFFF);
-		const std::wstring legal = L"N\u00E3o oficial. Minecraft \u00E9 da Mojang Studios.";
-		text(legal, s.sw - 4 - font()->width(legal), s.sh - 10, 0x80FFFFFF);
+		drawFooter(hint);
 
 		glColor4f(1, 1, 1, 1);
 		ui.endCustomDrawGameState();
