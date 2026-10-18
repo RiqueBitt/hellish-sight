@@ -11,6 +11,7 @@
 // This header is engine-free so the UI scenes can include it.
 
 #include <memory>
+#include <string>
 #include <vector>
 
 class ItemInstance;
@@ -26,6 +27,7 @@ namespace HSRecipeViewer
 		std::shared_ptr<ItemInstance> hovered;	// container item under the pointer, if any
 		int craftGrid = 0;					// 0 none, 2 = 2x2 inventory grid, 3 = 3x3 crafting table
 		bool creative = false;
+		std::wstring debug;					// temporary layout diagnostics
 	};
 
 	// true when the overlay should run for this pad (pad 0 with keyboard and mouse)

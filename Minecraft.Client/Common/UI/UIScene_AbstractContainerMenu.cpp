@@ -246,6 +246,12 @@ void UIScene_AbstractContainerMenu::tick()
 		info.pointerX = (m_pointerPos.x + m_fPointerImageOffsetX) * sx;
 		info.pointerY = (m_pointerPos.y + m_fPointerImageOffsetY) * sy;
 		info.hovered = HS_HoveredItem();
+		{
+			wchar_t dbg[256];
+			swprintf_s(dbg, 256, L"mv %dx%d rd %dx%d ptr %.0f,%.0f pnl %.0f..%.0f main %d,%d bnd %.0f..%.0f scr %d", m_movieWidth, m_movieHeight, rw, rh,
+				m_pointerPos.x, m_pointerPos.y, m_fPanelMinX, m_fPanelMaxX, m_controlMainPanel.getXPos(), m_controlMainPanel.getYPos(), bx0, bx1, ui.getScreenWidth());
+			info.debug = dbg;
+		}
 		if (getSceneType() == eUIScene_ClassicCraftingMenu) info.craftGrid = 3;
 		else if (getSceneType() == eUIScene_InventoryMenu && app.GetGameSettings(m_iPad, eGameSetting_ClassicCrafting)) info.craftGrid = 2;
 		Minecraft *mc = Minecraft::GetInstance();

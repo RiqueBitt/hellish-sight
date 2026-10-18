@@ -1155,6 +1155,7 @@ namespace HSRecipeViewer
 
 		updateHover();
 		walk(true);
+		if (!s.scene.debug.empty()) { g_drawing = true; text(s.scene.debug, 2, 2, 0xFFFFFF00); }
 
 		// tooltips
 		const Hover &h = s.hover;
