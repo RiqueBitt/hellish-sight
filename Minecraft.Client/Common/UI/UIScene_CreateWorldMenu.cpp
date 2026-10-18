@@ -1246,6 +1246,7 @@ void UIScene_CreateWorldMenu::CreateGame(UIScene_CreateWorldMenu* pClass, DWORD 
 		param->hellScale = HELL_LEVEL_SCALE_INFINITE;
 		break;
 	};
+	param->worldGenV2 = pClass->m_MoreOptionsParams.bWorldGenV2;	// Hellish Sight
 #else
 	param->xzSize = LEVEL_MAX_WIDTH;
 	param->hellScale = HELL_LEVEL_MAX_SCALE;

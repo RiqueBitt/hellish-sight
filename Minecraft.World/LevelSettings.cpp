@@ -115,6 +115,7 @@ LevelSettings::LevelSettings(int64_t seed, GameType *gameType, bool generateMapF
 LevelSettings::LevelSettings(LevelData *levelData)
 {
 	_init(levelData->getSeed(), levelData->getGameType(), levelData->isGenerateMapFeatures(), levelData->isHardcore(), levelData->useNewSeaLevel(), levelData->getGenerator(), levelData->getXZSize(), levelData->getHellScale() );
+	m_worldGenV2 = levelData->isWorldGenV2();	// Hellish Sight
 }
 
 LevelSettings *LevelSettings::enableStartingBonusItems()

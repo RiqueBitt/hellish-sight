@@ -5,6 +5,7 @@
 #include "net.minecraft.world.level.newbiome.layer.h"
 #include "System.h"
 #include "BiomeSource.h"
+#include "ChunkSource.h"
 #include "..\Minecraft.Client\Minecraft.h"
 #include "..\Minecraft.Client\ProgressRenderer.h"
 
@@ -51,7 +52,13 @@ BiomeSource::BiomeSource(int64_t seed, LevelType *generator)
 // 4J - removal of separate temperature & downfall layers brought forward from 1.2.3
 BiomeSource::BiomeSource(Level *level)
 {
-	_init(level->getSeed(), level->getLevelData()->getGenerator());
+	_init();
+	// Hellish Sight: infinite worlds use Java 1.7-style continents (much less ocean)
+	const bool moreLand = level->getLevelData()->getXZSize() >= LEVEL_WIDTH_INFINITE;
+	LayerArray layers = Layer::getDefaultLayers(level->getSeed(), level->getLevelData()->getGenerator(), moreLand);
+	layer = layers[0];
+	zoomedLayer = layers[1];
+	delete [] layers.data;
 }
 
 BiomeSource::~BiomeSource()

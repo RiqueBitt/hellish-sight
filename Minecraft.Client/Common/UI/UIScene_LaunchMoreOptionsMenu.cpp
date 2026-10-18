@@ -98,7 +98,12 @@ UIScene_LaunchMoreOptionsMenu::UIScene_LaunchMoreOptionsMenu(int iPad, void *ini
 	m_checkboxes[eLaunchCheckbox_FireSpreads].init(app.GetString(IDS_FIRE_SPREADS),eLaunchCheckbox_FireSpreads,m_params->bFireSpreads);
 	m_checkboxes[eLaunchCheckbox_TNT].init(app.GetString(IDS_TNT_EXPLODES),eLaunchCheckbox_TNT,m_params->bTNT);
 	m_checkboxes[eLaunchCheckbox_HostPrivileges].init(app.GetString(IDS_HOST_PRIVILEGES),eLaunchCheckbox_HostPrivileges,m_params->bHostPrivileges);
-	m_checkboxes[eLaunchCheckbox_ResetNether].init(app.GetString(IDS_RESET_NETHER),eLaunchCheckbox_ResetNether,m_params->bResetNether);
+	// Hellish Sight: on "create world" the (unused) Reset Nether checkbox becomes "WorldGen V2";
+	// the menu movie moves it right below the seed field.
+	if (m_params->bGenerateOptions)
+		m_checkboxes[eLaunchCheckbox_ResetNether].init(L"WorldGen V2",eLaunchCheckbox_ResetNether,m_params->bWorldGenV2);
+	else
+		m_checkboxes[eLaunchCheckbox_ResetNether].init(app.GetString(IDS_RESET_NETHER),eLaunchCheckbox_ResetNether,m_params->bResetNether);
 	m_checkboxes[eLaunchCheckbox_Structures].init(app.GetString(IDS_GENERATE_STRUCTURES),eLaunchCheckbox_Structures,m_params->bStructures);
 	m_checkboxes[eLaunchCheckbox_FlatWorld].init(app.GetString(IDS_SUPERFLAT_WORLD),eLaunchCheckbox_FlatWorld,m_params->bFlatWorld);
 	m_checkboxes[eLaunchCheckbox_BonusChest].init(app.GetString(IDS_BONUS_CHEST),eLaunchCheckbox_BonusChest,m_params->bBonusChest);
@@ -392,7 +397,8 @@ void UIScene_LaunchMoreOptionsMenu::handleCheckboxToggled(F64 controlId, bool se
 		m_bUpdateCheats = true;
 		break;
 	case eLaunchCheckbox_ResetNether:
-		m_params->bResetNether = selected;
+		if (m_params->bGenerateOptions) m_params->bWorldGenV2 = selected;	// Hellish Sight
+		else m_params->bResetNether = selected;
 		break;
 	case eLaunchCheckbox_Structures:
 		m_params->bStructures = selected;
@@ -516,6 +522,11 @@ void UIScene_LaunchMoreOptionsMenu::handleFocusChange(F64 controlId, F64 childId
 	};
 
 	wstring wsText=app.GetString(stringId);	
+	if (static_cast<int>(controlId) == eLaunchCheckbox_ResetNether && m_params->bGenerateOptions)
+	{
+		// Hellish Sight: description for the WorldGen V2 checkbox
+		wsText = L"WorldGen V2: terreno realista inspirado no Realistic Terrain Generation (montanhas, colinas, penhascos e rios esculpidos). Desmarcado = geracao normal do Minecraft.";
+	}
 	EHTMLFontSize size = eHTMLSize_Normal;
 	if(!RenderManager.IsHiDef() && !RenderManager.IsWidescreen())
 	{

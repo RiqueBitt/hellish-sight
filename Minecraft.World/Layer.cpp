@@ -16,7 +16,54 @@ libdivide::divider<long long> fast_d7(7);
 libdivide::divider<long long> fast_d10(10);
 #endif
 
+namespace
+{
+	// Hellish Sight: Java 1.7 GenLayerRemoveTooMuchOcean. An ocean cell whose four
+	// neighbours are all ocean has a 1 in 2 chance of becoming land.
+	class RemoveTooMuchOceanLayer : public Layer
+	{
+	public:
+		RemoveTooMuchOceanLayer(int64_t seedMixup, shared_ptr<Layer> parentLayer) : Layer(seedMixup)
+		{
+			parent = parentLayer;
+		}
+
+		virtual intArray getArea(int xo, int yo, int w, int h)
+		{
+			const int px = xo - 1;
+			const int py = yo - 1;
+			const int pw = w + 2;
+			const int ph = h + 2;
+			intArray p = parent->getArea(px, py, pw, ph);
+			intArray result = IntCache::allocate(w * h);
+			for (int y = 0; y < h; y++)
+			{
+				for (int x = 0; x < w; x++)
+				{
+					const int up = p[(x + 1) + (y + 0) * pw];
+					const int right = p[(x + 2) + (y + 1) * pw];
+					const int left = p[(x + 0) + (y + 1) * pw];
+					const int down = p[(x + 1) + (y + 2) * pw];
+					const int c = p[(x + 1) + (y + 1) * pw];
+					result[x + y * w] = c;
+					initRandom(x + xo, y + yo);
+					if (c == 0 && up == 0 && right == 0 && left == 0 && down == 0 && nextRandom(2) == 0)
+					{
+						result[x + y * w] = 1;
+					}
+				}
+			}
+			return result;
+		}
+	};
+}
+
 LayerArray Layer::getDefaultLayers(int64_t seed, LevelType *levelType)
+{
+	return getDefaultLayers(seed, levelType, false);
+}
+
+LayerArray Layer::getDefaultLayers(int64_t seed, LevelType *levelType, bool moreLand)
 {
 	// 4J - Some changes moved here from 1.2.3. Temperature & downfall layers are no longer created & returned, and a debug layer is isn't.
 	// For reference with regard to future merging, things NOT brought forward from the 1.2.3 version are new layer types that we
@@ -26,6 +73,13 @@ LayerArray Layer::getDefaultLayers(int64_t seed, LevelType *levelType)
 	islandLayer = std::make_shared<AddIslandLayer>(1, islandLayer);
 	islandLayer = std::make_shared<ZoomLayer>(2001, islandLayer);
 	islandLayer = std::make_shared<AddIslandLayer>(2, islandLayer);
+	if (moreLand)
+	{
+		// Hellish Sight: Java 1.7 continent shaping, far less endless ocean in big worlds
+		islandLayer = std::make_shared<AddIslandLayer>(50, islandLayer);
+		islandLayer = std::make_shared<AddIslandLayer>(70, islandLayer);
+		islandLayer = std::make_shared<RemoveTooMuchOceanLayer>(2, islandLayer);
+	}
 	islandLayer = std::make_shared<AddSnowLayer>(2, islandLayer);
 	islandLayer = std::make_shared<ZoomLayer>(2002, islandLayer);
 	islandLayer = std::make_shared<AddIslandLayer>(3, islandLayer);

@@ -342,6 +342,7 @@ typedef struct _LaunchMoreOptionsMenuInitData
 
 	bool bHostPrivileges;
 	bool bResetNether;
+	bool bWorldGenV2;	// Hellish Sight: RTG-style terrain (create world only)
 
 	bool bMobGriefing;
 	bool bKeepInventory;

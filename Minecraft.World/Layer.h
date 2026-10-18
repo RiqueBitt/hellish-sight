@@ -22,6 +22,8 @@ private:
 
 public:
 	static LayerArray getDefaultLayers(int64_t seed, LevelType *levelType);
+	// Hellish Sight: moreLand = Java 1.7-style continent layers (used by infinite worlds)
+	static LayerArray getDefaultLayers(int64_t seed, LevelType *levelType, bool moreLand);
 
 	Layer(int64_t seedMixup);
 

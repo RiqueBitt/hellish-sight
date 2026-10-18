@@ -67,6 +67,12 @@ public:
 	bool useNewSeaLevel();
 	int getXZSize(); // 4J Added
 	int getHellScale(); // 4J Added
+	// Hellish Sight: RTG-style terrain generator (stored in level.dat)
+	void setWorldGenV2(bool enabled) { m_worldGenV2 = enabled; }
+	bool isWorldGenV2() const { return m_worldGenV2; }
+private:
+	bool m_worldGenV2 = false;
+public:
 	static GameType *validateGameType(int gameType);
 	wstring getLevelTypeOptions();
 };

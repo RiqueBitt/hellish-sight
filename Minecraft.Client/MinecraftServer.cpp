@@ -898,6 +898,7 @@ bool MinecraftServer::loadLevel(LevelStorageSource *storageSource, const wstring
 
 	LevelSettings *levelSettings = new LevelSettings(levelSeed, gameType, app.GetGameHostOption(eGameHostOption_Structures)>0?true:false, isHardcore(), true, pLevelType, initData->xzSize, initData->hellScale);
 	if( app.GetGameHostOption(eGameHostOption_BonusChest ) ) levelSettings->enableStartingBonusItems();
+	levelSettings->setWorldGenV2(initData->worldGenV2);	// Hellish Sight
 
 	// 4J - temp - load existing level
 	shared_ptr<McRegionLevelStorage> storage = nullptr;

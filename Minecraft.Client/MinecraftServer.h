@@ -47,6 +47,7 @@ typedef struct _NetworkGameInitData
 	bool dedicatedNoLocalHostPlayer;
 	unsigned int xzSize;
 	unsigned char hellScale;
+	bool worldGenV2;	// Hellish Sight: RTG-style terrain for new worlds
 	ESavePlatform savePlatform;
 	wstring levelName;
 
@@ -61,6 +62,7 @@ typedef struct _NetworkGameInitData
 		dedicatedNoLocalHostPlayer = false;
 		xzSize = LEVEL_LEGACY_WIDTH;
 		hellScale = HELL_LEVEL_LEGACY_SCALE;
+		worldGenV2 = false;
 		savePlatform = SAVE_FILE_PLATFORM_LOCAL;
 	}
 } NetworkGameInitData;

@@ -127,6 +127,7 @@ LevelData::LevelData(CompoundTag *tag)
 	// 4J Added
 	m_xzSize = tag->getInt(L"XZSize");
 	m_hellScale = tag->getInt(L"HellScale");
+	m_worldGenV2 = tag->getBoolean(L"HSWorldGenV2");	// Hellish Sight (false when absent)
 
 #ifdef _LARGE_WORLDS
 	m_classicEdgeMoat = tag->getInt(L"ClassicMoat");
@@ -243,6 +244,7 @@ LevelData::LevelData(LevelSettings *levelSettings, const wstring& levelName)
 	bStrongholdEndPortal = false;
 	m_xzSize = levelSettings->getXZSize();
 	m_hellScale = levelSettings->getHellScale();
+	m_worldGenV2 = levelSettings->isWorldGenV2();	// Hellish Sight
 
 	m_xzSize = min(m_xzSize,LEVEL_ABSOLUTE_MAX_WIDTH);
 	m_xzSize = max(m_xzSize,LEVEL_MIN_WIDTH);
@@ -307,6 +309,7 @@ LevelData::LevelData(LevelData *copy)
 	bStrongholdEndPortal = copy->bStrongholdEndPortal;
 	m_xzSize = copy->m_xzSize;
 	m_hellScale = copy->m_hellScale;
+	m_worldGenV2 = copy->m_worldGenV2;	// Hellish Sight
 #ifdef _LARGE_WORLDS
 	m_classicEdgeMoat = copy->m_classicEdgeMoat;
 	m_smallEdgeMoat = copy->m_smallEdgeMoat;
@@ -377,6 +380,7 @@ void LevelData::setTagData(CompoundTag *tag)
 #endif
 
 	tag->putInt(L"HellScale", m_hellScale);
+	tag->putBoolean(L"HSWorldGenV2", m_worldGenV2);	// Hellish Sight
 }
 
 int64_t LevelData::getSeed()

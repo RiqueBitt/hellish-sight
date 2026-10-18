@@ -62,4 +62,5 @@ public:
 	GameRules *getGameRules();
 	int getXZSize(); // 4J Added
 	int getHellScale(); // 4J Addded
+	bool isWorldGenV2() { return wrapped->isWorldGenV2(); }	// Hellish Sight
 };
