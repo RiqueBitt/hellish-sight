@@ -2491,14 +2491,14 @@ void Level::tick(shared_ptr<Entity> e, bool actual)
 	if (actual && !isClientSide && !e->instanceof(eTYPE_PLAYER) && e->GetType() != eTYPE_ENDERDRAGON && !players.empty())
 	{
 		const double maxDist = static_cast<double>(s_simulationChunks) * 16.0 + 8.0;
-		bool near = false;
+		bool playerNear = false;
 		for (auto &p : players)
 		{
 			if (p == nullptr) continue;
 			const double dx = p->x - e->x, dz = p->z - e->z;
-			if (dx * dx + dz * dz <= maxDist * maxDist) { near = true; break; }
+			if (dx * dx + dz * dz <= maxDist * maxDist) { playerNear = true; break; }
 		}
-		if (!near) return;
+		if (!playerNear) return;
 	}
 
 	e->xOld = e->x;
