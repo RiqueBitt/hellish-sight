@@ -30,6 +30,7 @@ struct HSModelElement
 	float to[3] = { 16, 16, 16 };
 	int rotAxis = -1;				// 0 x, 1 y, 2 z
 	float rotAngle = 0.0f;			// degrees
+	float rotCos = 1.0f, rotSin = 0.0f;	// cached from rotAngle (set by the loader)
 	float origin[3] = { 8, 8, 8 };
 	bool rescale = false;
 	bool shade = true;

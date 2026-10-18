@@ -18,6 +18,7 @@
 #include "Loader.h"
 #include "json/json.hpp"
 
+#include <algorithm>
 #include <cmath>
 #include <cstring>
 #include <fstream>
@@ -69,46 +70,50 @@ namespace HSMeshRender
 
 		void emitQuad(Tesselator *t, const HSMeshQuad &q)
 		{
-			const float ax = q.v[1][0] - q.v[0][0], ay = q.v[1][1] - q.v[0][1], az = q.v[1][2] - q.v[0][2];
-			const float bx = q.v[2][0] - q.v[0][0], by = q.v[2][1] - q.v[0][1], bz = q.v[2][2] - q.v[0][2];
-			float nx = ay * bz - az * by, ny = az * bx - ax * bz, nz = ax * by - ay * bx;
-			const float len = sqrtf(nx * nx + ny * ny + nz * nz);
-			if (len > 1e-6f) { nx /= len; ny /= len; nz /= len; }
-			t->normal(nx, ny, nz);
+			t->normal(q.n[0], q.n[1], q.n[2]);
 			for (int c = 0; c < 4; ++c) t->vertexUV(q.v[c][0], q.v[c][1], q.v[c][2], q.v[c][3], q.v[c][4]);
 		}
 
-		// draws the quads of one part, grouped by texture (emissive quads at full brightness)
+		// load time: normals + quads sorted into runs of one texture (one bind and one draw per run)
+		void prepare(HSMeshPart &part)
+		{
+			for (HSMeshQuad &q : part.quads)
+			{
+				const float ax = q.v[1][0] - q.v[0][0], ay = q.v[1][1] - q.v[0][1], az = q.v[1][2] - q.v[0][2];
+				const float bx = q.v[2][0] - q.v[0][0], by = q.v[2][1] - q.v[0][1], bz = q.v[2][2] - q.v[0][2];
+				float nx = ay * bz - az * by, ny = az * bx - ax * bz, nz = ax * by - ay * bx;
+				const float len = sqrtf(nx * nx + ny * ny + nz * nz);
+				if (len > 1e-6f) { nx /= len; ny /= len; nz /= len; }
+				q.n[0] = nx; q.n[1] = ny; q.n[2] = nz;
+			}
+			std::stable_sort(part.quads.begin(), part.quads.end(), [](const HSMeshQuad &a, const HSMeshQuad &b) {
+				return a.tex != b.tex ? a.tex < b.tex : (a.emissive < b.emissive);
+			});
+			part.runs.clear();
+			for (int i = 0; i < static_cast<int>(part.quads.size()); ++i)
+			{
+				const HSMeshQuad &q = part.quads[i];
+				if (part.runs.empty() || part.runs.back().tex != q.tex || part.runs.back().emissive != q.emissive)
+					part.runs.push_back({ q.tex, q.emissive, i, 0 });
+				part.runs.back().count++;
+			}
+		}
+
 		void drawPart(HSMesh &mesh, const HSMeshPart &part)
 		{
 			if (part.quads.empty()) return;
 			Tesselator *t = Tesselator::getInstance();
 			Textures *textures = Minecraft::GetInstance()->textures;
-			for (size_t ti = 0; ti < mesh.texturePaths.size(); ++ti)
+			int bound = -3;
+			for (const HSMeshRun &run : part.runs)
 			{
-				bool any = false, anyEmissive = false;
-				for (const HSMeshQuad &q : part.quads)
-				{
-					if (q.tex != static_cast<int>(ti)) continue;
-					if (q.emissive) anyEmissive = true; else any = true;
-				}
-				if (!any && !anyEmissive) continue;
-				const int id = texture(mesh, static_cast<int>(ti));
+				const int id = texture(mesh, run.tex);
 				if (id < 0) continue;
-				textures->bind(id);
-				if (any)
-				{
-					t->begin();
-					for (const HSMeshQuad &q : part.quads) if (q.tex == static_cast<int>(ti) && !q.emissive) emitQuad(t, q);
-					t->end();
-				}
-				if (anyEmissive)
-				{
-					t->begin();
-					t->tex2(0x00F000F0);
-					for (const HSMeshQuad &q : part.quads) if (q.tex == static_cast<int>(ti) && q.emissive) emitQuad(t, q);
-					t->end();
-				}
+				if (id != bound) { textures->bind(id); bound = id; }
+				t->begin();
+				if (run.emissive) t->tex2(0x00F000F0);
+				for (int i = run.first; i < run.first + run.count; ++i) emitQuad(t, part.quads[i]);
+				t->end();
 			}
 		}
 
@@ -302,6 +307,7 @@ namespace HSMeshRender
 						part.hasPivot = true;
 					}
 				}
+				prepare(part);
 				mesh->parts.push_back(part);
 			}
 		}

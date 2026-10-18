@@ -8673,8 +8673,7 @@ namespace
 	void rotateElementPoint(const HSModelElement &e, float p[3])	// pixel space
 	{
 		if (e.rotAxis < 0 || e.rotAngle == 0.0f) return;
-		const float a = e.rotAngle * 3.14159265f / 180.0f;
-		const float c = cosf(a), s = sinf(a);
+		const float c = e.rotCos, s = e.rotSin;	// precomputed by the loader
 		float v[3] = { p[0] - e.origin[0], p[1] - e.origin[1], p[2] - e.origin[2] };
 		float r[3] = { v[0], v[1], v[2] };
 		if (e.rotAxis == 0) { r[1] = v[1] * c - v[2] * s; r[2] = v[1] * s + v[2] * c; }
@@ -8754,7 +8753,6 @@ bool TileRenderer::tesselateHSModelInWorld( Tile* tt, int x, int y, int z )
 	Tesselator *t = Tesselator::getInstance();
 	const int q = model->rotateWithFacing ? quarterTurnsFor(data & 7) : 0;
 
-	std::vector<HSModelElement> built;
 	const std::vector<HSModelElement> *elements = &model->elements;
 	if (model->connector)
 	{
@@ -8763,8 +8761,16 @@ bool TileRenderer::tesselateHSModelInWorld( Tile* tt, int x, int y, int z )
 		{
 			if (model->connects != nullptr && model->connects(level, x, y, z, f)) connections |= 1 << f;
 		}
-		buildConnector(*model, connections, built);
-		elements = &built;
+		// chunk rebuilds run on several threads: one cache of the 64 shapes per thread and model
+		thread_local std::vector<const HSModel *> models;
+		size_t slot = 0;
+		for (; slot < models.size(); ++slot) if (models[slot] == model) break;
+		if (slot == models.size()) models.push_back(model);
+		thread_local std::vector<std::vector<HSModelElement> > shapes;
+		const size_t key = slot * 64 + connections;
+		if (shapes.size() <= key) shapes.resize(key + 1);
+		if (shapes[key].empty()) buildConnector(*model, connections, shapes[key]);
+		elements = &shapes[key];
 	}
 
 	const int col = tt->getColor(level, x, y, z);

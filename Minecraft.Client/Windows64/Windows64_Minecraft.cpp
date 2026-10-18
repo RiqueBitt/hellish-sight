@@ -4,6 +4,7 @@
 #include "stdafx.h"
 #include "Client/RecipeViewer/RecipeViewer.h"
 #include "Client/MachineGui/MachineGui.h"
+#include "Client/PcInput/PcInput.h"
 #include "../Common/HSSettings.h"
 #include "../Common/HSLod.h"
 #include "HSJavaServer.h"
@@ -2209,7 +2210,9 @@ int APIENTRY _tWinMain(_In_ HINSTANCE hInstance,
 		ui.tick();
 		ui.render();
 		HSMachineGui::render();		// Hellish Sight: mod machine GUI sprites
+		HSPcInput::tick();
 		HSRecipeViewer::render();	// Hellish Sight: JEI-style recipe viewer over the container screens
+		HSPcInput::render();		// Hellish Sight: keyboard / mouse prompts, controls page
 
 		pMinecraft->gameRenderer->ApplyGammaPostProcess();
 

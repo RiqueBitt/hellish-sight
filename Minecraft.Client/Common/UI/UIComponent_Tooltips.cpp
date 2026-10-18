@@ -1,4 +1,7 @@
 #include "stdafx.h"
+#ifdef _WINDOWS64
+#include "Client/PcInput/PcInput.h"
+#endif
 #include "UI.h"
 #include "UIComponent_Tooltips.h"
 #include "UISplitScreenHelpers.h"
@@ -203,6 +206,15 @@ void UIComponent_Tooltips::render(S32 width, S32 height, C4JRender::eViewportTyp
 		return;
 	}
 
+#ifdef _WINDOWS64
+	// Hellish Sight: on keyboard and mouse the bar is drawn with keys and mouse buttons instead of controller icons
+	if (!m_bSplitscreen && HSPcInput::keyboardPrompts(m_iPad))
+	{
+		HSPcInput::setTooltipsVisible(m_iPad, true, ui.GetMenuDisplayed(m_iPad));
+		return;
+	}
+#endif
+
 	if(m_bSplitscreen)
 	{
 		S32 xPos = 0;
@@ -343,6 +355,9 @@ void UIComponent_Tooltips::_SetTooltip(unsigned int iToolTipId, UIString label, 
 	}
 	m_tooltipValues[iToolTipId].show = show;
 	m_tooltipValues[iToolTipId].label = label;
+#ifdef _WINDOWS64
+	HSPcInput::setTooltip(m_iPad, static_cast<int>(iToolTipId), std::wstring(label.c_str()), show);	// Hellish Sight: keyboard / mouse prompts
+#endif
 
 	IggyDataValue result;
 	IggyDataValue value[3];

@@ -8,6 +8,7 @@
 #include "Common/ModPaths.h"
 
 #include "json/json.hpp"
+#include <cmath>
 #include <fstream>
 #include <map>
 #include <sstream>
@@ -105,6 +106,8 @@ namespace ModModels
 					const std::string axis = r.value("axis", std::string("y"));
 					e.rotAxis = axis == "x" ? 0 : (axis == "z" ? 2 : 1);
 					e.rotAngle = r.value("angle", 0.0f);
+					e.rotCos = cosf(e.rotAngle * 3.14159265f / 180.0f);
+					e.rotSin = sinf(e.rotAngle * 3.14159265f / 180.0f);
 					e.rescale = r.value("rescale", false);
 					if (r.contains("origin") && r["origin"].is_array() && r["origin"].size() == 3)
 						for (int k = 0; k < 3; ++k) e.origin[k] = num(r["origin"][k], 8.0f);

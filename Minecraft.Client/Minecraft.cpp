@@ -1,5 +1,6 @@
 #include "stdafx.h"
 #include "Minecraft.h"
+#include "../Minecraft.World/InventoryMenu.h"
 #ifdef _WINDOWS64
 #include "Client/RecipeViewer/RecipeViewer.h"
 #endif
@@ -3968,6 +3969,29 @@ void Minecraft::tick(bool bFirst, bool bUpdateTextures)
             bool ctrlHeld = g_KBMInput.IsKBMActive() && g_KBMInput.IsKeyDown(KeyboardMouseInput::KEY_CONTROL);
 			player->drop(ctrlHeld);
 		}
+
+#ifdef _WINDOWS64
+		// Hellish Sight: middle click picks the block you look at (Java "Pick Block")
+		if (iPad == 0 && g_KBMInput.IsKBMActive() && g_KBMInput.IsMouseGrabbed() && !ui.GetMenuDisplayed(iPad)
+			&& g_KBMInput.IsMouseButtonPressed(KeyboardMouseInput::MOUSE_MIDDLE) && hitResult != nullptr && hitResult->type == HitResult::TILE && level != nullptr)
+		{
+			const int tid = level->getTile(hitResult->x, hitResult->y, hitResult->z);
+			if (tid > 0 && tid < Tile::TILE_NUM_COUNT && Tile::tiles[tid] != nullptr)
+			{
+				const int cid = Tile::tiles[tid]->cloneTileId(level, hitResult->x, hitResult->y, hitResult->z);
+				const int cdata = Tile::tiles[tid]->cloneTileData(level, hitResult->x, hitResult->y, hitResult->z);
+				if (cid > 0 && cid < Item::ITEM_NUM_COUNT && Item::items[cid] != nullptr)
+				{
+					const bool creative = gameMode->hasInfiniteItems();
+					player->inventory->grabTexture(cid, cdata, Item::items[cid]->isStackedByData(), creative);
+					if (creative)
+					{
+						gameMode->handleCreativeModeItemAdd(player->inventory->getSelected(), InventoryMenu::USE_ROW_SLOT_START + player->inventory->selected);
+					}
+				}
+			}
+		}
+#endif
 
 		uint64_t ullButtonsPressed=player->ullButtonsPressed;
 

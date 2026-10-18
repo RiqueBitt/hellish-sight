@@ -23,12 +23,16 @@ struct HSMeshQuad
 	int tex = 0;
 	bool emissive = false;
 	float v[4][5];		// x, y, z, u, v
+	float n[3] = { 0, 1, 0 };	// face normal (computed at load)
 };
+
+struct HSMeshRun { int tex; bool emissive; int first, count; };	// quads sorted by texture at load
 
 struct HSMeshPart
 {
 	std::string name;
 	std::vector<HSMeshQuad> quads;
+	std::vector<HSMeshRun> runs;
 	float pivot[3] = { 0.5f, 0.5f, 0.5f };
 	bool hasPivot = false;				// quads are relative to the pivot (spinning parts)
 };
