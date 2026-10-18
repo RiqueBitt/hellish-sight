@@ -80,7 +80,7 @@ void ItemRenderer::render(shared_ptr<Entity> _itemEntity, double x, double y, do
     glTranslatef(static_cast<float>(x), static_cast<float>(y) + bob, static_cast<float>(z));
     glEnable(GL_RESCALE_NORMAL);
 
-	Tile *tile = Tile::tiles[item->id];
+	Tile *tile = (item->id >= 0 && item->id < Tile::TILE_NUM_COUNT) ? Tile::tiles[item->id] : nullptr;	// Hellish Sight: mod items have ids >= 4096
 
 	if ((item->getIconType() == Icon::TYPE_TERRAIN && tile != nullptr && TileRenderer::canRender(tile->getRenderShape())) && item->id != Tile::barrier_Id)
 	{

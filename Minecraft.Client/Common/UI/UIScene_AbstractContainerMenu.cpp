@@ -10,6 +10,7 @@
 #ifdef _WINDOWS64
 #include "../../Windows64/KeyboardMouseInput.h"
 #include "Client/RecipeViewer/RecipeViewer.h"	// Hellish Sight: JEI-style recipe viewer
+#include "Client/MachineGui/MachineGui.h"
 #endif
 
 UIScene_AbstractContainerMenu::UIScene_AbstractContainerMenu(int iPad, UILayer *parentLayer) : UIScene(iPad, parentLayer)
@@ -46,6 +47,7 @@ void UIScene_AbstractContainerMenu::handleDestroy()
 	g_KBMInput.SetScreenCursorHidden(false);
 	g_KBMInput.SetCursorHiddenForUI(false);
 	HSRecipeViewer::sceneClosed(m_iPad);
+	HSMachineGui::clear(m_iPad);
 #endif
 
 	Minecraft *pMinecraft = Minecraft::GetInstance();

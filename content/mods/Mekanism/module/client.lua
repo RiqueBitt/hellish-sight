@@ -600,10 +600,10 @@ function main()
     registerMachine("advanced_energy_cube", "Advanced Energy Cube", { side = "res/advanced_energy_cube.png", front = "res/advanced_energy_cube_front.png", frontActive = "res/advanced_energy_cube_front.png", top = "res/advanced_energy_cube.png", bottom = "res/advanced_energy_cube.png" }, { kind = "storage", energyCapacity = 16000000, transfer = 16000, power = { {"minecraft:redstone", 400}, {"minecraft:redstone_block", 3600} } })
     registerMachine("elite_energy_cube", "Elite Energy Cube", { side = "res/elite_energy_cube.png", front = "res/elite_energy_cube_front.png", frontActive = "res/elite_energy_cube_front.png", top = "res/elite_energy_cube.png", bottom = "res/elite_energy_cube.png" }, { kind = "storage", energyCapacity = 64000000, transfer = 64000, power = { {"minecraft:redstone", 400}, {"minecraft:redstone_block", 3600} } })
     registerMachine("ultimate_energy_cube", "Ultimate Energy Cube", { side = "res/ultimate_energy_cube.png", front = "res/ultimate_energy_cube_front.png", frontActive = "res/ultimate_energy_cube_front.png", top = "res/ultimate_energy_cube.png", bottom = "res/ultimate_energy_cube.png" }, { kind = "storage", energyCapacity = 256000000, transfer = 256000, power = { {"minecraft:redstone", 400}, {"minecraft:redstone_block", 3600} } })
-    registerMachine("basic_universal_cable", "Basic Universal Cable", { side = "res/basic_universal_cable.png" }, { kind = "cable", transfer = 8000, hardness = 1.0 })
-    registerMachine("advanced_universal_cable", "Advanced Universal Cable", { side = "res/advanced_universal_cable.png" }, { kind = "cable", transfer = 128000, hardness = 1.0 })
-    registerMachine("elite_universal_cable", "Elite Universal Cable", { side = "res/elite_universal_cable.png" }, { kind = "cable", transfer = 1024000, hardness = 1.0 })
-    registerMachine("ultimate_universal_cable", "Ultimate Universal Cable", { side = "res/ultimate_universal_cable.png" }, { kind = "cable", transfer = 8192000, hardness = 1.0 })
+    registerMachine("basic_universal_cable", "Basic Universal Cable", { core = "res/basic_universal_cable_core.png", arm = "res/basic_universal_cable_arm.png", side = "res/basic_universal_cable.png" }, { kind = "cable", transfer = 8000, hardness = 1.0 })
+    registerMachine("advanced_universal_cable", "Advanced Universal Cable", { core = "res/advanced_universal_cable_core.png", arm = "res/advanced_universal_cable_arm.png", side = "res/advanced_universal_cable.png" }, { kind = "cable", transfer = 128000, hardness = 1.0 })
+    registerMachine("elite_universal_cable", "Elite Universal Cable", { core = "res/elite_universal_cable_core.png", arm = "res/elite_universal_cable_arm.png", side = "res/elite_universal_cable.png" }, { kind = "cable", transfer = 1024000, hardness = 1.0 })
+    registerMachine("ultimate_universal_cable", "Ultimate Universal Cable", { core = "res/ultimate_universal_cable_core.png", arm = "res/ultimate_universal_cable_arm.png", side = "res/ultimate_universal_cable.png" }, { kind = "cable", transfer = 8192000, hardness = 1.0 })
 
     -- chemical machines, tanks, pipes, transporters, pump, miner, teleporter, multiblocks
     registerMachine("electrolytic_separator", "Electrolytic Separator", { model = "res/models/electrolytic_separator.json", side = "res/electrolytic_separator_side.png", front = "res/electrolytic_separator_front.png", frontActive = "res/electrolytic_separator_front_on.png", top = "res/electrolytic_separator_top.png", bottom = "res/mek_steel_side.png" }, {
@@ -720,40 +720,40 @@ function main()
     registerMachine("ultimate_chemical_tank", "Ultimate Chemical Tank", { model = "res/models/ultimate_chemical_tank.json", side = "res/ultimate_chemical_tank_side.png", front = "res/ultimate_chemical_tank_front.png", frontActive = "res/ultimate_chemical_tank_front_on.png", top = "res/ultimate_chemical_tank_top.png", bottom = "res/mek_steel_side.png" }, {
         kind = "tank", tankCapacity = 4096000, transfer = 64000, hardness = 2.0
     })
-    registerMachine("basic_mechanical_pipe", "Basic Mechanical Pipe", { side = "res/basic_mechanical_pipe.png" }, {
+    registerMachine("basic_mechanical_pipe", "Basic Mechanical Pipe", { core = "res/basic_mechanical_pipe_core.png", arm = "res/basic_mechanical_pipe_arm.png", side = "res/basic_mechanical_pipe.png" }, {
         kind = "pipe", transfer = 2000, hardness = 1.0, upgrades = false
     })
-    registerMachine("basic_pressurized_tube", "Basic Pressurized Tube", { side = "res/basic_pressurized_tube.png" }, {
+    registerMachine("basic_pressurized_tube", "Basic Pressurized Tube", { core = "res/basic_pressurized_tube_core.png", arm = "res/basic_pressurized_tube_arm.png", side = "res/basic_pressurized_tube.png" }, {
         kind = "pipe", transfer = 4000, hardness = 1.0, upgrades = false
     })
-    registerMachine("basic_logistical_transporter", "Basic Logistical Transporter", { side = "res/basic_logistical_transporter.png" }, {
+    registerMachine("basic_logistical_transporter", "Basic Logistical Transporter", { core = "res/basic_logistical_transporter_core.png", arm = "res/basic_logistical_transporter_arm.png", side = "res/basic_logistical_transporter.png" }, {
         kind = "transporter", transfer = 8, hardness = 1.0, upgrades = false
     })
-    registerMachine("advanced_mechanical_pipe", "Advanced Mechanical Pipe", { side = "res/advanced_mechanical_pipe.png" }, {
+    registerMachine("advanced_mechanical_pipe", "Advanced Mechanical Pipe", { core = "res/advanced_mechanical_pipe_core.png", arm = "res/advanced_mechanical_pipe_arm.png", side = "res/advanced_mechanical_pipe.png" }, {
         kind = "pipe", transfer = 8000, hardness = 1.0, upgrades = false
     })
-    registerMachine("advanced_pressurized_tube", "Advanced Pressurized Tube", { side = "res/advanced_pressurized_tube.png" }, {
+    registerMachine("advanced_pressurized_tube", "Advanced Pressurized Tube", { core = "res/advanced_pressurized_tube_core.png", arm = "res/advanced_pressurized_tube_arm.png", side = "res/advanced_pressurized_tube.png" }, {
         kind = "pipe", transfer = 16000, hardness = 1.0, upgrades = false
     })
-    registerMachine("advanced_logistical_transporter", "Advanced Logistical Transporter", { side = "res/advanced_logistical_transporter.png" }, {
+    registerMachine("advanced_logistical_transporter", "Advanced Logistical Transporter", { core = "res/advanced_logistical_transporter_core.png", arm = "res/advanced_logistical_transporter_arm.png", side = "res/advanced_logistical_transporter.png" }, {
         kind = "transporter", transfer = 16, hardness = 1.0, upgrades = false
     })
-    registerMachine("elite_mechanical_pipe", "Elite Mechanical Pipe", { side = "res/elite_mechanical_pipe.png" }, {
+    registerMachine("elite_mechanical_pipe", "Elite Mechanical Pipe", { core = "res/elite_mechanical_pipe_core.png", arm = "res/elite_mechanical_pipe_arm.png", side = "res/elite_mechanical_pipe.png" }, {
         kind = "pipe", transfer = 32000, hardness = 1.0, upgrades = false
     })
-    registerMachine("elite_pressurized_tube", "Elite Pressurized Tube", { side = "res/elite_pressurized_tube.png" }, {
+    registerMachine("elite_pressurized_tube", "Elite Pressurized Tube", { core = "res/elite_pressurized_tube_core.png", arm = "res/elite_pressurized_tube_arm.png", side = "res/elite_pressurized_tube.png" }, {
         kind = "pipe", transfer = 64000, hardness = 1.0, upgrades = false
     })
-    registerMachine("elite_logistical_transporter", "Elite Logistical Transporter", { side = "res/elite_logistical_transporter.png" }, {
+    registerMachine("elite_logistical_transporter", "Elite Logistical Transporter", { core = "res/elite_logistical_transporter_core.png", arm = "res/elite_logistical_transporter_arm.png", side = "res/elite_logistical_transporter.png" }, {
         kind = "transporter", transfer = 32, hardness = 1.0, upgrades = false
     })
-    registerMachine("ultimate_mechanical_pipe", "Ultimate Mechanical Pipe", { side = "res/ultimate_mechanical_pipe.png" }, {
+    registerMachine("ultimate_mechanical_pipe", "Ultimate Mechanical Pipe", { core = "res/ultimate_mechanical_pipe_core.png", arm = "res/ultimate_mechanical_pipe_arm.png", side = "res/ultimate_mechanical_pipe.png" }, {
         kind = "pipe", transfer = 128000, hardness = 1.0, upgrades = false
     })
-    registerMachine("ultimate_pressurized_tube", "Ultimate Pressurized Tube", { side = "res/ultimate_pressurized_tube.png" }, {
+    registerMachine("ultimate_pressurized_tube", "Ultimate Pressurized Tube", { core = "res/ultimate_pressurized_tube_core.png", arm = "res/ultimate_pressurized_tube_arm.png", side = "res/ultimate_pressurized_tube.png" }, {
         kind = "pipe", transfer = 256000, hardness = 1.0, upgrades = false
     })
-    registerMachine("ultimate_logistical_transporter", "Ultimate Logistical Transporter", { side = "res/ultimate_logistical_transporter.png" }, {
+    registerMachine("ultimate_logistical_transporter", "Ultimate Logistical Transporter", { core = "res/ultimate_logistical_transporter_core.png", arm = "res/ultimate_logistical_transporter_arm.png", side = "res/ultimate_logistical_transporter.png" }, {
         kind = "transporter", transfer = 64, hardness = 1.0, upgrades = false
     })
     registerMachine("electric_pump", "Electric Pump", { model = "res/models/electric_pump.json", side = "res/electric_pump_side.png", front = "res/electric_pump_front.png", frontActive = "res/electric_pump_front_on.png", top = "res/electric_pump_top.png", bottom = "res/mek_steel_side.png" }, {
@@ -806,16 +806,16 @@ function main()
     registerMachine("fuelwood_heater", "Fuelwood Heater", { front = "res/fuelwood_heater_front.png", frontActive = "res/fuelwood_heater_frontActive.png", side = "res/fuelwood_heater_side.png", top = "res/fuelwood_heater_top.png", bottom = "res/fuelwood_heater_bottom.png" }, {
         kind = "heater", furnaceFuels = true, heatPerTick = 400, heatCapacity = 100, conductance = 0.5
     })
-    registerMachine("basic_thermodynamic_conductor", "Basic Thermodynamic Conductor", { side = "res/basic_thermodynamic_conductor.png" }, {
+    registerMachine("basic_thermodynamic_conductor", "Basic Thermodynamic Conductor", { core = "res/basic_thermodynamic_conductor_core.png", arm = "res/basic_thermodynamic_conductor_arm.png", side = "res/basic_thermodynamic_conductor.png" }, {
         kind = "conductor", conductance = 0.1, heatCapacity = 50, hardness = 1.0, upgrades = false
     })
-    registerMachine("advanced_thermodynamic_conductor", "Advanced Thermodynamic Conductor", { side = "res/advanced_thermodynamic_conductor.png" }, {
+    registerMachine("advanced_thermodynamic_conductor", "Advanced Thermodynamic Conductor", { core = "res/advanced_thermodynamic_conductor_core.png", arm = "res/advanced_thermodynamic_conductor_arm.png", side = "res/advanced_thermodynamic_conductor.png" }, {
         kind = "conductor", conductance = 0.2, heatCapacity = 50, hardness = 1.0, upgrades = false
     })
-    registerMachine("elite_thermodynamic_conductor", "Elite Thermodynamic Conductor", { side = "res/elite_thermodynamic_conductor.png" }, {
+    registerMachine("elite_thermodynamic_conductor", "Elite Thermodynamic Conductor", { core = "res/elite_thermodynamic_conductor_core.png", arm = "res/elite_thermodynamic_conductor_arm.png", side = "res/elite_thermodynamic_conductor.png" }, {
         kind = "conductor", conductance = 0.4, heatCapacity = 50, hardness = 1.0, upgrades = false
     })
-    registerMachine("ultimate_thermodynamic_conductor", "Ultimate Thermodynamic Conductor", { side = "res/ultimate_thermodynamic_conductor.png" }, {
+    registerMachine("ultimate_thermodynamic_conductor", "Ultimate Thermodynamic Conductor", { core = "res/ultimate_thermodynamic_conductor_core.png", arm = "res/ultimate_thermodynamic_conductor_arm.png", side = "res/ultimate_thermodynamic_conductor.png" }, {
         kind = "conductor", conductance = 0.8, heatCapacity = 50, hardness = 1.0, upgrades = false
     })
     registerMachine("seismic_vibrator", "Seismic Vibrator", { model = "res/models/seismic_vibrator.json", side = "res/seismic_vibrator_side.png", front = "res/seismic_vibrator_front.png", frontActive = "res/seismic_vibrator_front_on.png", top = "res/seismic_vibrator_top.png", bottom = "res/mek_steel_side.png" }, {

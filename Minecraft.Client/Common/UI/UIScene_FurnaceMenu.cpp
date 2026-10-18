@@ -5,6 +5,9 @@
 #include "../../Minecraft.h"
 #include "UIScene_FurnaceMenu.h"
 #include "Client/ModMachineScreen.h"
+#ifdef _WINDOWS64
+#include "Client/MachineGui/MachineGui.h"
+#endif
 
 UIScene_FurnaceMenu::UIScene_FurnaceMenu(int iPad, void *_initData, UILayer *parentLayer) : UIScene_AbstractContainerMenu(iPad, parentLayer)
 {
@@ -94,6 +97,9 @@ void UIScene_FurnaceMenu::HS_UpdateMachineScreen()
 	const int kind = d[HSD_KIND] - 1;
 
 	std::string spec;
+#ifdef _WINDOWS64
+	HSMachineGui::Screen gui;	// Hellish Sight: the mod's own GUI sprites, drawn over the screen
+#endif
 	auto addBar = [&](long long value, long long max, int color, int barKind) {
 		if (max <= 0) return;
 		const int frac = static_cast<int>((std::min)(1000LL, value * 1000 / max));
@@ -101,6 +107,14 @@ void UIScene_FurnaceMenu::HS_UpdateMachineScreen()
 		sprintf_s(buf, "%d,%d,%d", frac, color, barKind);
 		if (!spec.empty()) spec += ";";
 		spec += buf;
+#ifdef _WINDOWS64
+		HSMachineGui::Bar bar;
+		bar.frac = frac / 1000.0f;
+		bar.color = color;
+		bar.kind = barKind;
+		bar.tooltip = hsNum(value) + L" / " + hsNum(max) + (barKind == 0 ? L" FE" : (barKind == 1 ? L" mB" : L" K"));
+		gui.bars.push_back(bar);
+#endif
 	};
 
 	const long long energy = hsGetBig(d, HSD_ENERGY), energyCap = hsGetBig(d, HSD_ENERGY_CAP);
@@ -169,6 +183,30 @@ void UIScene_FurnaceMenu::HS_UpdateMachineScreen()
 		else line3 += L" | " + info;
 	}
 
+#ifdef _WINDOWS64
+	if (HSMachineGui::available())
+	{
+		S32 rw, rh;
+		m_parentLayer->getRenderDimensions(rw, rh);
+		if (m_movieWidth > 0 && m_movieHeight > 0)
+		{
+			const float sx = static_cast<float>(rw) / m_movieWidth, sy = static_cast<float>(rh) / m_movieHeight;
+			const float mainX = static_cast<float>(m_controlMainPanel.getXPos()), mainY = static_cast<float>(m_controlMainPanel.getYPos());
+			gui.pad = m_iPad;
+			gui.screenW = rw;
+			gui.screenH = rh;
+			gui.panelX0 = (m_fPanelMinX + mainX) * sx;
+			gui.panelX1 = (m_fPanelMaxX + mainX) * sx;
+			gui.panelY0 = (m_fPanelMinY + mainY) * sy;
+			gui.panelY1 = (m_fPanelMaxY + mainY) * sy;
+			gui.pointerX = (m_pointerPos.x + m_fPointerImageOffsetX + mainX) * sx;
+			gui.pointerY = (m_pointerPos.y + m_fPointerImageOffsetY + mainY) * sy;
+			gui.progress = d[HSD_PROGRESS];
+			HSMachineGui::update(gui);
+			spec.clear();	// the sprites replace the drawn fallback panel
+		}
+	}
+#endif
 	if (spec != m_hsLastSpec)
 	{
 		m_hsLastSpec = spec;

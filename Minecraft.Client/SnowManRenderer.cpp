@@ -23,7 +23,7 @@ void SnowManRenderer::additionalRendering(shared_ptr<LivingEntity> _mob, float a
 
 	MobRenderer::additionalRendering(mob, a);
 	shared_ptr<ItemInstance> headGear = std::make_shared<ItemInstance>(Tile::pumpkin, 1);
-	if (headGear != nullptr && headGear->getItem()->id < 256)
+	if (headGear != nullptr && headGear->getItem()->getIconType() == Icon::TYPE_TERRAIN && headGear->id < Tile::TILE_NUM_COUNT && Tile::tiles[headGear->id] != nullptr)
 	{
 		glPushMatrix();
 		model->head->translateTo(1 / 16.0f);

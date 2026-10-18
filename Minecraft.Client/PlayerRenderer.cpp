@@ -420,7 +420,7 @@ void PlayerRenderer::additionalRendering(shared_ptr<LivingEntity> _mob, float a)
 			glPushMatrix();
 			resModel->head->translateTo(1 / 16.0f);
 
-			if (headGear->getItem()->id < 256)
+			if (headGear->getItem()->getIconType() == Icon::TYPE_TERRAIN && headGear->id < Tile::TILE_NUM_COUNT && Tile::tiles[headGear->id] != nullptr)	// Hellish Sight: mod blocks have ids >= 256
 			{
 				if (TileRenderer::canRender(Tile::tiles[headGear->id]->getRenderShape()))
 				{
@@ -605,7 +605,7 @@ void PlayerRenderer::additionalRendering(shared_ptr<LivingEntity> _mob, float a)
 				anim = item->getUseAnimation();
 			}
 
-			if (item->id < 256 && TileRenderer::canRender(Tile::tiles[item->id]->getRenderShape()) && item->id != Tile::barrier_Id)
+			if (item->getIconType() == Icon::TYPE_TERRAIN && item->id < Tile::TILE_NUM_COUNT && Tile::tiles[item->id] != nullptr && TileRenderer::canRender(Tile::tiles[item->id]->getRenderShape()) && item->id != Tile::barrier_Id)
 			{
 				float s = 8 / 16.0f;
 				glTranslatef(-0 / 16.0f, 3 / 16.0f, -5 / 16.0f);

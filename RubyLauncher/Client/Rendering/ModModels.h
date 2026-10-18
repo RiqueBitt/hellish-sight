@@ -27,7 +27,9 @@ namespace ModModels
 	int load(const std::string &modFolder, const std::string &modId, const std::string &file);
 
 	// a connector (cable / pipe) model using one texture
-	int makeConnector(const std::wstring &iconName, float thickness, bool (*connects)(LevelSource *, int, int, int, int));
+	// armIconName may be empty (the core texture is used for the arms too); coreUV / armU in texture pixels
+	int makeConnector(const std::wstring &coreIconName, const std::wstring &armIconName, float thickness,
+		const float coreUV[4], const float armU[2], bool (*connects)(LevelSource *, int, int, int, int));
 
 	// resolves the icons of a model (call from Tile::registerIcons)
 	void registerIcons(int modelIndex, IconRegister *iconRegister);

@@ -449,8 +449,19 @@ int BlockRegistry::registerMachine(const std::wstring& path, const std::string& 
 		}
 		if (modelIndex < 0 && (def.kind == MachineKind_Cable || def.kind == MachineKind_Pipe || def.kind == MachineKind_Transporter || def.kind == MachineKind_Conductor))
 		{
-			const float thickness = (def.kind == MachineKind_Cable || def.kind == MachineKind_Conductor) ? 6.0f : 8.0f;
-			modelIndex = ModModels::makeConnector(def.iconSide, thickness, &ModMachines::connectorConnects);
+			const bool thin = (def.kind == MachineKind_Cable || def.kind == MachineKind_Conductor);
+			const float thickness = thin ? 6.0f : 8.0f;
+			// textures.core (end / core face) and textures.arm (side of the arms), Mekanism multipart style
+			const std::wstring core = texture("core", "_core");
+			const std::wstring arm = texture("arm", "_arm");
+			float coreUV[4] = { 5, 5, 11, 11 }, armU[2] = { 5, 11 };
+			if (!core.empty())
+			{
+				const float lo = thin ? 3.0f : 2.0f, hi = 16.0f - lo;
+				coreUV[0] = coreUV[1] = lo; coreUV[2] = coreUV[3] = hi;
+				armU[0] = lo; armU[1] = hi;
+			}
+			modelIndex = ModModels::makeConnector(core.empty() ? def.iconSide : core, arm, thickness, coreUV, armU, &ModMachines::connectorConnects);
 		}
 		if (modelIndex >= 0) HSModels::setForTile(tileId, modelIndex);
 	}

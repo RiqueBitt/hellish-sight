@@ -48,6 +48,8 @@ struct HSModel
 	// connectors (cables, pipes): a core box plus one arm per connected side
 	bool connector = false;
 	float thickness = 6.0f;			// pixels
+	float coreUV[4] = { 5, 5, 11, 11 };	// texture 0: faces of the core
+	float armU[2] = { 5, 11 };			// texture 1 (or 0): sides of the arms, v runs along the arm (0..16)
 	bool (*connects)(LevelSource *level, int x, int y, int z, int face) = nullptr;
 };
 

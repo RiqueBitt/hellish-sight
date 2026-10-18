@@ -8695,12 +8695,13 @@ namespace
 		HSModelElement core;
 		core.from[0] = core.from[1] = core.from[2] = a;
 		core.to[0] = core.to[1] = core.to[2] = b;
+		const int armTex = m.icons.size() > 1 ? 1 : 0;
 		for (int f = 0; f < 6; ++f)
 		{
 			if (connections & (1 << f)) continue;	// covered by the arm
 			core.faces[f].present = true;
 			core.faces[f].tex = 0;
-			core.faces[f].uv[0] = a; core.faces[f].uv[1] = a; core.faces[f].uv[2] = b; core.faces[f].uv[3] = b;
+			for (int k = 0; k < 4; ++k) core.faces[f].uv[k] = m.coreUV[k];
 		}
 		out.push_back(core);
 		for (int f = 0; f < 6; ++f)
@@ -8718,9 +8719,10 @@ namespace
 				const int gAxis = (g < 2) ? 1 : (g < 4 ? 2 : 0);
 				if (gAxis == axis) continue;	// both ends are hidden: the core / the neighbour it connects to
 				face.present = true;
-				// the texture runs along the arm
-				const float len0 = positive ? b : 0.0f, len1 = positive ? 16.0f : a;
-				face.uv[0] = a; face.uv[2] = b; face.uv[1] = len0; face.uv[3] = len1;
+				face.tex = armTex;
+				// the arm texture runs along the arm
+				face.uv[0] = m.armU[0]; face.uv[2] = m.armU[1];
+				face.uv[1] = 0.0f; face.uv[3] = 16.0f;
 				face.rotation = (axis == 1) ? 0 : 90;
 			}
 			out.push_back(arm);

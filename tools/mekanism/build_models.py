@@ -196,3 +196,43 @@ for v in _tex_saved.values():
         s = Image.open(os.path.join(OUT, v)).size[0] // 16
         cells += s * s
 print('models:', converted, 'textures:', sum(1 for v in _tex_saved.values() if v), 'atlas cells:', cells)
+
+# ---- machine GUI sprites (drawn by the engine over the machine screens) ----------------------------
+GUI = os.path.join(SRC, 'src', 'main', 'resources', 'assets', 'mekanism', 'textures', 'gui', 'sprites')
+GUI_OUT = os.path.join(OUT, 'res', 'gui')
+os.makedirs(GUI_OUT, exist_ok=True)
+for src, dst in (('base.png', 'gui_base'), ('bar/base.png', 'gui_bar_base'), ('bar/vertical_power.png', 'gui_bar_power'),
+                 ('gauge/normal.png', 'gui_gauge'), ('gauge/overlay/standard.png', 'gui_gauge_overlay'),
+                 ('progress/right/empty.png', 'gui_progress_empty'), ('progress/right/full.png', 'gui_progress_full'),
+                 ('slot/normal.png', 'gui_slot'), ('slot/power.png', 'gui_slot_power')):
+    p = os.path.join(GUI, src)
+    if os.path.exists(p):
+        Image.open(p).convert('RGBA').save(os.path.join(GUI_OUT, dst + '.png'))
+    else:
+        print('  missing gui sprite', src)
+print('gui sprites:', len(os.listdir(GUI_OUT)))
+
+# ---- transmitters (cables, pipes, tubes, transporters, conductors): core + arm textures ------------
+MP = os.path.join(SRC, 'src', 'main', 'resources', 'assets', 'mekanism', 'textures', 'block', 'models', 'multipart')
+with open(lua_path, encoding='utf-8') as f:
+    lua = f.read()
+tx = 0
+def patch_tx(m):
+    global tx
+    block_id, rest = m.group(1), m.group(2)
+    core = os.path.join(MP, block_id + '.png')
+    arm = os.path.join(MP, block_id + '_vertical.png')
+    if not (os.path.exists(core) and os.path.exists(arm)):
+        return m.group(0)
+    for src, suffix in ((core, '_core'), (arm, '_arm')):
+        im = Image.open(src).convert('RGBA')
+        w, h = im.size
+        if h > w:
+            im = im.crop((0, 0, w, w))
+        im.save(os.path.join(OUT, 'res', block_id + suffix + '.png'))
+    tx += 1
+    return 'registerMachine("%s"%s{ core = "res/%s_core.png", arm = "res/%s_arm.png",' % (block_id, rest, block_id, block_id)
+lua = re.sub(r'registerMachine\("([a-z0-9_]+)"(, "[^"]*", )\{', patch_tx, lua)
+with open(lua_path, 'w', encoding='utf-8') as f:
+    f.write(lua)
+print('transmitters:', tx)

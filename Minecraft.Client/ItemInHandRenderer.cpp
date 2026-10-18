@@ -389,6 +389,13 @@ void ItemInHandRenderer::renderItem3D(Tesselator *t, float u0, float v0, float u
 		glMatrixMode(GL_TEXTURE);
 		glLoadIdentity();
 		glTranslatef(u0, v0, 0);
+		// Hellish Sight: the lists were built for one 16 px cell of a 256x256 item atlas / 256x512 terrain
+		// atlas. Mods grow the atlases (and model textures span several cells), so scale them to the icon.
+		{
+			const float listU = 16.0f / 256.0f, listV = isTerrain ? 16.0f / 512.0f : 16.0f / 256.0f;
+			const float su = (u1 - u0) / listU, sv = (v1 - v0) / listV;
+			if (su != 0.0f && sv != 0.0f) glScalef(su, sv, 1.0f);
+		}
 		glCallList(isTerrain? listTerrain : listItem);
 		glLoadIdentity();
 		glMatrixMode(GL_MODELVIEW);

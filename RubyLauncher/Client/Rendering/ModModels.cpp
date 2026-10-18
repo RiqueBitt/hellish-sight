@@ -134,15 +134,20 @@ namespace ModModels
 		return HSModels::add(model);
 	}
 
-	int makeConnector(const std::wstring &iconName, float thickness, bool (*connects)(LevelSource *, int, int, int, int))
+	int makeConnector(const std::wstring &coreIconName, const std::wstring &armIconName, float thickness,
+		const float coreUV[4], const float armU[2], bool (*connects)(LevelSource *, int, int, int, int))
 	{
 		HSModel *model = new HSModel();
 		model->connector = true;
 		model->rotateWithFacing = false;
 		model->thickness = thickness;
 		model->connects = connects;
-		model->iconNames.push_back(iconName);
-		model->icons.assign(1, nullptr);
+		for (int k = 0; k < 4; ++k) model->coreUV[k] = coreUV[k];
+		model->armU[0] = armU[0];
+		model->armU[1] = armU[1];
+		model->iconNames.push_back(coreIconName);
+		if (!armIconName.empty()) model->iconNames.push_back(armIconName);
+		model->icons.assign(model->iconNames.size(), nullptr);
 		return HSModels::add(model);
 	}
 
