@@ -1,7 +1,9 @@
 #include "stdafx.h"
 
 #include "TileRenderer.h"
+#include <cmath>
 #include "../Minecraft.World/HSHighIds.h"
+#include "../Minecraft.World/HSModel.h"
 #include "GameRenderer.h"
 #include "Minecraft.h"
 #include "Textures.h"
@@ -412,6 +414,9 @@ bool TileRenderer::tesselateInWorld( Tile* tt, int x, int y, int z, int forceDat
 		break;
 	case Tile::SHAPE_THIN_PANE:
 		retVal = tesselateThinPaneInWorld(tt, x, y, z);
+		break;
+	case Tile::SHAPE_HS_MODEL:
+		retVal = tesselateHSModelInWorld(tt, x, y, z);
 		break;
 	case Tile::SHAPE_VINE:
 		retVal = tesselateVineInWorld( tt, x, y, z );
@@ -7959,6 +7964,12 @@ void TileRenderer::renderTile( Tile* tile, int data, float brightness, float fAl
 
 	t->setMipmapEnable( Tile::mipmapEnable[tile->id] );	// 4J added
 
+	if ( shape == Tile::SHAPE_HS_MODEL )	// Hellish Sight
+	{
+		renderHSModelTile( tile, data );
+		return;
+	}
+
 	if ( shape == Tile::SHAPE_BLOCK || shape == Tile::SHAPE_TREE || shape == Tile::SHAPE_QUARTZ || shape == Tile::SHAPE_PISTON_BASE || shape == Tile::SHAPE_PORTAL_FRAME )
 	{
 		if ( shape == Tile::SHAPE_PISTON_BASE )
@@ -8571,6 +8582,7 @@ bool TileRenderer::canRender( int renderShape )
 	if ( renderShape == Tile::SHAPE_BEACON) return true;
 	if ( renderShape == Tile::SHAPE_ANVIL) return true;
 	if (renderShape == Tile::SHAPE_THIN_PANE) return true;
+	if (renderShape == Tile::SHAPE_HS_MODEL) return true;	// Hellish Sight
 	if (renderShape == Tile::SHAPE_WATER) return true;
 	return false;
 }
@@ -8606,4 +8618,252 @@ Icon *TileRenderer::getTextureOrMissing(Icon *icon)
 #endif
 
 	return icon;
+}
+
+
+// ============================================================================================
+// Hellish Sight: box models (Java block model "elements") - see Minecraft.World/HSModel.h
+// ============================================================================================
+namespace
+{
+	// corners of each face (index into the box's min / max) and the MC uv corner order:
+	// vertex i uses u0 for i = 0, 1 and u1 for i = 2, 3; v0 for i = 0, 3 and v1 for i = 1, 2
+	// (before the face rotation).
+	const int kFaceCorners[6][4][3] = {
+		{ {0,0,1}, {0,0,0}, {1,0,0}, {1,0,1} },	// down
+		{ {0,1,0}, {0,1,1}, {1,1,1}, {1,1,0} },	// up
+		{ {1,1,0}, {1,0,0}, {0,0,0}, {0,1,0} },	// north
+		{ {0,1,1}, {0,0,1}, {1,0,1}, {1,1,1} },	// south
+		{ {0,1,0}, {0,0,0}, {0,0,1}, {0,1,1} },	// west
+		{ {1,1,1}, {1,0,1}, {1,0,0}, {1,1,0} },	// east
+	};
+	const float kFaceNormal[6][3] = { {0,-1,0}, {0,1,0}, {0,0,-1}, {0,0,1}, {-1,0,0}, {1,0,0} };
+	const int kFaceOffset[6][3] = { {0,-1,0}, {0,1,0}, {0,0,-1}, {0,0,1}, {-1,0,0}, {1,0,0} };
+	const float kFaceShade[6] = { 0.5f, 1.0f, 0.8f, 0.8f, 0.6f, 0.6f };
+
+	// Y rotation by facing: a model faces north; the block's facing (2..5) turns it
+	int quarterTurnsFor(int facing)
+	{
+		switch (facing)
+		{
+		case 5: return 1;	// east
+		case 3: return 2;	// south
+		case 4: return 3;	// west
+		default: return 0;	// north (and up / down)
+		}
+	}
+
+	// face index after turning the block clockwise (seen from above) by q quarter turns
+	int turnFace(int face, int q)
+	{
+		static const int next[6] = { 0, 1, 5, 4, 2, 3 };	// north->east->south->west->north
+		for (int i = 0; i < q; ++i) face = next[face];
+		return face;
+	}
+
+	void turnPoint(float &x, float &z, int q)	// block space 0..1
+	{
+		for (int i = 0; i < q; ++i)
+		{
+			const float nx = 1.0f - z, nz = x;
+			x = nx; z = nz;
+		}
+	}
+
+	void rotateElementPoint(const HSModelElement &e, float p[3])	// pixel space
+	{
+		if (e.rotAxis < 0 || e.rotAngle == 0.0f) return;
+		const float a = e.rotAngle * 3.14159265f / 180.0f;
+		const float c = cosf(a), s = sinf(a);
+		float v[3] = { p[0] - e.origin[0], p[1] - e.origin[1], p[2] - e.origin[2] };
+		float r[3] = { v[0], v[1], v[2] };
+		if (e.rotAxis == 0) { r[1] = v[1] * c - v[2] * s; r[2] = v[1] * s + v[2] * c; }
+		else if (e.rotAxis == 1) { r[0] = v[0] * c + v[2] * s; r[2] = -v[0] * s + v[2] * c; }
+		else { r[0] = v[0] * c - v[1] * s; r[1] = v[0] * s + v[1] * c; }
+		if (e.rescale)
+		{
+			const float k = 1.0f / (std::max)(0.0001f, fabsf(c));
+			for (int i = 0; i < 3; ++i) if (i != e.rotAxis) r[i] *= k;
+		}
+		p[0] = r[0] + e.origin[0]; p[1] = r[1] + e.origin[1]; p[2] = r[2] + e.origin[2];
+	}
+
+	// connectors: core + arms, built from the connection flags
+	void buildConnector(const HSModel &m, int connections, std::vector<HSModelElement> &out)
+	{
+		const float a = 8.0f - m.thickness * 0.5f, b = 8.0f + m.thickness * 0.5f;
+		HSModelElement core;
+		core.from[0] = core.from[1] = core.from[2] = a;
+		core.to[0] = core.to[1] = core.to[2] = b;
+		for (int f = 0; f < 6; ++f)
+		{
+			if (connections & (1 << f)) continue;	// covered by the arm
+			core.faces[f].present = true;
+			core.faces[f].tex = 0;
+			core.faces[f].uv[0] = a; core.faces[f].uv[1] = a; core.faces[f].uv[2] = b; core.faces[f].uv[3] = b;
+		}
+		out.push_back(core);
+		for (int f = 0; f < 6; ++f)
+		{
+			if (!(connections & (1 << f))) continue;
+			HSModelElement arm = core;
+			const int axis = (f < 2) ? 1 : (f < 4 ? 2 : 0);
+			const bool positive = (f == 1 || f == 3 || f == 5);
+			arm.from[axis] = positive ? b : 0.0f;
+			arm.to[axis] = positive ? 16.0f : a;
+			for (int g = 0; g < 6; ++g)
+			{
+				HSModelFace &face = arm.faces[g];
+				face = HSModelFace();
+				const int gAxis = (g < 2) ? 1 : (g < 4 ? 2 : 0);
+				if (gAxis == axis) continue;	// both ends are hidden: the core / the neighbour it connects to
+				face.present = true;
+				// the texture runs along the arm
+				const float len0 = positive ? b : 0.0f, len1 = positive ? 16.0f : a;
+				face.uv[0] = a; face.uv[2] = b; face.uv[1] = len0; face.uv[3] = len1;
+				face.rotation = (axis == 1) ? 0 : 90;
+			}
+			out.push_back(arm);
+		}
+	}
+
+	Icon *modelIcon(const HSModel &m, int tex, Icon *fallback)
+	{
+		if (tex >= 0 && tex < static_cast<int>(m.icons.size()) && m.icons[tex] != nullptr) return m.icons[tex];
+		return fallback;
+	}
+
+	void faceUV(Icon *icon, const HSModelFace &f, int corner, float &u, float &v)
+	{
+		const int s = (corner + f.rotation / 90) & 3;
+		const float pu = (s == 0 || s == 1) ? f.uv[0] : f.uv[2];
+		const float pv = (s == 0 || s == 3) ? f.uv[1] : f.uv[3];
+		u = icon->getU(pu, true);
+		v = icon->getV(pv, true);
+	}
+}
+
+bool TileRenderer::tesselateHSModelInWorld( Tile* tt, int x, int y, int z )
+{
+	const int data = level->getData(x, y, z);
+	HSModel *model = HSModels::forTile(tt->id, data);
+	if (model == nullptr || (model->elements.empty() && !model->connector)) return tesselateBlockInWorld(tt, x, y, z);
+
+	Tesselator *t = Tesselator::getInstance();
+	const int q = model->rotateWithFacing ? quarterTurnsFor(data & 7) : 0;
+
+	std::vector<HSModelElement> built;
+	const std::vector<HSModelElement> *elements = &model->elements;
+	if (model->connector)
+	{
+		int connections = 0;
+		for (int f = 0; f < 6; ++f)
+		{
+			if (model->connects != nullptr && model->connects(level, x, y, z, f)) connections |= 1 << f;
+		}
+		buildConnector(*model, connections, built);
+		elements = &built;
+	}
+
+	const int col = tt->getColor(level, x, y, z);
+	const float cr = ((col >> 16) & 0xff) / 255.0f, cg = ((col >> 8) & 0xff) / 255.0f, cb = (col & 0xff) / 255.0f;
+	const int ownLight = getLightColor(tt, level, x, y, z);
+	bool any = false;
+
+	for (const HSModelElement &e : *elements)
+	{
+		for (int f = 0; f < 6; ++f)
+		{
+			const HSModelFace &face = e.faces[f];
+			if (!face.present) continue;
+			const int worldFace = turnFace(f, q);
+
+			if (face.cull >= 0 && !noCulling)
+			{
+				const int cullFace = turnFace(face.cull, q);
+				const int nx = x + kFaceOffset[cullFace][0], ny = y + kFaceOffset[cullFace][1], nz = z + kFaceOffset[cullFace][2];
+				if (!tt->shouldRenderFace(level, nx, ny, nz, cullFace)) continue;
+			}
+			// light from the side the face looks at (the block itself is opaque, its own light is 0)
+			int light = getLightColor(tt, level, x + kFaceOffset[worldFace][0], y + kFaceOffset[worldFace][1], z + kFaceOffset[worldFace][2]);
+			if (light == 0) light = ownLight;
+			if (e.emission > 0)
+			{
+				const int sky = (light >> 20) & 0xf, block = (std::max)((light >> 4) & 0xf, e.emission);
+				light = (sky << 20) | (block << 4);
+			}
+
+			Icon *icon = hasFixedTexture() ? fixedTexture : modelIcon(*model, face.tex, tt->getTexture(worldFace, data));
+			if (icon == nullptr) continue;
+
+			const float shade = e.shade ? kFaceShade[worldFace] : 1.0f;
+			const bool tint = face.tint;
+			t->tex2(light);
+			t->color(shade * (tint ? cr : 1.0f), shade * (tint ? cg : 1.0f), shade * (tint ? cb : 1.0f));
+
+			for (int c = 0; c < 4; ++c)
+			{
+				float p[3];
+				for (int k = 0; k < 3; ++k) p[k] = kFaceCorners[f][c][k] ? e.to[k] : e.from[k];
+				rotateElementPoint(e, p);
+				float bx = p[0] / 16.0f, by = p[1] / 16.0f, bz = p[2] / 16.0f;
+				turnPoint(bx, bz, q);
+				float u, v;
+				faceUV(icon, face, c, u, v);
+				t->vertexUV(x + bx, y + by, z + bz, u, v);
+			}
+			any = true;
+		}
+	}
+	return any;
+}
+
+void TileRenderer::renderHSModelTile( Tile* tile, int data )
+{
+	HSModel *model = HSModels::forTile(tile->id, data);
+	Tesselator *t = Tesselator::getInstance();
+
+	std::vector<HSModelElement> built;
+	const std::vector<HSModelElement> *elements = model != nullptr ? &model->elements : nullptr;
+	if (model != nullptr && model->connector)
+	{
+		buildConnector(*model, (1 << 4) | (1 << 5), built);	// inventory: a straight piece
+		elements = &built;
+	}
+	// inventory / hand: like the vanilla blocks, the front faces the viewer
+	const int q = (model != nullptr && model->rotateWithFacing) ? quarterTurnsFor(3) : 0;
+
+	glRotatef(90, 0, 1, 0);
+	glTranslatef(-0.5f, -0.5f, -0.5f);
+	if (elements == nullptr || elements->empty())
+	{
+		glTranslatef(0.5f, 0.5f, 0.5f);
+		return;
+	}
+	for (const HSModelElement &e : *elements)
+	{
+		for (int f = 0; f < 6; ++f)
+		{
+			const HSModelFace &face = e.faces[f];
+			if (!face.present) continue;
+			const int worldFace = turnFace(f, q);
+			Icon *icon = modelIcon(*model, face.tex, tile->getTexture(worldFace, data));
+			if (icon == nullptr) continue;
+			t->begin();
+			t->normal(kFaceNormal[worldFace][0], kFaceNormal[worldFace][1], kFaceNormal[worldFace][2]);
+			for (int c = 0; c < 4; ++c)
+			{
+				float p[3];
+				for (int k = 0; k < 3; ++k) p[k] = kFaceCorners[f][c][k] ? e.to[k] : e.from[k];
+				rotateElementPoint(e, p);
+				float bx = p[0] / 16.0f, by = p[1] / 16.0f, bz = p[2] / 16.0f;
+				turnPoint(bx, bz, q);
+				float u, v;
+				faceUV(icon, face, c, u, v);
+				t->vertexUV(bx, by, bz, u, v);
+			}
+			t->end();
+		}
+	}
+	glTranslatef(0.5f, 0.5f, 0.5f);
 }

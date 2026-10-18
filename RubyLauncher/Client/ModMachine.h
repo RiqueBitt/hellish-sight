@@ -179,6 +179,8 @@ namespace ModMachines
 	int moduleLevel(shared_ptr<ItemInstance> item, const std::string &module);
 
 	bool teleporterFrame(Level *level, int x, int y, int z, ModMachineDef *d, int &axis, int &offset);
+	// connectors: does the cable / pipe at x, y, z connect on that face (0..5)?
+	bool connectorConnects(LevelSource *level, int x, int y, int z, int face);
 	// item use (portable teleporter) and armour tick (MekaSuit modules)
 	bool onItemUse(ItemInstance *item, Level *level, shared_ptr<Player> player);
 	void armorTick(Player *player);
@@ -337,6 +339,7 @@ public:
 	virtual void updateShape(LevelSource *level, int x, int y, int z, int forceData = -1, shared_ptr<TileEntity> forceEntity = shared_ptr<TileEntity>());
 	virtual bool isSolidRender(bool isServerLevel = false);
 	virtual bool isCubeShaped();
+	virtual int getRenderShape();	// Hellish Sight: box models
 	bool isCable() const;		// thin connector shape (cables, pipes, transporters)
 
 	static void setActive(Level *level, int x, int y, int z, bool active);

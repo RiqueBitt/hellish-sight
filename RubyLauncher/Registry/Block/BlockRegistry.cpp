@@ -12,6 +12,8 @@
 
 #include "Client/ModTile.h"
 #include "Client/ModMachine.h"
+#include "Client/Rendering/ModModels.h"
+#include "HSModel.h"
 #include "Common/ModPaths.h"
 #include "Host/RubyLauncherHost.h"
 #include "Registry/Item/ItemRegistry.h"
@@ -431,6 +433,26 @@ int BlockRegistry::registerMachine(const std::wstring& path, const std::string& 
 			fuel.ticks = f.get_or(2, 200);
 			if (!fuel.item.empty()) def.fuels.push_back(fuel);
 		}
+	}
+
+	// Hellish Sight: 3D box models (textures.model / textures.modelActive), connectors draw a core + arms
+	{
+		const std::string folder = RubyPaths::toNarrow(path);
+		sol::optional<std::string> model = textures["model"];
+		sol::optional<std::string> modelActive = textures["modelActive"];
+		int modelIndex = -1;
+		if (model && !model.value().empty()) modelIndex = ModModels::load(folder, modId, model.value());
+		if (modelIndex >= 0 && modelActive && !modelActive.value().empty())
+		{
+			const int active = ModModels::load(folder, modId, modelActive.value());
+			if (active >= 0) HSModels::all()[modelIndex]->activeModel = active;
+		}
+		if (modelIndex < 0 && (def.kind == MachineKind_Cable || def.kind == MachineKind_Pipe || def.kind == MachineKind_Transporter || def.kind == MachineKind_Conductor))
+		{
+			const float thickness = (def.kind == MachineKind_Cable || def.kind == MachineKind_Conductor) ? 6.0f : 8.0f;
+			modelIndex = ModModels::makeConnector(def.iconSide, thickness, &ModMachines::connectorConnects);
+		}
+		if (modelIndex >= 0) HSModels::setForTile(tileId, modelIndex);
 	}
 
 	const int defIndex = static_cast<int>(ModMachines::defs().size());

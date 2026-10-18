@@ -12,6 +12,8 @@
 #include "Facing.h"
 #include "Mth.h"
 #include "ModMachine.h"
+#include "Rendering/ModModels.h"
+#include "HSModel.h"
 #include "Registry/IDs.h"
 #include "ServerPlayer.h"
 #include "PlayerConnection.h"
@@ -1876,6 +1878,7 @@ Icon *ModMachineTile::getTexture(int face, int data)
 
 void ModMachineTile::registerIcons(IconRegister *iconRegister)
 {
+	if (HSModels::hasModel(id)) ModModels::registerIcons(HSModels::tileIndex()[id], iconRegister);	// Hellish Sight
 	ModMachineDef *d = defAt(m_defIndex);
 	if (d == nullptr) { Tile::registerIcons(iconRegister); return; }
 	icon = iconRegister->registerIcon(d->iconSide);
@@ -1903,12 +1906,36 @@ bool ModMachineTile::isCable() const
 
 bool ModMachineTile::isSolidRender(bool isServerLevel)
 {
-	return !isCable();
+	return !isCable() && !HSModels::hasModel(id);	// models are not full cubes: neighbours keep their faces
 }
 
 bool ModMachineTile::isCubeShaped()
 {
-	return !isCable();
+	return !isCable() && !HSModels::hasModel(id);
+}
+
+int ModMachineTile::getRenderShape()
+{
+	return HSModels::hasModel(id) ? Tile::SHAPE_HS_MODEL : BaseEntityTile::getRenderShape();
+}
+
+bool ModMachines::connectorConnects(LevelSource *level, int x, int y, int z, int face)
+{
+	static const int off[6][3] = { {0,-1,0}, {0,1,0}, {0,0,-1}, {0,0,1}, {-1,0,0}, {1,0,0} };
+	if (level == nullptr || face < 0 || face > 5) return false;
+	const int self = level->getTile(x, y, z);
+	ModMachineDef *selfDef = ModMachines::byTile(self);
+	const int id = level->getTile(x + off[face][0], y + off[face][1], z + off[face][2]);
+	if (id <= 0 || id >= Tile::TILE_NUM_COUNT || Tile::tiles[id] == nullptr) return false;
+	ModMachineDef *other = ModMachines::byTile(id);
+	if (other != nullptr)
+	{
+		// connectors of different kinds (cable / pipe / tube...) do not join, machines always do
+		if (selfDef != nullptr && isConnectorKind(other->kind) && isConnectorKind(selfDef->kind) && other->kind != selfDef->kind) return false;
+		return true;
+	}
+	// transporters also connect to chests, furnaces, hoppers...
+	return selfDef != nullptr && selfDef->kind == MachineKind_Transporter && Tile::tiles[id]->isEntityTile();
 }
 
 void ModMachineTile::updateShape(LevelSource *level, int x, int y, int z, int forceData, shared_ptr<TileEntity> forceEntity)

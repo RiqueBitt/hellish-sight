@@ -30,7 +30,11 @@ namespace
 	const int ATLAS_COLUMNS = 16;
 	const int ATLAS_ROWS = 32;
 
-	bool loadModTextures(const std::wstring &filePath, const std::string &iconName, vector<int> &pixels)
+	vector<int> downscaleHalf(const vector<int> &source, int size);
+
+	// Hellish Sight: square textures of 16, 32 or 64 pixels (bigger ones are scaled down to 64,
+	// animated strips use their first frame). Returns the size in cells (1, 2 or 4), 0 on failure.
+	int loadModTextures(const std::wstring &filePath, const std::string &iconName, vector<int> &pixels)
 	{	// Reading mod textures from a mods texture folder
 		D3DXIMAGE_INFO imageInfo;
 		ZeroMemory(&imageInfo, sizeof(imageInfo));
@@ -40,19 +44,25 @@ namespace
 		if (RenderManager.LoadTextureData(wstringtofilename(filePath), &imageInfo, &data) != ERROR_SUCCESS || data == nullptr)
 		{	// Fall back to vanilla textures if a mods texture is missing/incorrectly named/whatever to prevent crashing
 			app.DebugPrintf("Ruby Launcher: couldnt read '%s' for '%s'\n", RubyPaths::toNarrow(filePath).c_str(), iconName.c_str());
-			return false;
+			return 0;
 		}
 
-		if (imageInfo.Width != ATLAS_CELL || imageInfo.Height != ATLAS_CELL)
-		{	// Mod textures must be 16x16 px resolution
-			// Fall back to vanilla textures if it isnt to avoid any weird shit that i dont wanna look into
+		const int w = static_cast<int>(imageInfo.Width), h = static_cast<int>(imageInfo.Height);
+		int size = w;
+		if (w < ATLAS_CELL || h < w || (w & (w - 1)) != 0)
+		{
 			delete[] data;
-			return false;
+			app.DebugPrintf("Ruby Launcher: '%s' must be a square power-of-two texture (got %dx%d)\n", iconName.c_str(), w, h);
+			return 0;
 		}
-
-		pixels.assign(data, data + ATLAS_CELL * ATLAS_CELL);
+		pixels.assign(data, data + size * size);	// first frame of a strip
 		delete[] data;
-		return true;
+		while (size > ATLAS_CELL * 4)
+		{
+			pixels = downscaleHalf(pixels, size);
+			size /= 2;
+		}
+		return size / ATLAS_CELL;
 	}
 
 	std::wstring textureFileBaseName(const std::wstring &filePath)
@@ -188,9 +198,13 @@ void PreStitchedTextureMap::stitch()
 	//BufferedImage *image = new BufferedImage(texturePack->getResource(L"/" + filename),false,true,drive); //ImageIO::read(texturePack->getResource(L"/" + filename));
 	BufferedImage *image = texturePack->getImageResource(filename, false, true, drive);
 	MemSect(0);
-	if (iconType != Icon::TYPE_TERRAIN && m_itemRows > 16 && image != nullptr && image->getHeight() * 32 < image->getWidth() * m_itemRows * 2)
-	{
-		image->growHeight(image->getWidth() * m_itemRows / ATLAS_COLUMNS);	// Hellish Sight
+	{	// Hellish Sight: grown atlases (items 16 -> 32 rows, terrain 32 -> 64 rows)
+		const int rows = (iconType == Icon::TYPE_TERRAIN) ? m_terrainRows : m_itemRows;
+		const int baseRows = (iconType == Icon::TYPE_TERRAIN) ? 32 : 16;
+		if (rows > baseRows && image != nullptr && image->getHeight() * ATLAS_COLUMNS < image->getWidth() * rows)
+		{
+			image->growHeight(image->getWidth() * rows / ATLAS_COLUMNS);
+		}
 	}
 	int height = image->getHeight();
 	int width = image->getWidth();
@@ -354,11 +368,13 @@ void PreStitchedTextureMap::allocateModTextureCells()
 {	// Voxel - Create the mod cells in the base atlas so the game actually knows to use them
 	// Otherwise the game will just ignore the "empty cells" since theyre not already defined
 	const vector<RubyModTexture> &requests = RubyLoader::getModTextures();
-	bool taken[ATLAS_ROWS][ATLAS_COLUMNS];
+	static const int MAX_ROWS = 64;
+	static bool taken[MAX_ROWS][ATLAS_COLUMNS];
 	// Vanilla: terrain atlas is 16x32 cells, items atlas is 16x16 cells.
 	// Hellish Sight: the vanilla item atlas has only ~12 free cells, so when mods
 	// add item textures it grows to 16x32 (existing icons keep their pixels, their
-	// V coordinates are halved once).
+	// V coordinates are halved once). The terrain atlas has ~130 free cells, far too
+	// few for a big mod (and its 3D model textures), so it grows the same way to 16x64.
 	if (iconType == Icon::TYPE_ITEM && !m_itemUVsHalved)
 	{
 		bool anyItemRequest = false;
@@ -377,33 +393,44 @@ void PreStitchedTextureMap::allocateModTextureCells()
 			m_itemRows = 32;
 		}
 	}
-	const int atlasRows = (iconType == Icon::TYPE_TERRAIN) ? ATLAS_ROWS : m_itemRows;
+	if (iconType == Icon::TYPE_TERRAIN && !m_terrainUVsHalved)
+	{
+		int blockRequests = 0;
+		for (auto &request : RubyLoader::getModTextures()) if (request.block) ++blockRequests;
+		if (blockRequests > 96)
+		{
+			for (auto &entry : texturesByName)
+			{
+				StitchedTexture *icon = static_cast<StitchedTexture *>(entry.second);
+				if (icon) icon->initUVs(icon->getU0(), icon->getV0() * 0.5f, icon->getU1(), icon->getV1() * 0.5f);
+			}
+			m_terrainUVsHalved = true;
+			m_terrainRows = 64;
+		}
+	}
+	const int atlasRows = (iconType == Icon::TYPE_TERRAIN) ? m_terrainRows : m_itemRows;
 	const bool terrainAtlas = (iconType == Icon::TYPE_TERRAIN);
 	const char *atlasName = terrainAtlas ? "terrain" : "items";
 
-	int lastUsedRow = -1;
-	int next = (lastUsedRow + 1) * ATLAS_COLUMNS;
-	int packedFirstRow = -1;
-	int packedLastRow = -1;
 	int packed = 0;
 
-	// loadUVs() rebuilds texturesByName on every stitch (texture pack change), so
-	// mod cells are re-allocated every time instead of only once.
 	modTextures.clear();
 	m_modTexturesAllocated = true;
 	if (iconType != Icon::TYPE_TERRAIN && iconType != Icon::TYPE_ITEM) return;
 	if (requests.empty()) return;
 
-	for (int row = 0; row < atlasRows; ++row)
+	for (int row = 0; row < MAX_ROWS; ++row)
 	{
 		for (int col = 0; col < ATLAS_COLUMNS; ++col)
 		{
-			taken[row][col] = false;
+			taken[row][col] = (row >= atlasRows);
 		}
 	}
 
+	int lastUsedRow = -1;
 	for (auto &entry : texturesByName)
 	{
+		if (m_modAlloc.find(entry.first) != m_modAlloc.end()) continue;	// mod cells are marked below
 		StitchedTexture *icon = static_cast<StitchedTexture *>(entry.second);
 
 		const int col0 = static_cast<int>(icon->getU0() * ATLAS_COLUMNS + 0.5f);
@@ -423,58 +450,80 @@ void PreStitchedTextureMap::allocateModTextureCells()
 			if (row > lastUsedRow) lastUsedRow = row;
 		}
 	}
+	for (auto &kv : m_modAlloc)
+	{
+		for (int r = 0; r < kv.second.span; ++r)
+			for (int c = 0; c < kv.second.span; ++c)
+				if (kv.second.row + r < MAX_ROWS && kv.second.col + c < ATLAS_COLUMNS) taken[kv.second.row + r][kv.second.col + c] = true;
+	}
+	const int firstFreeRow = lastUsedRow + 1;	// Put them below all the built-in textures so nothing overlaps
 
 	for (auto &request : requests)
-	{	// Put them below all the built-in textures so nothing overlaps
+	{
 		if (request.block != terrainAtlas) continue;
 
 		const wstring name = RubyPaths::toWide(request.iconName);
+		vector<int> pixels;
+		const int span = request.filePath.empty() ? 0 : loadModTextures(RubyPaths::toWide(request.filePath), request.iconName, pixels);
 
+		auto known = m_modAlloc.find(name);
+		if (known != m_modAlloc.end())
+		{	// re-stitch (texture pack change): same cells, fresh pixels
+			if (span == known->second.span)
+			{
+				ModTextureCell modTexture;
+				modTexture.name = name;
+				modTexture.row = known->second.row;
+				modTexture.col = known->second.col;
+				modTexture.span = span;
+				modTexture.pixels.swap(pixels);
+				modTextures.push_back(modTexture);
+			}
+			continue;
+		}
 		if (texturesByName.find(name) != texturesByName.end()) continue;
 
-		int cell = -1;
-
-		for (int i = next; i < atlasRows * ATLAS_COLUMNS; ++i)
+		int cellRow = -1, cellCol = -1;
+		if (span > 0)
 		{
-			const int row = i / ATLAS_COLUMNS;
-			const int col = i % ATLAS_COLUMNS;
-
-			if (!taken[row][col])
+			for (int row = firstFreeRow; row + span <= atlasRows && cellRow < 0; ++row)
 			{
-				taken[row][col] = true;
-				cell = i;
-				next = i + 1;
-				break;
+				for (int col = 0; col + span <= ATLAS_COLUMNS; col += span)
+				{
+					bool free = true;
+					for (int r = 0; r < span && free; ++r)
+						for (int c = 0; c < span && free; ++c)
+							if (taken[row + r][col + c]) free = false;
+					if (free) { cellRow = row; cellCol = col; break; }
+				}
 			}
 		}
 
-		vector<int> pixels;
-
-		if (cell < 0)
-		{	// If the atlas is full, it falls back to vanilla textures
-			// I should expand the atlas sizes soon...
-			app.DebugPrintf("Ruby Launcher: the %s atlas is full...\n", atlasName);
-		}
-		else if (!request.filePath.empty() && loadModTextures(RubyPaths::toWide(request.filePath), request.iconName, pixels))
-		{
-			ModTextureCell modTexture;
-			modTexture.name = name;
-			modTexture.row = cell / ATLAS_COLUMNS;
-			modTexture.col = cell % ATLAS_COLUMNS;
-			modTexture.pixels.swap(pixels);
-			modTextures.push_back(modTexture);
-			texturesByName[name] = new SimpleIcon(name, textureFileBaseName(RubyPaths::toWide(request.filePath)), static_cast<float>(modTexture.col) / ATLAS_COLUMNS, static_cast<float>(modTexture.row) / atlasRows, static_cast<float>(modTexture.col + 1) / ATLAS_COLUMNS, static_cast<float>(modTexture.row + 1) / atlasRows);
-
-			++packed;
-			if (packedFirstRow < 0) packedFirstRow = modTexture.row;
-			packedLastRow = modTexture.row;
-
-			app.DebugPrintf("Ruby Launcher: '%s' in the %s atlas, row %d, column %d\n", request.iconName.c_str(), atlasName, modTexture.row, modTexture.col);
+		if (cellRow < 0)
+		{	// If the atlas is full (or the file is unusable), it falls back to vanilla textures
+			if (span > 0) app.DebugPrintf("Ruby Launcher: the %s atlas is full...\n", atlasName);
+			registerModTextureFallback(name, RubyPaths::toWide(request.fallback));
 			continue;
 		}
 
-		registerModTextureFallback(name, RubyPaths::toWide(request.fallback));
+		for (int r = 0; r < span; ++r)
+			for (int c = 0; c < span; ++c)
+				taken[cellRow + r][cellCol + c] = true;
+		m_modAlloc[name] = { cellRow, cellCol, span };
+
+		ModTextureCell modTexture;
+		modTexture.name = name;
+		modTexture.row = cellRow;
+		modTexture.col = cellCol;
+		modTexture.span = span;
+		modTexture.pixels.swap(pixels);
+		modTextures.push_back(modTexture);
+		texturesByName[name] = new SimpleIcon(name, textureFileBaseName(RubyPaths::toWide(request.filePath)),
+			static_cast<float>(cellCol) / ATLAS_COLUMNS, static_cast<float>(cellRow) / atlasRows,
+			static_cast<float>(cellCol + span) / ATLAS_COLUMNS, static_cast<float>(cellRow + span) / atlasRows);
+		++packed;
 	}
+	app.DebugPrintf("Ruby Launcher: %d new mod textures in the %s atlas (%d rows)\n", packed, atlasName, atlasRows);
 }
 
 #if defined(_WINDOWS64) && !defined(MINECRAFT_SERVER_BUILD)
@@ -535,14 +584,26 @@ void PreStitchedTextureMap::blitModTextures(BufferedImage *image)
 		if (modTexture.pixels.empty()) continue;
 
 		vector<int> level = modTexture.pixels;
-		int cellSize = ATLAS_CELL;
+		int cellSize = ATLAS_CELL * modTexture.span;
+		const int cellPx = atlasWidth / ATLAS_COLUMNS;	// pixels per cell at mip level 0
+		if (cellPx > ATLAS_CELL && cellPx % ATLAS_CELL == 0)
+		{	// HD texture pack: scale the mod texture up to the pack's cell size (nearest)
+			const int k = cellPx / ATLAS_CELL, big = cellSize * k;
+			vector<int> up(big * big);
+			for (int yy = 0; yy < big; ++yy)
+				for (int xx = 0; xx < big; ++xx)
+					up[yy * big + xx] = level[(yy / k) * cellSize + (xx / k)];
+			level.swap(up);
+			cellSize = big;
+		}
 
 		for (int l = 0; l < 10; ++l)
 		{
 			const int levelWidth = atlasWidth >> l;
 			const int levelHeight = atlasHeight >> l;
-			const int x = modTexture.col * cellSize;
-			const int y = modTexture.row * cellSize;
+			const int x = (modTexture.col * cellPx) >> l;
+			const int y = (modTexture.row * cellPx) >> l;
+			if (static_cast<int>(level.size()) != cellSize * cellSize || x + cellSize > levelWidth || y + cellSize > levelHeight) break;
 			int *dst = image->getData(l);
 
 			if (dst == nullptr || levelWidth <= 0 || levelHeight <= 0 || cellSize <= 0) break;

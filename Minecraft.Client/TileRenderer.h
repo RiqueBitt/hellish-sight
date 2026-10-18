@@ -143,6 +143,8 @@ private:
 	bool tesselateThinPaneInWorld(Tile *tt, int x, int y, int z);
 	bool tesselateThinFenceInWorld( ThinFenceTile* tt, int x, int y, int z );
 	bool tesselateCrossInWorld( Tile* tt, int x, int y, int z );
+	bool tesselateHSModelInWorld( Tile* tt, int x, int y, int z );	// Hellish Sight: box models
+	void renderHSModelTile( Tile* tile, int data );					// Hellish Sight: box models (inventory / hand / dropped)
 	bool tesselateStemInWorld( Tile* _tt, int x, int y, int z );
 	bool tesselateRowInWorld( Tile* tt, int x, int y, int z );
 	void tesselateTorch( Tile* tt, float x, float y, float z, float xxa, float zza, int data );

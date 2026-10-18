@@ -176,7 +176,8 @@ public:
 	static const int SHAPE_QUARTZ = 39;
 	static const int SHAPE_THIN_PANE = 40;
 
-	static const int SHAPE_COUNT = 41;
+	static const int SHAPE_HS_MODEL = 41;	// Hellish Sight: box models (HSModel.h)
+	static const int SHAPE_COUNT = 42;
 
 	static  Tile **tiles;
 

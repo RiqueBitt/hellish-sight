@@ -515,7 +515,7 @@ function main()
             { "mekanism:crystal_uranium", "mekanism:shard_uranium", 1, chemIn = { "mekanism:hydrogen_chloride", 20 } }
         }
     })
-    registerMachine("metallurgic_infuser", "Metallurgic Infuser", { front = "res/metallurgic_infuser_front.png", frontActive = "res/metallurgic_infuser_frontActive.png", side = "res/metallurgic_infuser_side.png", top = "res/metallurgic_infuser_top.png", bottom = "res/metallurgic_infuser_bottom.png" }, {
+    registerMachine("metallurgic_infuser", "Metallurgic Infuser", { model = "res/models/metallurgic_infuser.json", front = "res/metallurgic_infuser_front.png", frontActive = "res/metallurgic_infuser_frontActive.png", side = "res/metallurgic_infuser_side.png", top = "res/metallurgic_infuser_top.png", bottom = "res/metallurgic_infuser_bottom.png" }, {
         hardness = 3.5,
         processTicks = 200,
         power = POWER,
@@ -592,10 +592,10 @@ function main()
     })
 
     -- energy: generators, energy cubes and universal cables (FE)
-    registerMachine("heat_generator", "Heat Generator", { front = "res/heat_generator_front.png", frontActive = "res/heat_generator_frontActive.png", side = "res/heat_generator_side.png", top = "res/heat_generator_top.png", bottom = "res/heat_generator_bottom.png" }, { kind = "generator", generatorType = "burn", furnaceFuels = true, generation = 80, transfer = 160, energyCapacity = 160000, power = { {"minecraft:lava_bucket", 4000}, {"mekanism:block_charcoal", 14400} } })
-    registerMachine("bio_generator", "Bio-Generator", { front = "res/bio_generator_front.png", frontActive = "res/bio_generator_frontActive.png", side = "res/bio_generator_side.png", top = "res/bio_generator_top.png", bottom = "res/bio_generator_bottom.png" }, { kind = "generator", generatorType = "burn", generation = 140, transfer = 280, energyCapacity = 160000, power = { {"mekanism:bio_fuel", 200}, {"minecraft:wheat", 60}, {"minecraft:reeds", 60} } })
-    registerMachine("solar_generator", "Solar Generator", { side = "res/solar_side.png", top = "res/solar_generator_top.png", bottom = "res/solar_side.png", front = "res/solar_side.png" }, { kind = "generator", generatorType = "solar", generation = 15, transfer = 60, energyCapacity = 96000 })
-    registerMachine("advanced_solar_generator", "Advanced Solar Generator", { side = "res/solar_side.png", top = "res/advanced_solar_generator_top.png", bottom = "res/solar_side.png", front = "res/solar_side.png" }, { kind = "generator", generatorType = "solar", generation = 120, transfer = 480, energyCapacity = 400000 })
+    registerMachine("heat_generator", "Heat Generator", { model = "res/models/heat_generator.json", modelActive = "res/models/heat_generator_active.json", front = "res/heat_generator_front.png", frontActive = "res/heat_generator_frontActive.png", side = "res/heat_generator_side.png", top = "res/heat_generator_top.png", bottom = "res/heat_generator_bottom.png" }, { kind = "generator", generatorType = "burn", furnaceFuels = true, generation = 80, transfer = 160, energyCapacity = 160000, power = { {"minecraft:lava_bucket", 4000}, {"mekanism:block_charcoal", 14400} } })
+    registerMachine("bio_generator", "Bio-Generator", { model = "res/models/bio_generator.json", front = "res/bio_generator_front.png", frontActive = "res/bio_generator_frontActive.png", side = "res/bio_generator_side.png", top = "res/bio_generator_top.png", bottom = "res/bio_generator_bottom.png" }, { kind = "generator", generatorType = "burn", generation = 140, transfer = 280, energyCapacity = 160000, power = { {"mekanism:bio_fuel", 200}, {"minecraft:wheat", 60}, {"minecraft:reeds", 60} } })
+    registerMachine("solar_generator", "Solar Generator", { model = "res/models/solar_generator.json", side = "res/solar_side.png", top = "res/solar_generator_top.png", bottom = "res/solar_side.png", front = "res/solar_side.png" }, { kind = "generator", generatorType = "solar", generation = 15, transfer = 60, energyCapacity = 96000 })
+    registerMachine("advanced_solar_generator", "Advanced Solar Generator", { model = "res/models/advanced_solar_generator.json", side = "res/solar_side.png", top = "res/advanced_solar_generator_top.png", bottom = "res/solar_side.png", front = "res/solar_side.png" }, { kind = "generator", generatorType = "solar", generation = 120, transfer = 480, energyCapacity = 400000 })
     registerMachine("basic_energy_cube", "Basic Energy Cube", { side = "res/basic_energy_cube.png", front = "res/basic_energy_cube_front.png", frontActive = "res/basic_energy_cube_front.png", top = "res/basic_energy_cube.png", bottom = "res/basic_energy_cube.png" }, { kind = "storage", energyCapacity = 4000000, transfer = 4000, power = { {"minecraft:redstone", 400}, {"minecraft:redstone_block", 3600} } })
     registerMachine("advanced_energy_cube", "Advanced Energy Cube", { side = "res/advanced_energy_cube.png", front = "res/advanced_energy_cube_front.png", frontActive = "res/advanced_energy_cube_front.png", top = "res/advanced_energy_cube.png", bottom = "res/advanced_energy_cube.png" }, { kind = "storage", energyCapacity = 16000000, transfer = 16000, power = { {"minecraft:redstone", 400}, {"minecraft:redstone_block", 3600} } })
     registerMachine("elite_energy_cube", "Elite Energy Cube", { side = "res/elite_energy_cube.png", front = "res/elite_energy_cube_front.png", frontActive = "res/elite_energy_cube_front.png", top = "res/elite_energy_cube.png", bottom = "res/elite_energy_cube.png" }, { kind = "storage", energyCapacity = 64000000, transfer = 64000, power = { {"minecraft:redstone", 400}, {"minecraft:redstone_block", 3600} } })
@@ -606,14 +606,14 @@ function main()
     registerMachine("ultimate_universal_cable", "Ultimate Universal Cable", { side = "res/ultimate_universal_cable.png" }, { kind = "cable", transfer = 8192000, hardness = 1.0 })
 
     -- chemical machines, tanks, pipes, transporters, pump, miner, teleporter, multiblocks
-    registerMachine("electrolytic_separator", "Electrolytic Separator", { side = "res/electrolytic_separator_side.png", front = "res/electrolytic_separator_front.png", frontActive = "res/electrolytic_separator_front_on.png", top = "res/electrolytic_separator_top.png", bottom = "res/mek_steel_side.png" }, {
+    registerMachine("electrolytic_separator", "Electrolytic Separator", { model = "res/models/electrolytic_separator.json", side = "res/electrolytic_separator_side.png", front = "res/electrolytic_separator_front.png", frontActive = "res/electrolytic_separator_front_on.png", top = "res/electrolytic_separator_top.png", bottom = "res/mek_steel_side.png" }, {
         hardness = 3.5, energyCapacity = 80000, power = POWER, energyPerTick = 200, processTicks = 10, recipes = {
             { "", "", 1, chemIn = { "minecraft:water", 100 }, chemOut = { "mekanism:hydrogen", 200 }, chemOut2 = { "mekanism:oxygen", 100 } },
             { "", "", 1, chemIn = { "mekanism:brine", 100 }, chemOut = { "mekanism:sodium", 100 }, chemOut2 = { "mekanism:chlorine", 100 } },
             { "", "", 1, chemIn = { "mekanism:heavy_water", 100 }, chemOut = { "mekanism:deuterium", 200 }, chemOut2 = { "mekanism:oxygen", 100 } }
         }
     })
-    registerMachine("chemical_oxidizer", "Chemical Oxidizer", { side = "res/chemical_oxidizer_side.png", front = "res/chemical_oxidizer_front.png", frontActive = "res/chemical_oxidizer_front_on.png", top = "res/chemical_oxidizer_top.png", bottom = "res/mek_steel_side.png" }, {
+    registerMachine("chemical_oxidizer", "Chemical Oxidizer", { model = "res/models/chemical_oxidizer.json", side = "res/chemical_oxidizer_side.png", front = "res/chemical_oxidizer_front.png", frontActive = "res/chemical_oxidizer_front_on.png", top = "res/chemical_oxidizer_top.png", bottom = "res/mek_steel_side.png" }, {
         hardness = 3.5, energyCapacity = 80000, power = POWER, energyPerTick = 100, processTicks = 40, recipes = {
             { "mekanism:dust_sulfur", "", 1, chemOut = { "mekanism:sulfur_dioxide", 100 } },
             { "mekanism:yellow_cake_uranium", "", 1, chemOut = { "mekanism:uranium_oxide", 250 } },
@@ -623,7 +623,7 @@ function main()
             { "mekanism:pellet_polonium", "", 1, chemOut = { "mekanism:polonium", 1000 } }
         }
     })
-    registerMachine("chemical_infuser", "Chemical Infuser", { side = "res/chemical_infuser_side.png", front = "res/chemical_infuser_front.png", frontActive = "res/chemical_infuser_front_on.png", top = "res/chemical_infuser_top.png", bottom = "res/mek_steel_side.png" }, {
+    registerMachine("chemical_infuser", "Chemical Infuser", { model = "res/models/chemical_infuser.json", side = "res/chemical_infuser_side.png", front = "res/chemical_infuser_front.png", frontActive = "res/chemical_infuser_front_on.png", top = "res/chemical_infuser_top.png", bottom = "res/mek_steel_side.png" }, {
         hardness = 3.5, energyCapacity = 80000, power = POWER, energyPerTick = 100, processTicks = 20, recipes = {
             { "", "", 1, chemIn = { "mekanism:hydrogen", 100 }, chemIn2 = { "mekanism:chlorine", 100 }, chemOut = { "mekanism:hydrogen_chloride", 100 } },
             { "", "", 1, chemIn = { "mekanism:sulfur_dioxide", 100 }, chemIn2 = { "mekanism:oxygen", 50 }, chemOut = { "mekanism:sulfur_trioxide", 100 } },
@@ -632,7 +632,7 @@ function main()
             { "", "", 1, chemIn = { "mekanism:uranium_oxide", 100 }, chemIn2 = { "mekanism:hydrofluoric_acid", 100 }, chemOut = { "mekanism:uranium_hexafluoride", 100 } }
         }
     })
-    registerMachine("chemical_dissolution_chamber", "Chemical Dissolution Chamber", { side = "res/chemical_dissolution_chamber_side.png", front = "res/chemical_dissolution_chamber_front.png", frontActive = "res/chemical_dissolution_chamber_front_on.png", top = "res/chemical_dissolution_chamber_top.png", bottom = "res/mek_steel_side.png" }, {
+    registerMachine("chemical_dissolution_chamber", "Chemical Dissolution Chamber", { model = "res/models/chemical_dissolution_chamber.json", side = "res/chemical_dissolution_chamber_side.png", front = "res/chemical_dissolution_chamber_front.png", frontActive = "res/chemical_dissolution_chamber_front_on.png", top = "res/chemical_dissolution_chamber_top.png", bottom = "res/mek_steel_side.png" }, {
         hardness = 3.5, energyCapacity = 80000, power = POWER, energyPerTick = 150, processTicks = 100, recipes = {
             { "minecraft:iron_ore", "", 1, chemIn = { "mekanism:sulfuric_acid", 100 }, chemOut = { "mekanism:dirty_iron_slurry", 1000 } },
             { "minecraft:gold_ore", "", 1, chemIn = { "mekanism:sulfuric_acid", 100 }, chemOut = { "mekanism:dirty_gold_slurry", 1000 } },
@@ -644,7 +644,7 @@ function main()
             { "mekanism:fluorite_gem", "", 1, chemIn = { "mekanism:sulfuric_acid", 50 }, chemOut = { "mekanism:hydrofluoric_acid", 1000 } }
         }
     })
-    registerMachine("chemical_washer", "Chemical Washer", { side = "res/chemical_washer_side.png", front = "res/chemical_washer_front.png", frontActive = "res/chemical_washer_front_on.png", top = "res/chemical_washer_top.png", bottom = "res/mek_steel_side.png" }, {
+    registerMachine("chemical_washer", "Chemical Washer", { model = "res/models/chemical_washer.json", side = "res/chemical_washer_side.png", front = "res/chemical_washer_front.png", frontActive = "res/chemical_washer_front_on.png", top = "res/chemical_washer_top.png", bottom = "res/mek_steel_side.png" }, {
         hardness = 3.5, energyCapacity = 80000, power = POWER, energyPerTick = 100, processTicks = 10, recipes = {
             { "", "", 1, chemIn = { "mekanism:dirty_iron_slurry", 200 }, chemIn2 = { "minecraft:water", 200 }, chemOut = { "mekanism:clean_iron_slurry", 200 } },
             { "", "", 1, chemIn = { "mekanism:dirty_gold_slurry", 200 }, chemIn2 = { "minecraft:water", 200 }, chemOut = { "mekanism:clean_gold_slurry", 200 } },
@@ -655,7 +655,7 @@ function main()
             { "", "", 1, chemIn = { "mekanism:dirty_uranium_slurry", 200 }, chemIn2 = { "minecraft:water", 200 }, chemOut = { "mekanism:clean_uranium_slurry", 200 } }
         }
     })
-    registerMachine("chemical_crystallizer", "Chemical Crystallizer", { side = "res/chemical_crystallizer_side.png", front = "res/chemical_crystallizer_front.png", frontActive = "res/chemical_crystallizer_front_on.png", top = "res/chemical_crystallizer_top.png", bottom = "res/mek_steel_side.png" }, {
+    registerMachine("chemical_crystallizer", "Chemical Crystallizer", { model = "res/models/chemical_crystallizer.json", side = "res/chemical_crystallizer_side.png", front = "res/chemical_crystallizer_front.png", frontActive = "res/chemical_crystallizer_front_on.png", top = "res/chemical_crystallizer_top.png", bottom = "res/mek_steel_side.png" }, {
         hardness = 3.5, energyCapacity = 80000, power = POWER, energyPerTick = 100, processTicks = 40, recipes = {
             { "", "mekanism:crystal_iron", 1, chemIn = { "mekanism:clean_iron_slurry", 200 } },
             { "", "mekanism:crystal_gold", 1, chemIn = { "mekanism:clean_gold_slurry", 200 } },
@@ -671,53 +671,53 @@ function main()
             { "", "mekanism:pellet_antimatter", 1, chemIn = { "mekanism:antimatter", 1000 } }
         }
     })
-    registerMachine("pressurized_reaction_chamber", "Pressurized Reaction Chamber", { side = "res/pressurized_reaction_chamber_side.png", front = "res/pressurized_reaction_chamber_front.png", frontActive = "res/pressurized_reaction_chamber_front_on.png", top = "res/pressurized_reaction_chamber_top.png", bottom = "res/mek_steel_side.png" }, {
+    registerMachine("pressurized_reaction_chamber", "Pressurized Reaction Chamber", { model = "res/models/pressurized_reaction_chamber.json", side = "res/pressurized_reaction_chamber_side.png", front = "res/pressurized_reaction_chamber_front.png", frontActive = "res/pressurized_reaction_chamber_front_on.png", top = "res/pressurized_reaction_chamber_top.png", bottom = "res/mek_steel_side.png" }, {
         hardness = 3.5, energyCapacity = 80000, power = POWER, energyPerTick = 100, processTicks = 100, recipes = {
             { "mekanism:bio_fuel", "mekanism:substrate", 1, inCount = 2, chemIn = { "minecraft:water", 10 }, chemIn2 = { "mekanism:hydrogen", 100 }, chemOut = { "mekanism:ethylene", 100 } },
             { "minecraft:coal", "mekanism:enriched_carbon", 2, chemIn = { "minecraft:water", 50 }, chemIn2 = { "mekanism:oxygen", 50 }, chemOut = { "mekanism:hydrogen", 50 } }
         }
     })
-    registerMachine("isotopic_centrifuge", "Isotopic Centrifuge", { side = "res/isotopic_centrifuge_side.png", front = "res/isotopic_centrifuge_front.png", frontActive = "res/isotopic_centrifuge_front_on.png", top = "res/isotopic_centrifuge_top.png", bottom = "res/mek_steel_side.png" }, {
+    registerMachine("isotopic_centrifuge", "Isotopic Centrifuge", { model = "res/models/isotopic_centrifuge.json", side = "res/isotopic_centrifuge_side.png", front = "res/isotopic_centrifuge_front.png", frontActive = "res/isotopic_centrifuge_front_on.png", top = "res/isotopic_centrifuge_top.png", bottom = "res/mek_steel_side.png" }, {
         hardness = 3.5, energyCapacity = 80000, power = POWER, energyPerTick = 200, processTicks = 20, recipes = {
             { "", "", 1, chemIn = { "mekanism:uranium_hexafluoride", 200 }, chemOut = { "mekanism:fissile_fuel", 100 } },
             { "", "", 1, chemIn = { "mekanism:nuclear_waste", 100 }, chemOut = { "mekanism:plutonium", 10 } }
         }
     })
-    registerMachine("solar_neutron_activator", "Solar Neutron Activator", { side = "res/solar_neutron_activator_side.png", front = "res/solar_neutron_activator_front.png", frontActive = "res/solar_neutron_activator_front_on.png", top = "res/solar_neutron_activator_top.png", bottom = "res/mek_steel_side.png" }, {
+    registerMachine("solar_neutron_activator", "Solar Neutron Activator", { model = "res/models/solar_neutron_activator.json", side = "res/solar_neutron_activator_side.png", front = "res/solar_neutron_activator_front.png", frontActive = "res/solar_neutron_activator_front_on.png", top = "res/solar_neutron_activator_top.png", bottom = "res/mek_steel_side.png" }, {
         hardness = 3.5, energyCapacity = 80000, power = POWER, energyPerTick = 60, processTicks = 20, recipes = {
             { "", "", 1, chemIn = { "mekanism:lithium", 100 }, chemOut = { "mekanism:tritium", 100 } },
             { "", "", 1, chemIn = { "mekanism:nuclear_waste", 100 }, chemOut = { "mekanism:polonium", 10 } }
         }
     })
-    registerMachine("antiprotonic_nucleosynthesizer", "Antiprotonic Nucleosynthesizer", { side = "res/antiprotonic_nucleosynthesizer_side.png", front = "res/antiprotonic_nucleosynthesizer_front.png", frontActive = "res/antiprotonic_nucleosynthesizer_front_on.png", top = "res/antiprotonic_nucleosynthesizer_top.png", bottom = "res/mek_steel_side.png" }, {
+    registerMachine("antiprotonic_nucleosynthesizer", "Antiprotonic Nucleosynthesizer", { model = "res/models/antiprotonic_nucleosynthesizer.json", side = "res/antiprotonic_nucleosynthesizer_side.png", front = "res/antiprotonic_nucleosynthesizer_front.png", frontActive = "res/antiprotonic_nucleosynthesizer_front_on.png", top = "res/antiprotonic_nucleosynthesizer_top.png", bottom = "res/mek_steel_side.png" }, {
         hardness = 3.5, energyCapacity = 80000, power = POWER, energyPerTick = 2000, processTicks = 200, recipes = {
             { "minecraft:coal", "minecraft:diamond", 1, chemIn = { "mekanism:antimatter", 10 } },
             { "minecraft:iron_ingot", "minecraft:gold_ingot", 1, chemIn = { "mekanism:antimatter", 5 } },
             { "minecraft:diamond", "minecraft:nether_star", 1, chemIn = { "mekanism:antimatter", 100 } }
         }
     })
-    registerMachine("basic_fluid_tank", "Basic Fluid Tank", { side = "res/basic_fluid_tank.png", front = "res/basic_fluid_tank.png", top = "res/basic_fluid_tank.png", bottom = "res/basic_fluid_tank.png" }, {
+    registerMachine("basic_fluid_tank", "Basic Fluid Tank", { model = "res/models/basic_fluid_tank.json", modelActive = "res/models/basic_fluid_tank_active.json", side = "res/basic_fluid_tank.png", front = "res/basic_fluid_tank.png", top = "res/basic_fluid_tank.png", bottom = "res/basic_fluid_tank.png" }, {
         kind = "tank", tankCapacity = 32000, transfer = 1000, hardness = 2.0
     })
-    registerMachine("basic_chemical_tank", "Basic Chemical Tank", { side = "res/basic_chemical_tank_side.png", front = "res/basic_chemical_tank_front.png", frontActive = "res/basic_chemical_tank_front_on.png", top = "res/basic_chemical_tank_top.png", bottom = "res/mek_steel_side.png" }, {
+    registerMachine("basic_chemical_tank", "Basic Chemical Tank", { model = "res/models/basic_chemical_tank.json", side = "res/basic_chemical_tank_side.png", front = "res/basic_chemical_tank_front.png", frontActive = "res/basic_chemical_tank_front_on.png", top = "res/basic_chemical_tank_top.png", bottom = "res/mek_steel_side.png" }, {
         kind = "tank", tankCapacity = 64000, transfer = 1000, hardness = 2.0
     })
-    registerMachine("advanced_fluid_tank", "Advanced Fluid Tank", { side = "res/advanced_fluid_tank.png", front = "res/advanced_fluid_tank.png", top = "res/advanced_fluid_tank.png", bottom = "res/advanced_fluid_tank.png" }, {
+    registerMachine("advanced_fluid_tank", "Advanced Fluid Tank", { model = "res/models/advanced_fluid_tank.json", modelActive = "res/models/advanced_fluid_tank_active.json", side = "res/advanced_fluid_tank.png", front = "res/advanced_fluid_tank.png", top = "res/advanced_fluid_tank.png", bottom = "res/advanced_fluid_tank.png" }, {
         kind = "tank", tankCapacity = 128000, transfer = 4000, hardness = 2.0
     })
-    registerMachine("advanced_chemical_tank", "Advanced Chemical Tank", { side = "res/advanced_chemical_tank_side.png", front = "res/advanced_chemical_tank_front.png", frontActive = "res/advanced_chemical_tank_front_on.png", top = "res/advanced_chemical_tank_top.png", bottom = "res/mek_steel_side.png" }, {
+    registerMachine("advanced_chemical_tank", "Advanced Chemical Tank", { model = "res/models/advanced_chemical_tank.json", side = "res/advanced_chemical_tank_side.png", front = "res/advanced_chemical_tank_front.png", frontActive = "res/advanced_chemical_tank_front_on.png", top = "res/advanced_chemical_tank_top.png", bottom = "res/mek_steel_side.png" }, {
         kind = "tank", tankCapacity = 256000, transfer = 4000, hardness = 2.0
     })
-    registerMachine("elite_fluid_tank", "Elite Fluid Tank", { side = "res/elite_fluid_tank.png", front = "res/elite_fluid_tank.png", top = "res/elite_fluid_tank.png", bottom = "res/elite_fluid_tank.png" }, {
+    registerMachine("elite_fluid_tank", "Elite Fluid Tank", { model = "res/models/elite_fluid_tank.json", modelActive = "res/models/elite_fluid_tank_active.json", side = "res/elite_fluid_tank.png", front = "res/elite_fluid_tank.png", top = "res/elite_fluid_tank.png", bottom = "res/elite_fluid_tank.png" }, {
         kind = "tank", tankCapacity = 512000, transfer = 16000, hardness = 2.0
     })
-    registerMachine("elite_chemical_tank", "Elite Chemical Tank", { side = "res/elite_chemical_tank_side.png", front = "res/elite_chemical_tank_front.png", frontActive = "res/elite_chemical_tank_front_on.png", top = "res/elite_chemical_tank_top.png", bottom = "res/mek_steel_side.png" }, {
+    registerMachine("elite_chemical_tank", "Elite Chemical Tank", { model = "res/models/elite_chemical_tank.json", side = "res/elite_chemical_tank_side.png", front = "res/elite_chemical_tank_front.png", frontActive = "res/elite_chemical_tank_front_on.png", top = "res/elite_chemical_tank_top.png", bottom = "res/mek_steel_side.png" }, {
         kind = "tank", tankCapacity = 1024000, transfer = 16000, hardness = 2.0
     })
-    registerMachine("ultimate_fluid_tank", "Ultimate Fluid Tank", { side = "res/ultimate_fluid_tank.png", front = "res/ultimate_fluid_tank.png", top = "res/ultimate_fluid_tank.png", bottom = "res/ultimate_fluid_tank.png" }, {
+    registerMachine("ultimate_fluid_tank", "Ultimate Fluid Tank", { model = "res/models/ultimate_fluid_tank.json", modelActive = "res/models/ultimate_fluid_tank_active.json", side = "res/ultimate_fluid_tank.png", front = "res/ultimate_fluid_tank.png", top = "res/ultimate_fluid_tank.png", bottom = "res/ultimate_fluid_tank.png" }, {
         kind = "tank", tankCapacity = 2048000, transfer = 64000, hardness = 2.0
     })
-    registerMachine("ultimate_chemical_tank", "Ultimate Chemical Tank", { side = "res/ultimate_chemical_tank_side.png", front = "res/ultimate_chemical_tank_front.png", frontActive = "res/ultimate_chemical_tank_front_on.png", top = "res/ultimate_chemical_tank_top.png", bottom = "res/mek_steel_side.png" }, {
+    registerMachine("ultimate_chemical_tank", "Ultimate Chemical Tank", { model = "res/models/ultimate_chemical_tank.json", side = "res/ultimate_chemical_tank_side.png", front = "res/ultimate_chemical_tank_front.png", frontActive = "res/ultimate_chemical_tank_front_on.png", top = "res/ultimate_chemical_tank_top.png", bottom = "res/mek_steel_side.png" }, {
         kind = "tank", tankCapacity = 4096000, transfer = 64000, hardness = 2.0
     })
     registerMachine("basic_mechanical_pipe", "Basic Mechanical Pipe", { side = "res/basic_mechanical_pipe.png" }, {
@@ -756,22 +756,22 @@ function main()
     registerMachine("ultimate_logistical_transporter", "Ultimate Logistical Transporter", { side = "res/ultimate_logistical_transporter.png" }, {
         kind = "transporter", transfer = 64, hardness = 1.0, upgrades = false
     })
-    registerMachine("electric_pump", "Electric Pump", { side = "res/electric_pump_side.png", front = "res/electric_pump_front.png", frontActive = "res/electric_pump_front_on.png", top = "res/electric_pump_top.png", bottom = "res/mek_steel_side.png" }, {
+    registerMachine("electric_pump", "Electric Pump", { model = "res/models/electric_pump.json", side = "res/electric_pump_side.png", front = "res/electric_pump_front.png", frontActive = "res/electric_pump_front_on.png", top = "res/electric_pump_top.png", bottom = "res/mek_steel_side.png" }, {
         kind = "pump", energyCapacity = 20000, energyPerTick = 50, processTicks = 20, tankCapacity = 16000, radius = 16, power = POWER
     })
     registerMachine("digital_miner", "Digital Miner", { side = "res/digital_miner_side.png", front = "res/digital_miner_front.png", frontActive = "res/digital_miner_front_on.png", top = "res/digital_miner_top.png", bottom = "res/mek_steel_side.png" }, {
         kind = "miner", energyCapacity = 100000, energyPerTick = 200, processTicks = 20, radius = 16, power = POWER
     })
-    registerMachine("teleporter", "Teleporter", { side = "res/teleporter.png", front = "res/teleporter.png", top = "res/teleporter.png", bottom = "res/teleporter.png" }, {
+    registerMachine("teleporter", "Teleporter", { model = "res/models/teleporter.json", side = "res/teleporter.png", front = "res/teleporter.png", top = "res/teleporter.png", bottom = "res/teleporter.png" }, {
         kind = "teleporter", portalFrame = "teleporter_frame", energyCapacity = 5000000, energyPerTick = 1000, power = POWER
     })
-    registerMachine("gas_burning_generator", "Gas-Burning Generator", { side = "res/gas_burning_generator_side.png", front = "res/gas_burning_generator_front.png", frontActive = "res/gas_burning_generator_front_on.png", top = "res/gas_burning_generator_top.png", bottom = "res/mek_steel_side.png" }, {
+    registerMachine("gas_burning_generator", "Gas-Burning Generator", { model = "res/models/gas_burning_generator.json", side = "res/gas_burning_generator_side.png", front = "res/gas_burning_generator_front.png", frontActive = "res/gas_burning_generator_front_on.png", top = "res/gas_burning_generator_top.png", bottom = "res/mek_steel_side.png" }, {
         kind = "generator", fuelChem = { "mekanism:ethylene", 1 }, generation = 480, transfer = 960, energyCapacity = 400000
     })
-    registerMachine("chargepad", "Chargepad", { side = "res/chargepad_side.png", front = "res/chargepad_front.png", frontActive = "res/chargepad_front_on.png", top = "res/chargepad_top.png", bottom = "res/mek_steel_side.png" }, {
+    registerMachine("chargepad", "Chargepad", { model = "res/models/chargepad.json", side = "res/chargepad_side.png", front = "res/chargepad_front.png", frontActive = "res/chargepad_front_on.png", top = "res/chargepad_top.png", bottom = "res/mek_steel_side.png" }, {
         kind = "storage", energyCapacity = 200000, transfer = 2000, power = POWER
     })
-    registerMachine("induction_port", "Induction Port", { side = "res/induction_port.png", front = "res/induction_port.png", top = "res/induction_port.png", bottom = "res/induction_port.png" }, {
+    registerMachine("induction_port", "Induction Port", { model = "res/models/induction_port.json", modelActive = "res/models/induction_port_active.json", side = "res/induction_port.png", front = "res/induction_port.png", top = "res/induction_port.png", bottom = "res/induction_port.png" }, {
         kind = "storage", energyCapacity = 0, transfer = 0, multiblock = { frame = { "induction_casing", "structural_glass" }, inner = { ["basic_induction_cell"] = { capacity = 50000000 }, ["basic_induction_provider"] = { transfer = 64000 }, ["advanced_induction_cell"] = { capacity = 200000000 }, ["advanced_induction_provider"] = { transfer = 512000 }, ["elite_induction_cell"] = { capacity = 800000000 }, ["elite_induction_provider"] = { transfer = 4096000 }, ["ultimate_induction_cell"] = { capacity = 2000000000 }, ["ultimate_induction_provider"] = { transfer = 32768000 } }, interiorAir = true, min = 3, max = 18 }
     })
     registerMachine("dynamic_valve", "Dynamic Valve", { side = "res/dynamic_valve.png", front = "res/dynamic_valve.png", top = "res/dynamic_valve.png", bottom = "res/dynamic_valve.png" }, {
@@ -795,12 +795,12 @@ function main()
     registerMachine("fusion_reactor_controller", "Fusion Reactor Controller", { side = "res/fusion_reactor_controller.png", front = "res/fusion_reactor_controller.png", top = "res/fusion_reactor_controller.png", bottom = "res/fusion_reactor_controller.png" }, {
         kind = "fusion", fuelChem = { "mekanism:dt_fuel", 2 }, generation = 40000, transfer = 200000, energyCapacity = 200000000, ignitionEnergy = 50000000, tankCapacity = 64000, multiblock = { frame = { "reactor_frame", "reactor_port", "reactor_glass" }, interiorAir = true, min = 5, max = 9 }
     })
-    registerMachine("sps_port", "SPS Port (Supercritical Phase Shifter)", { side = "res/sps_port.png", front = "res/sps_port.png", top = "res/sps_port.png", bottom = "res/sps_port.png" }, {
+    registerMachine("sps_port", "SPS Port (Supercritical Phase Shifter)", { model = "res/models/sps_port.json", modelActive = "res/models/sps_port_active.json", side = "res/sps_port.png", front = "res/sps_port.png", top = "res/sps_port.png", bottom = "res/sps_port.png" }, {
         energyCapacity = 10000000, energyPerTick = 20000, processTicks = 100, tankCapacity = 64000, multiblock = { frame = { "sps_casing", "structural_glass" }, interiorAir = true, min = 5, max = 5 }, recipes = {
             { "", "", 1, chemIn = { "mekanism:polonium", 2000 }, chemOut = { "mekanism:antimatter", 1 } }
         }
     })
-    registerMachine("resistive_heater", "Resistive Heater", { side = "res/resistive_heater_side.png", top = "res/resistive_heater_top.png", bottom = "res/resistive_heater_bottom.png", front = "res/resistive_heater_side.png" }, {
+    registerMachine("resistive_heater", "Resistive Heater", { model = "res/models/resistive_heater.json", modelActive = "res/models/resistive_heater_active.json", side = "res/resistive_heater_side.png", top = "res/resistive_heater_top.png", bottom = "res/resistive_heater_bottom.png", front = "res/resistive_heater_side.png" }, {
         kind = "heater", energyCapacity = 200000, energyPerTick = 1000, heatCapacity = 100, conductance = 0.5, power = POWER
     })
     registerMachine("fuelwood_heater", "Fuelwood Heater", { front = "res/fuelwood_heater_front.png", frontActive = "res/fuelwood_heater_frontActive.png", side = "res/fuelwood_heater_side.png", top = "res/fuelwood_heater_top.png", bottom = "res/fuelwood_heater_bottom.png" }, {
@@ -818,25 +818,25 @@ function main()
     registerMachine("ultimate_thermodynamic_conductor", "Ultimate Thermodynamic Conductor", { side = "res/ultimate_thermodynamic_conductor.png" }, {
         kind = "conductor", conductance = 0.8, heatCapacity = 50, hardness = 1.0, upgrades = false
     })
-    registerMachine("seismic_vibrator", "Seismic Vibrator", { side = "res/seismic_vibrator_side.png", front = "res/seismic_vibrator_front.png", frontActive = "res/seismic_vibrator_front_on.png", top = "res/seismic_vibrator_top.png", bottom = "res/mek_steel_side.png" }, {
+    registerMachine("seismic_vibrator", "Seismic Vibrator", { model = "res/models/seismic_vibrator.json", side = "res/seismic_vibrator_side.png", front = "res/seismic_vibrator_front.png", frontActive = "res/seismic_vibrator_front_on.png", top = "res/seismic_vibrator_top.png", bottom = "res/mek_steel_side.png" }, {
         kind = "seismic", energyCapacity = 20000, energyPerTick = 50, power = POWER
     })
     registerMachine("qio_drive_array", "QIO Drive Array", { front = "res/qio_drive_array_front.png", side = "res/qio_drive_array_side.png", top = "res/qio_drive_array_top.png", bottom = "res/qio_drive_array_bottom.png" }, {
         kind = "qio_drive", upgrades = false
     })
-    registerMachine("qio_dashboard", "QIO Dashboard", { side = "res/qio_dashboard_side.png", front = "res/qio_dashboard_front.png", frontActive = "res/qio_dashboard_front_on.png", top = "res/qio_dashboard_top.png", bottom = "res/mek_steel_side.png" }, {
+    registerMachine("qio_dashboard", "QIO Dashboard", { model = "res/models/qio_dashboard.json", modelActive = "res/models/qio_dashboard_active.json", side = "res/qio_dashboard_side.png", front = "res/qio_dashboard_front.png", frontActive = "res/qio_dashboard_front_on.png", top = "res/qio_dashboard_top.png", bottom = "res/mek_steel_side.png" }, {
         kind = "qio_dashboard", upgrades = false
     })
-    registerMachine("qio_importer", "QIO Importer", { side = "res/qio_importer_side.png", front = "res/qio_importer_front.png", frontActive = "res/qio_importer_front_on.png", top = "res/qio_importer_top.png", bottom = "res/mek_steel_side.png" }, {
+    registerMachine("qio_importer", "QIO Importer", { model = "res/models/qio_importer.json", modelActive = "res/models/qio_importer_active.json", side = "res/qio_importer_side.png", front = "res/qio_importer_front.png", frontActive = "res/qio_importer_front_on.png", top = "res/qio_importer_top.png", bottom = "res/mek_steel_side.png" }, {
         kind = "qio_importer", upgrades = false
     })
-    registerMachine("qio_exporter", "QIO Exporter", { side = "res/qio_exporter_side.png", front = "res/qio_exporter_front.png", frontActive = "res/qio_exporter_front_on.png", top = "res/qio_exporter_top.png", bottom = "res/mek_steel_side.png" }, {
+    registerMachine("qio_exporter", "QIO Exporter", { model = "res/models/qio_exporter.json", modelActive = "res/models/qio_exporter_active.json", side = "res/qio_exporter_side.png", front = "res/qio_exporter_front.png", frontActive = "res/qio_exporter_front_on.png", top = "res/qio_exporter_top.png", bottom = "res/mek_steel_side.png" }, {
         kind = "qio_exporter", upgrades = false
     })
-    registerMachine("quantum_entangloporter", "Quantum Entangloporter", { side = "res/quantum_entangloporter_side.png", front = "res/quantum_entangloporter_front.png", frontActive = "res/quantum_entangloporter_front_on.png", top = "res/quantum_entangloporter_top.png", bottom = "res/mek_steel_side.png" }, {
+    registerMachine("quantum_entangloporter", "Quantum Entangloporter", { model = "res/models/quantum_entangloporter.json", side = "res/quantum_entangloporter_side.png", front = "res/quantum_entangloporter_front.png", frontActive = "res/quantum_entangloporter_front_on.png", top = "res/quantum_entangloporter_top.png", bottom = "res/mek_steel_side.png" }, {
         kind = "entangloporter", energyCapacity = 10000000, tankCapacity = 64000, transfer = 1000000, upgrades = false
     })
-    registerMachine("modification_station", "Modification Station", { side = "res/modification_station_side.png", front = "res/modification_station_front.png", frontActive = "res/modification_station_front_on.png", top = "res/modification_station_top.png", bottom = "res/mek_steel_side.png" }, {
+    registerMachine("modification_station", "Modification Station", { model = "res/models/modification_station.json", side = "res/modification_station_side.png", front = "res/modification_station_front.png", frontActive = "res/modification_station_front_on.png", top = "res/modification_station_top.png", bottom = "res/mek_steel_side.png" }, {
         kind = "modification_station", energyCapacity = 100000, energyPerTick = 100, processTicks = 100, power = POWER
     })
 

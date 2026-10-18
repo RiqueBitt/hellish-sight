@@ -35,8 +35,13 @@ private:
 		wstring name;
 		int row;
 		int col;
+		int span = 1;		// Hellish Sight: square textures of 16 * span pixels use span x span cells
 		vector<int> pixels;
 	};
+	struct ModTextureAlloc { int row, col, span; };
+	unordered_map<wstring, ModTextureAlloc> m_modAlloc;	// Hellish Sight: cells stay the same across re-stitches
+	int m_terrainRows = 32;		// Hellish Sight: the terrain atlas doubles (32 -> 64 rows) when mods need cells
+	bool m_terrainUVsHalved = false;
 
 	vector<ModTextureCell> modTextures;
 	bool m_modTexturesAllocated;
