@@ -6,6 +6,7 @@
 #include "Minecraft.h"
 #include "Font.h"
 #include "Textures.h"
+#include "ResourceLocation.h"
 #include "ItemRenderer.h"
 #include "Lighting.h"
 #include "ItemInstance.h"
@@ -76,6 +77,13 @@ namespace Glance
 				std::swprintf(buffer, 32, L"%.1f", value);
 			}
 			return buffer;
+		}
+
+		// The engine binds textures through ResourceLocation; build it once.
+		ResourceLocation *guiIconsLocation()
+		{
+			static ResourceLocation location(TN_GUI_ICONS);
+			return &location;
 		}
 
 		int heartCount(float maxHealth)
@@ -342,7 +350,7 @@ namespace Glance
 			{
 				const int hearts = heartCount(target.maxHealth);
 				const int halfHearts = static_cast<int>(std::ceil((std::max)(0.0f, target.health)));
-				textures->bindTexture(TN_GUI_ICONS);
+				textures->bindTexture(guiIconsLocation());
 				glColor4f(1.0f, 1.0f, 1.0f, 1.0f);
 				for (int i = 0; i < hearts; ++i)
 				{
@@ -356,7 +364,7 @@ namespace Glance
 			}
 
 			case RowType::HealthNumbers:
-				textures->bindTexture(TN_GUI_ICONS);
+				textures->bindTexture(guiIconsLocation());
 				glColor4f(1.0f, 1.0f, 1.0f, 1.0f);
 				blit(textX, rowY, kHeartEmptyU, kHeartV, kHeartSize, kHeartSize);
 				blit(textX, rowY, kHeartFullU, kHeartV, kHeartSize, kHeartSize);
@@ -366,7 +374,7 @@ namespace Glance
 			case RowType::Armor:
 			{
 				const int icons = (std::min)((target.armor + 1) / 2, kHeartsPerRow);
-				textures->bindTexture(TN_GUI_ICONS);
+				textures->bindTexture(guiIconsLocation());
 				glColor4f(1.0f, 1.0f, 1.0f, 1.0f);
 				for (int i = 0; i < icons; ++i)
 				{

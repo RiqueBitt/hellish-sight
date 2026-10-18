@@ -662,14 +662,18 @@ void Gui::render(float a, bool mouseFree, int xMouse, int yMouse)
 			}
 			Lighting::turnOff();
 			glDisable(GL_RESCALE_NORMAL);
+		}
+#endif // RENDER_HUD
 
-			// Ruby Launcher: Glance "what am I looking at" panel (off unless a mod enables it)
+		// Ruby Launcher: Glance "what am I looking at" panel (off unless a mod enables it).
+		// Lives outside RENDER_HUD: on Windows64 the classic HUD block is compiled out (Iggy draws the HUD).
+		if (bDisplayGui)
+		{
 			Glance::Hud::get().render(minecraft,
 				(bTwoPlayerSplitscreen ? iWidthOffset : 0) + screenWidth / 2,
 				iSafezoneTopYHalf,
 				iPad);
 		}
-#endif // RENDER_HUD
 
 		// 4J - do render of crouched player. This code is largely taken from the inventory render of the player, with some special hard-coded positions
 		// worked out by hand from the xui implementation of the crouch icon
