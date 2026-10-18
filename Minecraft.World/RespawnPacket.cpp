@@ -56,7 +56,7 @@ void RespawnPacket::read(DataInputStream *dis) //throws IOException
 	m_newSeaLevel = dis->readBoolean();
 	m_newEntityId = dis->readShort();
 #ifdef _LARGE_WORLDS
-	m_xzSize = dis->readShort();
+	m_xzSize = dis->readInt();	// Hellish Sight: was readShort (infinite worlds need 22 bits)
 	m_hellScale = dis->read();
 #endif
 	app.DebugPrintf("RespawnPacket::read - Difficulty = %d\n",difficulty);
@@ -81,7 +81,7 @@ void RespawnPacket::write(DataOutputStream *dos) //throws IOException
 	dos->writeBoolean(m_newSeaLevel);
 	dos->writeShort(m_newEntityId);
 #ifdef _LARGE_WORLDS
-	dos->writeShort(m_xzSize);
+	dos->writeInt(m_xzSize);
 	dos->write(m_hellScale);
 #endif
 }

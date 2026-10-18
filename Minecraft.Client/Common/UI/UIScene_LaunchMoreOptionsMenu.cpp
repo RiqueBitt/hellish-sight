@@ -13,6 +13,15 @@ int m_iWorldSizeTitleA[4] =
 	IDS_WORLD_SIZE_TITLE_MEDIUM,
 	IDS_WORLD_SIZE_TITLE_LARGE,
 };
+
+// Hellish Sight: 5th slider stop, "Infinite" (no string table entry, so it's a literal)
+static const int kWorldSizeInfiniteIndex = 4;
+static LPCWSTR worldSizeLabel(int index)
+{
+	if (index >= kWorldSizeInfiniteIndex) return L"Infinito";
+	if (index < 0) index = 0;
+	return app.GetString(m_iWorldSizeTitleA[index]);
+}
 #endif
 
 UIScene_LaunchMoreOptionsMenu::UIScene_LaunchMoreOptionsMenu(int iPad, void *initData, UILayer *parentLayer) : UIScene(iPad, parentLayer)
@@ -109,11 +118,11 @@ UIScene_LaunchMoreOptionsMenu::UIScene_LaunchMoreOptionsMenu(int iPad, void *ini
 
 #ifdef _LARGE_WORLDS
 	m_labelWorldSize.init(app.GetString(IDS_WORLD_SIZE));
-	m_sliderWorldSize.init(app.GetString(m_iWorldSizeTitleA[m_params->worldSize]),eControl_WorldSize,0,3,m_params->worldSize);
+	m_sliderWorldSize.init(worldSizeLabel(m_params->worldSize),eControl_WorldSize,0,kWorldSizeInfiniteIndex,m_params->worldSize);
 
 	m_checkboxes[eLaunchCheckbox_DisableSaving].init( app.GetString(IDS_DISABLE_SAVING), eLaunchCheckbox_DisableSaving, m_params->bDisableSaving );
 	
-	if(m_params->currentWorldSize != e_worldSize_Unknown)
+	if(m_params->currentWorldSize != e_worldSize_Unknown && m_params->currentWorldSize != e_worldSize_Infinite)
 	{
 		m_labelWorldResize.init(app.GetString(IDS_INCREASE_WORLD_SIZE));
 		int min= static_cast<int>(m_params->currentWorldSize)-1;
@@ -649,7 +658,7 @@ void UIScene_LaunchMoreOptionsMenu::handleSliderMove(F64 sliderId, F64 currentVa
 #ifdef _LARGE_WORLDS
 		m_sliderWorldSize.handleSliderMove(value);
 		m_params->worldSize = value;
-		m_sliderWorldSize.setLabel(app.GetString(m_iWorldSizeTitleA[value]));
+		m_sliderWorldSize.setLabel(worldSizeLabel(value));
 #endif
 		break;
 	case eControl_WorldResize:

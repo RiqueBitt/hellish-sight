@@ -97,9 +97,14 @@ public:
 	shared_ptr<ItemInstance> getItemForRecipe(Recipy *r);
 	Recipy::INGREDIENTS_REQUIRED *getRecipeIngredientsArray();
 
+	// Ruby Launcher: mod recipes
+	void addRecipe(Recipy *recipe);
+	void rebuildIngredientsArray();
+
 private:
 	void buildRecipeIngredientsArray();
-	Recipy::INGREDIENTS_REQUIRED *m_pRecipeIngredientsRequired;
+	Recipy::INGREDIENTS_REQUIRED *m_pRecipeIngredientsRequired = nullptr;
+	int m_ingredientsCount = 0;
 
 public:
 	static ToolRecipies			*pToolRecipies;

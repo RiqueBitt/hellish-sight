@@ -1240,6 +1240,11 @@ void UIScene_CreateWorldMenu::CreateGame(UIScene_CreateWorldMenu* pClass, DWORD 
 		param->xzSize = LEVEL_WIDTH_LARGE;
 		param->hellScale = HELL_LEVEL_SCALE_LARGE; // hellsize = ceil(5*64/8) = 40
 		break;
+	case 4:
+		// Hellish Sight: Infinite (Java-sized, border at +/-29,999,984)
+		param->xzSize = LEVEL_WIDTH_INFINITE;
+		param->hellScale = HELL_LEVEL_SCALE_INFINITE;
+		break;
 	};
 #else
 	param->xzSize = LEVEL_MAX_WIDTH;

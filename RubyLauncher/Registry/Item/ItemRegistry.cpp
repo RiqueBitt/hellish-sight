@@ -202,24 +202,9 @@ int ItemRegistry::registerItem(const std::wstring& path, const std::string& id, 
         }
     }
 
-    if (def.isAccessory)
-    {
-        item->setAccessory();
-    }
-
     if (def.maxStackSize)
 	{
         item->setMaxStackSize(def.maxStackSize);
-    }
-
-	if (def.fireImmune)
-    {
-        item->setFireImmune();
-    }
-
-    if (def.blastImmune)
-    {
-        item->setBlastImmune();
     }
 
     langList[nameId] = wname;

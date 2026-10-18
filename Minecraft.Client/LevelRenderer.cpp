@@ -3355,6 +3355,18 @@ int LevelRenderer::getGlobalIndexForChunk(int x, int y, int z, int dimensionId)
 	int yy = y / CHUNK_SIZE;
 	int zz = ( z / CHUNK_XZSIZE )  + ( MAX_LEVEL_RENDER_SIZE[dimIdx] / 2 );
 
+	// Hellish Sight: the overworld and nether can be far bigger than these fixed tables
+	// (up to +/-29,999,984 blocks), so wrap positions around them (toroidal indexing).
+	// The visible window (2 * view distance + 1 chunks) is smaller than the table,
+	// so chunks on screen at the same time never share a slot; a slot that gets a new
+	// position is re-marked dirty by Chunk::setPos and rebuilt.
+	if( dimIdx != 2 )
+	{
+		const int size = MAX_LEVEL_RENDER_SIZE[dimIdx];
+		xx %= size; if( xx < 0 ) xx += size;
+		zz %= size; if( zz < 0 ) zz += size;
+	}
+
 	if( ( xx < 0 ) || ( xx >= MAX_LEVEL_RENDER_SIZE[dimIdx] ) ) return -1;
 	if( ( zz < 0 ) || ( zz >= MAX_LEVEL_RENDER_SIZE[dimIdx] ) ) return -1;
 	if( ( yy < 0 ) || ( yy >= CHUNK_Y_COUNT ) ) return -1;

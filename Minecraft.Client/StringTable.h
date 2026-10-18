@@ -67,6 +67,7 @@ public:
 
 	LPCWSTR getString(const wstring &id);
 	LPCWSTR getString(int id);
+	void registerString(int id, const wstring &value);	// Ruby Launcher: mod item/block names
 
 	//static LPCWSTR m_wchLocaleCode[LOCALE_COUNT];
 

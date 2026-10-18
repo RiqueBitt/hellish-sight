@@ -14,9 +14,14 @@ class TilePos;
 #define LEVEL_WIDTH_SMALL 64
 #define LEVEL_WIDTH_MEDIUM (3*64)
 #define LEVEL_WIDTH_LARGE (5*64)
+// Hellish Sight: Java-sized world, border at +/-29,999,984 blocks (3,749,998 chunks across).
+// LEVEL_MAX_WIDTH stays at the "Large" size because the renderer sizes its fixed tables with it.
+#define LEVEL_WIDTH_INFINITE 3749998
+#define LEVEL_ABSOLUTE_MAX_WIDTH LEVEL_WIDTH_INFINITE
 
 #else
 #define LEVEL_MAX_WIDTH 54
+#define LEVEL_ABSOLUTE_MAX_WIDTH LEVEL_MAX_WIDTH
 #endif
 #define LEVEL_MIN_WIDTH 54
 #define LEVEL_LEGACY_WIDTH 54
@@ -32,6 +37,7 @@ class TilePos;
 #define HELL_LEVEL_SCALE_SMALL 3
 #define HELL_LEVEL_SCALE_MEDIUM 6
 #define HELL_LEVEL_SCALE_LARGE 8
+#define HELL_LEVEL_SCALE_INFINITE 8
 
 #else
 #define HELL_LEVEL_MAX_SCALE 3

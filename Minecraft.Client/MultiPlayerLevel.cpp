@@ -681,12 +681,10 @@ void MultiPlayerLevel::animateTick(int xt, int yt, int zt)
 			{
 				if( ( cy + yy ) < 0 ) continue;
 				if( ( cy + yy ) > 15 ) continue;
-				// Note - LEVEL_MAX_WIDTH is in game (16) tile chunks, and so our level goes from -LEVEL_MAX_WIDTH to LEVEL_MAX_WIDTH of our half-sized chunks
-				if( ( cx + xx ) >= LEVEL_MAX_WIDTH ) continue;
-				if( ( cx + xx ) < -LEVEL_MAX_WIDTH ) continue;
-				if( ( cz + zz ) >= LEVEL_MAX_WIDTH ) continue;
-				if( ( cz + zz ) < -LEVEL_MAX_WIDTH ) continue;
-				chunksToAnimate.insert( ( ( ( cx + xx ) & 0xff ) << 16 ) | ( ( ( cy + yy ) & 0xff ) << 8 ) | ( ( ( cz + zz ) & 0xff ) ) );
+				// Hellish Sight: 28 bits for x/z (in 8-block units: +/-1 billion blocks), 8 bits for y
+				chunksToAnimate.insert( ( static_cast<int64_t>( ( cx + xx ) & 0x0fffffff ) << 36 ) |
+										( static_cast<int64_t>( ( cy + yy ) & 0xff ) << 28 ) |
+										  static_cast<int64_t>( ( cz + zz ) & 0x0fffffff ) );
 			}
 }
 
@@ -709,11 +707,12 @@ void MultiPlayerLevel::animateTickDoWork()
 
 	for( int i = 0; i < ticksPerChunk; i++ )
 	{
-		for(int packed : chunksToAnimate)
+		for(int64_t packed : chunksToAnimate)
 		{
-			int cx = ( packed << 8 ) >> 24;
-			int cy = ( packed << 16 ) >> 24;
-			int cz = ( packed << 24 ) >> 24;
+			// Sign-extend the 28-bit x/z fields
+			int cx = static_cast<int>( static_cast<uint32_t>( ( packed >> 36 ) & 0x0fffffff ) << 4 ) >> 4;
+			int cy = static_cast<int>( ( packed >> 28 ) & 0xff );
+			int cz = static_cast<int>( static_cast<uint32_t>( packed & 0x0fffffff ) << 4 ) >> 4;
 			cx <<= 3;
 			cy <<= 3;
 			cz <<= 3;

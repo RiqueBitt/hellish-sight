@@ -20,6 +20,12 @@ OreFeature::OreFeature(int tile, int count, int targetTile)
 	_init(tile, count, targetTile);
 }
 
+OreFeature::OreFeature(int tile, int data, int count, int targetTile)
+{
+	_init(tile, count, targetTile);
+	this->data = data;
+}
+
 bool OreFeature::place(Level *level, Random *random, int x, int y, int z)
 {
 	PIXBeginNamedEvent(0,"Place Ore Feature");
@@ -134,7 +140,7 @@ bool OreFeature::place(Level *level, Random *random, int x, int y, int z)
 							{
                                 if ( level->getTile(x2, y2, z2) == targetTile)
 								{									
-									level->setTileAndData(x2, y2, z2, tile, 0, Tile::UPDATE_INVISIBLE_NO_LIGHT);
+									level->setTileAndData(x2, y2, z2, tile, data, Tile::UPDATE_INVISIBLE_NO_LIGHT);
 								}
                             }
                         }

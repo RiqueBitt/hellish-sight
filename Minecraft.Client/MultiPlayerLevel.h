@@ -84,7 +84,7 @@ protected:
 
 public:
 	void animateTickDoWork();			// 4J added
-	unordered_set<int> chunksToAnimate;	// 4J added
+	unordered_set<int64_t> chunksToAnimate;	// 4J added (Hellish Sight: 64-bit keys for big worlds)
 
 public:
 	void removeAllPendingEntityRemovals();

@@ -154,7 +154,7 @@ LevelData::LevelData(CompoundTag *tag)
 #endif
 
 
-	m_xzSize = min(m_xzSize,LEVEL_MAX_WIDTH);
+	m_xzSize = min(m_xzSize,LEVEL_ABSOLUTE_MAX_WIDTH);
 	m_xzSize = max(m_xzSize,LEVEL_MIN_WIDTH);
 
 	m_hellScale = min(m_hellScale,HELL_LEVEL_MAX_SCALE);
@@ -176,6 +176,7 @@ LevelData::LevelData(CompoundTag *tag)
 	case LEVEL_WIDTH_SMALL:		hostOptionworldSize = e_worldSize_Small;		break;
 	case LEVEL_WIDTH_MEDIUM:	hostOptionworldSize = e_worldSize_Medium;		break;
 	case LEVEL_WIDTH_LARGE:		hostOptionworldSize = e_worldSize_Large;		break;
+	case LEVEL_WIDTH_INFINITE:	hostOptionworldSize = e_worldSize_Infinite;		break;
 	default: assert(0);		break;
 	}
 	app.SetGameHostOption(eGameHostOption_WorldSize, hostOptionworldSize );
@@ -243,7 +244,7 @@ LevelData::LevelData(LevelSettings *levelSettings, const wstring& levelName)
 	m_xzSize = levelSettings->getXZSize();
 	m_hellScale = levelSettings->getHellScale();
 
-	m_xzSize = min(m_xzSize,LEVEL_MAX_WIDTH);
+	m_xzSize = min(m_xzSize,LEVEL_ABSOLUTE_MAX_WIDTH);
 	m_xzSize = max(m_xzSize,LEVEL_MIN_WIDTH);
 
 	m_hellScale = min(m_hellScale,HELL_LEVEL_MAX_SCALE);

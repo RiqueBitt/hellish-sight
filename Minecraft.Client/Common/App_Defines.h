@@ -37,7 +37,7 @@
 #define GAME_HOST_OPTION_BITMASK_BEDROCKFOG			0x00020000
 #define GAME_HOST_OPTION_BITMASK_DISABLESAVE		0x00040000
 #define GAME_HOST_OPTION_BITMASK_NOTOWNER			0x00080000
-#define GAME_HOST_OPTION_BITMASK_WORLDSIZE			0x00700000 // 3 bits, 5 values (unset(0), classic(1), small(2), medium(3), large(4))
+#define GAME_HOST_OPTION_BITMASK_WORLDSIZE			0x00700000 // 3 bits, 6 values (unset(0), classic(1), small(2), medium(3), large(4), infinite(5))
 #define GAME_HOST_OPTION_BITMASK_MOBGRIEFING		0x00800000
 #define GAME_HOST_OPTION_BITMASK_KEEPINVENTORY		0x01000000
 #define GAME_HOST_OPTION_BITMASK_DOMOBSPAWNING		0x02000000
@@ -55,7 +55,8 @@ enum EGameHostOptionWorldSize
 	e_worldSize_Classic,
 	e_worldSize_Small,
 	e_worldSize_Medium,
-	e_worldSize_Large
+	e_worldSize_Large,
+	e_worldSize_Infinite	// Hellish Sight: +/-29,999,984 like Java
 };
 
 

@@ -3,13 +3,17 @@
 #include "BirchFeature.h"
 #include "net.minecraft.world.level.tile.h"
 
-BirchFeature::BirchFeature(bool doUpdate) : Feature(doUpdate)
+BirchFeature::BirchFeature(bool doUpdate) : Feature(doUpdate), baseHeight(5), trunkType(TreeTile::BIRCH_TRUNK), leafType(LeafTile::BIRCH_LEAF), trunkTile(Tile::treeTrunk_Id), leafTile(Tile::leaves_Id)
+{
+}
+
+BirchFeature::BirchFeature(bool doUpdate, int baseHeight, int trunkType, int leafType, int trunkTile, int leafTile) : Feature(doUpdate), baseHeight(baseHeight), trunkType(trunkType), leafType(leafType), trunkTile(trunkTile), leafTile(leafTile)
 {
 }
 
 bool BirchFeature::place(Level *level, Random *random, int x, int y, int z)
 {
-	int treeHeight = random->nextInt(3) + 5;
+	int treeHeight = random->nextInt(3) + baseHeight;
 
 	bool free = true;
 	if (y < 1 || y + treeHeight + 1 > Level::maxBuildHeight) return false;
@@ -26,7 +30,7 @@ bool BirchFeature::place(Level *level, Random *random, int x, int y, int z)
 				if (yy >= 0 && yy < Level::maxBuildHeight)
 				{
 					int tt = level->getTile(xx, yy, zz);
-					if (tt != 0 && tt != Tile::leaves_Id) free = false;
+					if (tt != 0 && tt != leafTile) free = false;
 				}
 				else
 				{
@@ -68,14 +72,14 @@ bool BirchFeature::place(Level *level, Random *random, int x, int y, int z)
 				int zo = zz - (z);
 				if (abs(xo) == offs && abs(zo) == offs && (random->nextInt(2) == 0 || yo == 0)) continue;
 				int t = level->getTile(xx, yy, zz);
-				if (t == 0 || t == Tile::leaves_Id) placeBlock(level, xx, yy, zz, Tile::leaves_Id, LeafTile::BIRCH_LEAF);
+				if (t == 0 || t == leafTile) placeBlock(level, xx, yy, zz, leafTile, leafType);
 			}
 		}
 	}
 	for (int hh = 0; hh < treeHeight; hh++)
 	{
 		int t = level->getTile(x, y + hh, z);
-		if (t == 0 || t == Tile::leaves_Id) placeBlock(level, x, y + hh, z, Tile::treeTrunk_Id, TreeTile::BIRCH_TRUNK);
+		if (t == 0 || t == leafTile) placeBlock(level, x, y + hh, z, trunkTile, trunkType);
 	}
 	return true;
 
