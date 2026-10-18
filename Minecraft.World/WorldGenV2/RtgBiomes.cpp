@@ -203,8 +203,10 @@ namespace WorldGenV2
 		const BlockState SNOW_BLOCK(Tile::snow_Id);
 		const BlockState ICE(Tile::ice_Id);
 		const BlockState MYCELIUM(Tile::mycel_Id);
-		const BlockState PODZOL = GRASS;	// no podzol in this version of the game; bare dirt patches looked wrong, so grass
-		const BlockState PACKED_ICE = ICE;	// no packed ice either
+		const BlockState PODZOL(Tile::dirt_Id, 2);			// DirtTile::PODZOL (neoLegacy TU31)
+		const BlockState PACKED_ICE(Tile::packedIce_Id);
+		const BlockState RED_SAND(Tile::sand_Id, 1);		// SandTile::RED_SAND
+		const BlockState HARDENED_CLAY(Tile::clayHardened_Id);
 		const BlockState SHADOW_STONE(Tile::clayHardened_colored_Id, 9);	// cyan stained hardened clay (RTG default)
 		const int WATER_ID = Tile::calmWater_Id;
 
@@ -709,6 +711,49 @@ namespace WorldGenV2
 			}
 		}
 
+		// Mesa (RTG SurfaceMesa): red sand on flat ground, banded hardened clay on slopes and below
+		BlockState mesaBand(int y)
+		{
+			// Java 1.7 clay band order (white, orange, yellow, brown, red, light grey, plain)
+			static const int bands[16] = { -1, 1, 1, 4, -1, 12, 14, 14, -1, 0, 1, -1, 8, 4, -1, 14 };
+			const int d = bands[((y % 16) + 16) % 16];
+			if (d < 0) return HARDENED_CLAY;
+			return BlockState(Tile::clayHardened_colored_Id, d);
+		}
+
+		void paintMesa(ChunkPrimer &primer, int x, int z, int depth, const float *noise)
+		{
+			const float cliff = Terrain::calcCliff(x, z, noise, 0.0f);
+			for (int k = 255; k > -1; k--)
+			{
+				int b = primer.getBlock(x, k, z);
+				if (isAir(b))
+				{
+					depth = -1;
+				}
+				else if (isStone(b))
+				{
+					depth++;
+					if (cliff > 1.4f)
+					{
+						if (depth > -1 && depth < 25) primer.setBlock(x, k, z, mesaBand(k));
+					}
+					else if (depth == 0 && k > 61)
+					{
+						primer.setBlock(x, k, z, RED_SAND);
+					}
+					else if (depth > 0 && depth < 4 && k > 61)
+					{
+						primer.setBlock(x, k, z, HARDENED_CLAY);
+					}
+					else if (depth > -1 && depth < 25 && k > 50)
+					{
+						primer.setBlock(x, k, z, mesaBand(k));
+					}
+				}
+			}
+		}
+
 		// SurfaceVanillaBeach (also stone / cold beach)
 		void paintBeach(ChunkPrimer &primer, int x, int z, int depth, const BlockState &top, const BlockState &filler, const BlockState &mixFill)
 		{
@@ -1068,13 +1113,124 @@ namespace WorldGenV2
 				};
 			}
 
+			// --- neoLegacy (TU25/TU31) biomes ---------------------------------------
+			// Each one keeps its own game biome (trees, mobs, colours) and borrows the
+			// closest RTG terrain shape and surface.
+			auto alias = [](Biome *biome, int templateId) -> BasicBiome *
+			{
+				if (biome == nullptr || g_biomes[templateId] == nullptr || g_biomes[biome->id] != nullptr) return nullptr;
+				BasicBiome *b = new BasicBiome(*static_cast<BasicBiome *>(g_biomes[templateId]));
+				b->rtgId = biome->id;
+				b->baseBiomeId = biome->id;
+				g_storage.emplace_back(b);
+				g_biomes[biome->id] = b;
+				return b;
+			};
+			if (Biome::deepOcean != nullptr)
+			{
+				BasicBiome *b = make(Biome::deepOcean->id, Biome::deepOcean);
+				b->allowRivers = false;
+				b->allowScenicLakes = false;
+				b->terrain = [](const RtgWorld &w, int x, int y, float, float river) { return terrainOcean(x, y, w, river, 40.0f); };
+				b->surface = [](ChunkPrimer &p, int i, int j, int x, int z, int d, const RtgWorld &w, const float *, float) {
+					paintOcean(p, i, j, x, z, d, w, GRAVEL, GRAVEL, SAND, 20.0f, 0.2f);
+				};
+			}
+			if (Biome::coldBeach != nullptr)
+			{
+				BasicBiome *b = alias(Biome::coldBeach, COLD_BEACH);
+				if (b) b->beachRtgId = Biome::coldBeach->id;
+				// RTG's cold beach now has a real game biome
+				static_cast<BasicBiome *>(g_biomes[COLD_BEACH])->baseBiomeId = Biome::coldBeach->id;
+				for (int id : { (int)Biome::frozenOcean->id, (int)Biome::frozenRiver->id, (int)Biome::iceFlats->id, (int)Biome::iceMountains->id })
+					if (g_biomes[id]) g_biomes[id]->beachRtgId = Biome::coldBeach->id;
+			}
+			// Mesa family: desert dunes / highlands painted with red sand and clay bands
+			for (Biome *mesa : { Biome::mesa, Biome::mesaBryce })
+			{
+				if (mesa == nullptr) continue;
+				BasicBiome *b = make(mesa->id, mesa);
+				b->allowScenicLakes = false;
+				b->riverOasis = true;
+				b->terrain = [](const RtgWorld &w, int x, int y, float, float river) {
+					return terrainHighland(static_cast<float>(x), static_cast<float>(y), w, river, 20.0f, 140.0f, 40.0f, 70.0f - 62.0f);
+				};
+				b->surface = [](ChunkPrimer &p, int, int, int x, int z, int d, const RtgWorld &, const float *n, float) { paintMesa(p, x, z, d, n); };
+			}
+			for (Biome *mesa : { Biome::mesaPlateauF, Biome::mesaPlateau, Biome::mesaPlateauFM, Biome::mesaPlateauM })
+			{
+				if (mesa == nullptr) continue;
+				BasicBiome *b = make(mesa->id, mesa);
+				b->allowScenicLakes = false;
+				b->allowRivers = false;
+				b->terrain = [](const RtgWorld &w, int x, int y, float, float river) {
+					return terrainHighland(static_cast<float>(x), static_cast<float>(y), w, river, 30.0f, 200.0f, 65.0f, 80.0f - 62.0f);
+				};
+				b->surface = [](ChunkPrimer &p, int, int, int x, int z, int d, const RtgWorld &, const float *n, float) { paintMesa(p, x, z, d, n); };
+			}
+			// Savanna: plains-like grassland, plateaus as highlands
+			for (Biome *s : { Biome::savanna, Biome::savannaM })
+			{
+				if (s == nullptr) continue;
+				BasicBiome *b = make(s->id, s);
+				Biome *base = s;
+				b->terrain = [](const RtgWorld &w, int x, int y, float, float river) {
+					return terrainPlains(x, y, w, river, 160.0f, 10.0f, 60.0f, 80.0f, 66.0f);
+				};
+				(void)base;
+				b->surface = [](ChunkPrimer &p, int i, int j, int x, int z, int d, const RtgWorld &w, const float *n, float r) {
+					MixedCliffParams mp;
+					mp.min = 1.0f;
+					paintMixedCliff(p, i, j, x, z, d, w, n, r, GRASS, DIRT, mp);
+				};
+			}
+			for (Biome *s : { Biome::savannaPlateau, Biome::savannaPlateauM })
+			{
+				if (s == nullptr) continue;
+				BasicBiome *b = make(s->id, s);
+				b->allowScenicLakes = false;
+				b->terrain = [](const RtgWorld &w, int x, int y, float, float river) {
+					return terrainHighland(static_cast<float>(x), static_cast<float>(y), w, river, 20.0f, 200.0f, 55.0f, 76.0f - 62.0f);
+				};
+				b->surface = [](ChunkPrimer &p, int i, int j, int x, int z, int d, const RtgWorld &w, const float *n, float r) {
+					MixedCliffParams mp;
+					mp.min = 1.0f;
+					paintMixedCliff(p, i, j, x, z, d, w, n, r, GRASS, DIRT, mp);
+				};
+			}
+			alias(Biome::jungleEdge, Biome::jungle->id);
+			alias(Biome::jungleM, Biome::jungle->id);
+			alias(Biome::jungleEdgeM, Biome::jungle->id);
+			alias(Biome::birchForest, Biome::forest->id);
+			alias(Biome::roofedForest, Biome::forest->id);
+			alias(Biome::flowerForest, Biome::forest->id);
+			alias(Biome::birchForestM, Biome::forest->id);
+			alias(Biome::roofedForestM, Biome::forest->id);
+			alias(Biome::birchForestHills, Biome::forestHills->id);
+			alias(Biome::birchForestHillsM, Biome::forestHills->id);
+			alias(Biome::coldTaiga, Biome::taiga->id);
+			alias(Biome::coldTaigaM, Biome::taiga->id);
+			alias(Biome::megaTaiga, Biome::taiga->id);
+			alias(Biome::redwoodTaiga, Biome::taiga->id);
+			alias(Biome::taigaM, Biome::taiga->id);
+			alias(Biome::coldTaigaHills, Biome::taigaHills->id);
+			alias(Biome::megaTaigaHills, Biome::taigaHills->id);
+			alias(Biome::redwoodTaigaHills, Biome::taigaHills->id);
+			alias(Biome::extremeHills_plus, Biome::extremeHills->id);
+			alias(Biome::sunflowersPlains, Biome::plains->id);
+			alias(Biome::desertM, Biome::desert->id);
+			alias(Biome::swamplandM, Biome::swampland->id);
+			alias(Biome::iceSpikes, Biome::iceFlats->id);
+
 			// Biome classes used by the BiomeAnalyzer (Forge BiomeDictionary equivalents)
 			for (int id = 0; id < 256; id++)
 			{
-				if (id == Biome::ocean->id || id == Biome::frozenOcean->id) g_ocean[id] = true;
+				const bool deepOcean = Biome::deepOcean != nullptr && id == Biome::deepOcean->id;
+				const bool coldBeach = Biome::coldBeach != nullptr && id == Biome::coldBeach->id;
+				if (id == Biome::ocean->id || id == Biome::frozenOcean->id || deepOcean) g_ocean[id] = true;
 				else if (id == Biome::river->id || id == Biome::frozenRiver->id) g_river[id] = true;
-				else if (id == Biome::swampland->id) g_swamp[id] = true;
-				else if (id == Biome::beaches->id || id == Biome::mushroomIslandShore->id || id == STONE_BEACH || id == COLD_BEACH) g_beach[id] = true;
+				else if (id == Biome::swampland->id || (Biome::swamplandM != nullptr && id == Biome::swamplandM->id)) g_swamp[id] = true;
+				else if (id == Biome::beaches->id || id == Biome::mushroomIslandShore->id || id == STONE_BEACH || id == COLD_BEACH || coldBeach) g_beach[id] = true;
 				else g_land[id] = true;
 			}
 		}
