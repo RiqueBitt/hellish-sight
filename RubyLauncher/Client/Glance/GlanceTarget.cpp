@@ -72,19 +72,19 @@ namespace Glance
 			switch (tileId)
 			{
 			case Tile::netherStalk_Id:
-				return std::min(data, 3) / 3.0f;
+				return (std::min)(data, 3) / 3.0f;
 			case Tile::cocoa_Id:
-				return std::min((data >> 2) & 3, 2) / 2.0f;
+				return (std::min)((data >> 2) & 3, 2) / 2.0f;
 			case Tile::pumpkinStem_Id:
 			case Tile::melonStem_Id:
-				return std::min(data & 7, 7) / 7.0f;
+				return (std::min)(data & 7, 7) / 7.0f;
 			default:
 				break;
 			}
 
 			if (dynamic_cast<CropTile *>(tile) != nullptr)
 			{
-				return std::min(data & 7, 7) / 7.0f;
+				return (std::min)(data & 7, 7) / 7.0f;
 			}
 			return -1.0f;
 		}
@@ -192,7 +192,7 @@ namespace Glance
 				if (mc->gameMode->getGlanceDestroyState(bx, by, bz, progress) &&
 					bx == hit->x && by == hit->y && bz == hit->z)
 				{
-					out.breakProgress = std::max(0.0f, std::min(progress, 1.0f));
+					out.breakProgress = (std::max)(0.0f, (std::min)(progress, 1.0f));
 				}
 			}
 

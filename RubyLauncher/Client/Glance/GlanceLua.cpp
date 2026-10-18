@@ -119,7 +119,7 @@ namespace Glance
 			if (result.get_type() == sol::type::table)
 			{
 				sol::table lines = result.as<sol::table>();
-				const size_t count = std::min(lines.size(), kMaxLinesPerProvider);
+				const size_t count = (std::min)(lines.size(), kMaxLinesPerProvider);
 				for (size_t i = 1; i <= count; ++i)
 				{
 					sol::object entry = lines[i];
@@ -160,13 +160,13 @@ namespace Glance
 			setBool("showBreakProgress", cfg.showBreakProgress);
 
 			sol::optional<double> opacity = options["opacity"];
-			if (opacity) cfg.opacity = static_cast<float>(std::max(0.0, std::min(*opacity, 1.0)));
+			if (opacity) cfg.opacity = static_cast<float>((std::max)(0.0, (std::min)(*opacity, 1.0)));
 
 			sol::optional<int> offsetY = options["offsetY"];
-			if (offsetY) cfg.offsetY = std::max(-64, std::min(*offsetY, 512));
+			if (offsetY) cfg.offsetY = (std::max)(-64, (std::min)(*offsetY, 512));
 
 			sol::optional<int> maxHearts = options["maxHearts"];
-			if (maxHearts) cfg.maxHearts = std::max(1, std::min(*maxHearts, 100));
+			if (maxHearts) cfg.maxHearts = (std::max)(1, (std::min)(*maxHearts, 100));
 
 			setColor("backgroundColor", cfg.backgroundColor);
 			setColor("borderTopColor", cfg.borderTopColor);

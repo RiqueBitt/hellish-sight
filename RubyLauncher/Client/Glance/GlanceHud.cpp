@@ -80,7 +80,7 @@ namespace Glance
 
 		int heartCount(float maxHealth)
 		{
-			return std::max(1, static_cast<int>(std::ceil(maxHealth / 2.0f)));
+			return (std::max)(1, static_cast<int>(std::ceil(maxHealth / 2.0f)));
 		}
 	}
 
@@ -98,7 +98,7 @@ namespace Glance
 
 	unsigned int Hud::withOpacity(unsigned int argb) const
 	{
-		const float opacity = std::max(0.0f, std::min(m_config.opacity, 1.0f));
+		const float opacity = (std::max)(0.0f, (std::min)(m_config.opacity, 1.0f));
 		const unsigned int alpha = static_cast<unsigned int>(((argb >> 24) & 0xFFu) * opacity + 0.5f);
 		return (alpha << 24) | (argb & 0x00FFFFFFu);
 	}
@@ -210,9 +210,9 @@ namespace Glance
 		{
 			const int hearts = heartCount(target.maxHealth);
 			Row row;
-			if (hearts <= std::max(1, m_config.maxHearts))
+			if (hearts <= (std::max)(1, m_config.maxHearts))
 			{
-				const int perRow = std::min(hearts, kHeartsPerRow);
+				const int perRow = (std::min)(hearts, kHeartsPerRow);
 				const int lines = (hearts + kHeartsPerRow - 1) / kHeartsPerRow;
 				row.type = RowType::Hearts;
 				row.width = perRow * kHeartStep + 1;
@@ -221,7 +221,7 @@ namespace Glance
 			else
 			{
 				row.type = RowType::HealthNumbers;
-				row.text = formatNumber(std::max(0.0f, target.health)) + L" / " + formatNumber(target.maxHealth);
+				row.text = formatNumber((std::max)(0.0f, target.health)) + L" / " + formatNumber(target.maxHealth);
 				row.width = kHeartSize + 2 + font->width(row.text);
 			}
 			rows.push_back(row);
@@ -229,7 +229,7 @@ namespace Glance
 
 		if (m_config.showArmor && target.kind == TargetKind::Entity && target.armor > 0)
 		{
-			const int icons = std::min((target.armor + 1) / 2, kHeartsPerRow);
+			const int icons = (std::min)((target.armor + 1) / 2, kHeartsPerRow);
 			Row row;
 			row.type = RowType::Armor;
 			row.width = icons * kHeartStep + 1;
@@ -277,18 +277,18 @@ namespace Glance
 		int textHeight = 0;
 		for (const Row &row : rows)
 		{
-			textWidth = std::max(textWidth, row.width);
+			textWidth = (std::max)(textWidth, row.width);
 			textHeight += row.height;
 		}
-		textHeight = std::max(0, textHeight - 2); // last line needs no leading
+		textHeight = (std::max)(0, textHeight - 2); // last line needs no leading
 
 		const int width = iconColumn + textWidth;
-		const int height = std::max(hasIcon ? kIconSize : 0, textHeight);
+		const int height = (std::max)(hasIcon ? kIconSize : 0, textHeight);
 
 		const int x = centerX - width / 2;
 		const int y = topY + kPanelMargin;
 		const int textX = x + iconColumn;
-		const int textY = y + std::max(0, (height - textHeight) / 2);
+		const int textY = y + (std::max)(0, (height - textHeight) / 2);
 
 		// ---- Panel -----------------------------------------------------------
 		drawPanel(x, y, width, height);
@@ -341,7 +341,7 @@ namespace Glance
 			case RowType::Hearts:
 			{
 				const int hearts = heartCount(target.maxHealth);
-				const int halfHearts = static_cast<int>(std::ceil(std::max(0.0f, target.health)));
+				const int halfHearts = static_cast<int>(std::ceil((std::max)(0.0f, target.health)));
 				textures->bindTexture(TN_GUI_ICONS);
 				glColor4f(1.0f, 1.0f, 1.0f, 1.0f);
 				for (int i = 0; i < hearts; ++i)
@@ -365,7 +365,7 @@ namespace Glance
 
 			case RowType::Armor:
 			{
-				const int icons = std::min((target.armor + 1) / 2, kHeartsPerRow);
+				const int icons = (std::min)((target.armor + 1) / 2, kHeartsPerRow);
 				textures->bindTexture(TN_GUI_ICONS);
 				glColor4f(1.0f, 1.0f, 1.0f, 1.0f);
 				for (int i = 0; i < icons; ++i)
