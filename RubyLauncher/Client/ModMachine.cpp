@@ -214,7 +214,7 @@ namespace ModMachines
 		FurnaceTileEntity::s_extraFuelCheck = [](shared_ptr<ItemInstance> item) -> bool {
 			return item != nullptr && isAnyMachinePowerItem(item->id, item->getAuxValue());
 		};
-		registerChemical("minecraft:water", L"Água", 0x3F76E4, false);
+		registerChemical("minecraft:water", L"\u00C1gua", 0x3F76E4, false);
 		registerChemical("minecraft:lava", L"Lava", 0xFF6A00, false);
 	}
 
@@ -1368,7 +1368,7 @@ void ModMachineTileEntity::tickTeleporter(ModMachineDef *d)
 			setChanged();
 			return;
 		}
-		sp->sendMessage(L"Nenhum outro teleporter na frequência " + std::to_wstring(m_frequency));
+		sp->sendMessage(L"Nenhum outro teleporter na frequ\u00EAncia " + std::to_wstring(m_frequency));
 		m_teleportCooldown = 60;
 		return;
 	}
@@ -1473,9 +1473,9 @@ static const wchar_t *faceModeName(int mode)
 	switch (mode)
 	{
 	case ModMachineTileEntity::FACE_INPUT: return L"entrada";
-	case ModMachineTileEntity::FACE_OUTPUT: return L"saída";
+	case ModMachineTileEntity::FACE_OUTPUT: return L"sa\u00EDda";
 	case ModMachineTileEntity::FACE_DISABLED: return L"desligada";
-	default: return L"padrão";
+	default: return L"padr\u00E3o";
 	}
 }
 
@@ -1500,7 +1500,7 @@ void ModMachineTileEntity::sendStatus(shared_ptr<Player> player)
 	for (int t = 0; t < TANK_COUNT; t++)
 	{
 		if (m_tanks[t].amount <= 0) continue;
-		player->sendMessage(std::wstring(t < TANK_OUT0 ? L"Tanque: " : L"Saída: ") + ModMachines::chemicalName(m_tanks[t].name) + L" " + fmtNum(m_tanks[t].amount) + L" / " + fmtNum(tankCapacity()) + L" mB");
+		player->sendMessage(std::wstring(t < TANK_OUT0 ? L"Tanque: " : L"Sa\u00EDda: ") + ModMachines::chemicalName(m_tanks[t].name) + L" " + fmtNum(m_tanks[t].amount) + L" / " + fmtNum(tankCapacity()) + L" mB");
 	}
 	if (d->kind == MachineKind_Processor && m_progress > 0)
 	{
@@ -1509,8 +1509,8 @@ void ModMachineTileEntity::sendStatus(shared_ptr<Player> player)
 	}
 	if (m_upgrades[UPG_SPEED] || m_upgrades[UPG_ENERGY] || m_upgrades[UPG_MUFFLING])
 		player->sendMessage(L"Upgrades: velocidade " + std::to_wstring(m_upgrades[UPG_SPEED]) + L", energia " + std::to_wstring(m_upgrades[UPG_ENERGY]) + L", silenciador " + std::to_wstring(m_upgrades[UPG_MUFFLING]));
-	if (d->kind == MachineKind_Teleporter) player->sendMessage(L"Frequência: " + std::to_wstring(m_frequency));
-	if (d->kind == MachineKind_Miner) player->sendMessage(std::wstring(L"Filtro: ") + (m_minerAll ? L"todos os blocos" : L"só minérios") + L" | " + std::to_wstring(m_minerCursor) + L" blocos verificados");
+	if (d->kind == MachineKind_Teleporter) player->sendMessage(L"Frequ\u00EAncia: " + std::to_wstring(m_frequency));
+	if (d->kind == MachineKind_Miner) player->sendMessage(std::wstring(L"Filtro: ") + (m_minerAll ? L"todos os blocos" : L"s\u00F3 min\u00E9rios") + L" | " + std::to_wstring(m_minerCursor) + L" blocos verificados");
 	if (!m_buffer.empty()) player->sendMessage(L"Itens aguardando: " + std::to_wstring(m_buffer.size()) + L" pilha(s)");
 	if (!isConnectorKind(d->kind) && d->kind != MachineKind_Storage && d->kind != MachineKind_Tank)
 		player->sendMessage(std::wstring(L"Auto-eject: ") + (m_eject ? L"ligado" : L"desligado"));
@@ -1587,13 +1587,13 @@ bool ModMachineTileEntity::interact(shared_ptr<Player> player, int face)
 		if (d->kind == MachineKind_Teleporter)
 		{
 			m_frequency = (m_frequency + 1) % 16;
-			player->sendMessage(L"Frequência do teleporter: " + std::to_wstring(m_frequency));
+			player->sendMessage(L"Frequ\u00EAncia do teleporter: " + std::to_wstring(m_frequency));
 		}
 		else if (d->kind == MachineKind_Miner && face == Facing::UP)
 		{
 			m_minerAll = !m_minerAll;
 			m_minerCursor = 0;
-			player->sendMessage(std::wstring(L"Digital Miner: ") + (m_minerAll ? L"minerando todos os blocos" : L"minerando só minérios") + L" (reiniciado)");
+			player->sendMessage(std::wstring(L"Digital Miner: ") + (m_minerAll ? L"minerando todos os blocos" : L"minerando s\u00F3 min\u00E9rios") + L" (reiniciado)");
 		}
 		else if (!isConnectorKind(d->kind) && face == frontFace() && d->kind != MachineKind_Storage && d->kind != MachineKind_Tank)
 		{
@@ -1616,7 +1616,7 @@ bool ModMachineTileEntity::interact(shared_ptr<Player> player, int face)
 		const int u = role == MachineTool_UpgradeSpeed ? UPG_SPEED : role == MachineTool_UpgradeEnergy ? UPG_ENERGY : UPG_MUFFLING;
 		if (m_upgrades[u] >= MAX_UPGRADES)
 		{
-			player->sendMessage(L"Este upgrade já está no máximo (8)");
+			player->sendMessage(L"Este upgrade j\u00E1 est\u00E1 no m\u00E1ximo (8)");
 			return true;
 		}
 		m_upgrades[u]++;
