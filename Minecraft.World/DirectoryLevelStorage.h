@@ -3,7 +3,9 @@ using namespace std;
 
 #ifdef _LARGE_WORLDS
 // 51 maps per player (7x7 overworld, 1 nether, 1 end) * 100 players rounded up to power of 2
-#define MAXIMUM_MAP_SAVE_DATA 8192//65536
+// Hellish Sight: raised from 8192 for the +-30M world (one map per 1024x1024 grid cell).
+// Map ids travel as signed shorts, so 32768 is the safe ceiling.
+#define MAXIMUM_MAP_SAVE_DATA 32768
 
 // 4J Stu - These are special map slots that are used on local machines. They will never be an actual map,
 // but are placeholders for when we get updated with the correct id

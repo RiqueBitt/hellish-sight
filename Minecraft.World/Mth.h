@@ -2,6 +2,17 @@
 class Random;
 class Mth
 {
+public:
+	// Hellish Sight: Java's (int) cast of a double (saturating, NaN -> 0). Used where
+	// huge noise values (Far Lands) would otherwise hit C++ undefined behaviour.
+	static int javaD2I(double v)
+	{
+		if (v != v) return 0;
+		if (v >= 2147483647.0) return 2147483647;
+		if (v <= -2147483648.0) return (-2147483647 - 1);
+		return static_cast<int>(v);
+	}
+
 private:
 	static const int BIG_ENOUGH_INT;
 	static const float BIG_ENOUGH_FLOAT;

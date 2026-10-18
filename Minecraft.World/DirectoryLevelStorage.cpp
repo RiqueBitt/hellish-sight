@@ -291,7 +291,14 @@ LevelData *DirectoryLevelStorage::prepareLevel()
 #endif
 				m_playerMappings[playerUid].readMappings(&dis);
 			}
-			dis.readFully(m_usedMappings);
+			// Hellish Sight: older saves stored a smaller used-id bitmap; read what is there and
+			// leave the rest (zero-initialised) free.
+			for (unsigned int got = 0; got < m_usedMappings.length; )
+			{
+				const int n = dis.read(m_usedMappings, got, m_usedMappings.length - got);
+				if (n <= 0) break;
+				got += static_cast<unsigned int>(n);
+			}
 #else
 
 			if(getSaveFile()->getSaveVersion() < END_DIMENSION_MAP_MAPPINGS_SAVE_VERSION)

@@ -377,7 +377,7 @@ void RandomLevelSource::buildSurfaces(int xOffs, int zOffs, byteArray blocks, Bi
 		{
 			Biome *b = biomes[z + x * 16];
 			float temp = b->getTemperature();
-			int runDepth = static_cast<int>(depthBuffer[x + z * 16] / 3 + 3 + random->nextDouble() * 0.25);
+			int runDepth = Mth::javaD2I(depthBuffer[x + z * 16] / 3 + 3 + random->nextDouble() * 0.25);	// Hellish Sight: Java cast semantics (Far Lands)
 
 			int run = -1;
 
