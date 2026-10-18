@@ -2407,10 +2407,9 @@ void Level::tickEntities()
 			}
 			if( found )
 			{
-				if(isClientSide)
-				{
-					__debugbreak();
-				}
+				// Hellish Sight: the client now frees far-away chunks (bounded memory for big
+				// worlds), so unloading client tile entities is expected here. The old 4J
+				// __debugbreak() for that case crashed the game when travelling far.
 				it = tileEntityList.erase(it);
 			}
 			else
