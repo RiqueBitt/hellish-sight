@@ -46,7 +46,9 @@ namespace
 	}
 
 	const int TILE_ID_MIN = 269;	// Dark Nustone Stairs; this has to be changed whenever i add new blocks to the base
-	const int TILE_ID_MAX = 510;	// Hellish Sight: 511 would share its low byte (255) with the renderer's "hidden tile" marker
+	// Hellish Sight: chunks keep extended ids (HSHighIds), so mods can use every id up to Tile::TILE_NUM_COUNT - 1.
+	// Ids whose low byte is 0 (looks like air in 8-bit storage) or 255 (the renderer's "hidden tile" marker) are skipped.
+	const int TILE_ID_MAX = 4095;
 
 	int tileIdMax = TILE_ID_MIN - 1;
 
@@ -186,7 +188,8 @@ int BlockRegistry::maxBlockCount() {
 int BlockRegistry::nextItemId() {
 	do {
 		tileIdMax += 1;
-	} while (tileIdMax <= TILE_ID_MAX && (Tile::tiles[tileIdMax] != nullptr || Item::items[tileIdMax] != nullptr));
+	} while (tileIdMax <= TILE_ID_MAX && (Tile::tiles[tileIdMax] != nullptr || Item::items[tileIdMax] != nullptr
+		|| (tileIdMax & 0xFF) == 0 || (tileIdMax & 0xFF) == 0xFF));
 
 	return (tileIdMax > TILE_ID_MAX) ? -1 : tileIdMax;
 }
