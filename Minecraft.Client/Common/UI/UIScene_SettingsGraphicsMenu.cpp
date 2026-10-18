@@ -5,6 +5,10 @@
 #include "../../Options.h"
 #include "../../GameRenderer.h"
 #include "../ShaderPack.h"
+#include "../HSSettings.h"
+#include "../../MinecraftServer.h"
+#include "../../PlayerList.h"
+#include "../../../Minecraft.World/Level.h"
 
 #ifdef _WINDOWS64
 extern bool g_bVSync;
@@ -78,8 +82,18 @@ UIScene_SettingsGraphicsMenu::UIScene_SettingsGraphicsMenu(int iPad, void *initD
 
 	WCHAR TempString[256];
 
-	swprintf(TempString, 256, L"Render Distance: %d",app.GetGameSettings(m_iPad,eGameSetting_RenderDistance));	
-	m_sliderRenderDistance.init(TempString,eControl_RenderDistance,0,3,DistanceToLevel(app.GetGameSettings(m_iPad,eGameSetting_RenderDistance)));
+	// Hellish Sight: render and simulation distance in chunks (2..32)
+	{
+		int renderChunks = app.GetGameSettings(m_iPad,eGameSetting_RenderDistance);
+		if (renderChunks < 2) renderChunks = 2;
+		if (renderChunks > 32) renderChunks = 32;
+		swprintf(TempString, 256, L"Distância de renderização: %d chunks", renderChunks);
+		m_sliderRenderDistance.init(TempString,eControl_RenderDistance,2,32,renderChunks);
+
+		const int simChunks = Level::s_simulationChunks;
+		swprintf(TempString, 256, L"Distância de simulação: %d chunks", simChunks);
+		m_sliderSimulationDistance.init(TempString,eControl_SimulationDistance,2,32,simChunks);
+	}
 	
 	swprintf( TempString, 256, L"%ls: %d%%", app.GetString( IDS_SLIDER_GAMMA ),app.GetGameSettings(m_iPad,eGameSetting_Gamma));	
 	m_sliderGamma.init(TempString,eControl_Gamma,0,100,app.GetGameSettings(m_iPad,eGameSetting_Gamma));
@@ -120,6 +134,12 @@ UIScene_SettingsGraphicsMenu::UIScene_SettingsGraphicsMenu(int iPad, void *initD
 		IggyValueSetStringUTF8RS(m_checkboxShaders.getIggyValuePath(), navDown, nullptr, "RenderDistance", -1);
 
 		IggyValueSetStringUTF8RS(m_sliderRenderDistance.getIggyValuePath(), navUp, nullptr, "Shaders", -1);
+
+		// Hellish Sight: RenderDistance -> SimulationDistance -> Gamma
+		IggyValueSetStringUTF8RS(m_sliderRenderDistance.getIggyValuePath(), navDown, nullptr, "SimulationDistance", -1);
+		IggyValueSetStringUTF8RS(m_sliderSimulationDistance.getIggyValuePath(), navUp, nullptr, "RenderDistance", -1);
+		IggyValueSetStringUTF8RS(m_sliderSimulationDistance.getIggyValuePath(), navDown, nullptr, "Gamma", -1);
+		IggyValueSetStringUTF8RS(m_sliderGamma.getIggyValuePath(), navUp, nullptr, "SimulationDistance", -1);
 	}
 #endif
 
@@ -241,14 +261,23 @@ void UIScene_SettingsGraphicsMenu::handleSliderMove(F64 sliderId, F64 currentVal
 		{
 			m_sliderRenderDistance.handleSliderMove(value);
 
-			const int dist = LevelToDistance(value);
-
+			// Hellish Sight: the value is the distance in chunks (2..32)
+			const int dist = value < 2 ? 2 : (value > 32 ? 32 : value);
 			app.SetGameSettings(m_iPad,eGameSetting_RenderDistance,dist);
-
-			const Minecraft* mc = Minecraft::GetInstance();
-			mc->options->viewDistance = 3 - value;
-			swprintf(TempString,256,L"Render Distance: %d",dist);
+			ApplyRenderDistance(dist);
+			swprintf(TempString,256,L"Distância de renderização: %d chunks",dist);
 			m_sliderRenderDistance.setLabel(TempString);
+		}
+		break;
+
+	case eControl_SimulationDistance:
+		{
+			m_sliderSimulationDistance.handleSliderMove(value);
+			const int sim = value < 2 ? 2 : (value > 32 ? 32 : value);
+			Level::s_simulationChunks = sim;
+			HSSettings::setInt("simulationDistance", sim);
+			swprintf(TempString,256,L"Distância de simulação: %d chunks",sim);
+			m_sliderSimulationDistance.setLabel(TempString);
 		}
 		break;
 
@@ -293,4 +322,19 @@ void UIScene_SettingsGraphicsMenu::handleCheckboxToggled(F64 controlId, bool sel
 		ShaderPack::GetInstance().SetEnabled(selected);
 	}
 #endif
+}
+
+// Hellish Sight: render distance in chunks for the renderer and (when hosting) the server
+void UIScene_SettingsGraphicsMenu::ApplyRenderDistance(int chunks)
+{
+	if (chunks < 2) chunks = 2;
+	if (chunks > 32) chunks = 32;
+	GameRenderer::s_renderChunks = chunks;
+	Minecraft *mc = Minecraft::GetInstance();
+	if (mc && mc->options)
+	{
+		// keep the old 4-step value for the sky / fog colour code
+		mc->options->viewDistance = chunks >= 24 ? -1 : (chunks >= 12 ? 0 : (chunks >= 6 ? 1 : 2));
+	}
+	// the local server picks the new chunk radius up on its next tick (MinecraftServer::tick)
 }

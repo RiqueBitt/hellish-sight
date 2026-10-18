@@ -513,6 +513,7 @@ set(_MINECRAFT_SERVER_COMMON_ROOT
   "${_MS_SRC}/../Minecraft.Client/Windows64/Network/WinsockNetLayer.cpp"
   "${_MS_SRC}/../Minecraft.Client/Windows64/PostProcesser.cpp"
   "${_MS_SRC}/../Minecraft.Client/Windows64/ShaderPack.cpp"
+  "${_MS_SRC}/../Minecraft.Client/Common/HSSettings.cpp"
   "${_MS_SRC}/../Minecraft.Client/Windows64/Windows64_App.cpp"
   "${_MS_SRC}/../Minecraft.Client/Windows64/Windows64_Minecraft.cpp"
   "${_MS_SRC}/../Minecraft.Client/Windows64/Windows64_UIController.cpp"

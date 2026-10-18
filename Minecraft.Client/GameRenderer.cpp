@@ -74,6 +74,8 @@ CRITICAL_SECTION GameRenderer::m_csDeleteStack;
 ResourceLocation GameRenderer::RAIN_LOCATION = ResourceLocation(TN_ENVIRONMENT_RAIN);
 ResourceLocation GameRenderer::SNOW_LOCATION = ResourceLocation(TN_ENVIRONMENT_SNOW);
 
+int GameRenderer::s_renderChunks = 16;	// Hellish Sight
+
 GameRenderer::GameRenderer(Minecraft *mc)
 {
 	// 4J - added this block of initialisers
@@ -718,14 +720,8 @@ void GameRenderer::getFovAndAspect(float& fov, float& aspect, float a, bool appl
 
 void GameRenderer::setupCamera(float a, int eye)
 {
-	if (mc->options->viewDistance >= 0)
-	{
-		renderDistance = static_cast<float>(16 * 16 >> mc->options->viewDistance);
-	}
-	else
-	{
-		renderDistance = static_cast<float>((16 * 16) << (-mc->options->viewDistance));
-	}
+	// Hellish Sight: render distance in chunks (2..32), chosen in Settings > Graphics
+	renderDistance = static_cast<float>(s_renderChunks * 16);
 
 	glMatrixMode(GL_PROJECTION);
 	glLoadIdentity();

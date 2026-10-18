@@ -12,7 +12,7 @@ class PlayerChunkMap
 {
 public:
 #ifdef _LARGE_WORLDS
-	static const int MAX_VIEW_DISTANCE = 30;
+	static const int MAX_VIEW_DISTANCE = 32;	// Hellish Sight: up to 32 chunks
 #else
 	static const int MAX_VIEW_DISTANCE = 15;
 #endif

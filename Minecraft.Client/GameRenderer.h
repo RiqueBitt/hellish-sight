@@ -91,6 +91,7 @@ private:
     void CachePlayerGammas();
 public:
     void ApplyGammaPostProcess() const;
+    static int s_renderChunks;	// Hellish Sight: render distance in chunks (2..32)
 #if defined(_WINDOWS64) && !defined(MINECRAFT_SERVER_BUILD)
     void buildShaderParams(float a, ShaderFrameParams &out);	// Hellish Sight shaders
 #endif

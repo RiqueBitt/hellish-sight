@@ -441,7 +441,9 @@ void LevelRenderer::allChanged(int playerIndex)
 	Tile::leaves->setFancy(mc->options->fancyGraphics);
 	lastViewDistance = mc->options->viewDistance;
 
-	int realviewDistance = UIScene_SettingsGraphicsMenu::LevelToDistance(3 - mc->options->viewDistance) + 2;
+	// Hellish Sight: render distance chosen in chunks (2..32)
+	lastRenderChunks = GameRenderer::s_renderChunks;
+	int realviewDistance = GameRenderer::s_renderChunks + 2;
 	int realrenderArea = (realviewDistance * realviewDistance * 4);
 
 	// Calculate size of area we can render based on number of players we need to render for
@@ -746,7 +748,7 @@ int LevelRenderer::render(shared_ptr<LivingEntity> player, int layer, double alp
 		{
 			allChanged();
 		}
-		else if (mc->options->viewDistance != lastViewDistance)
+		else if (mc->options->viewDistance != lastViewDistance || GameRenderer::s_renderChunks != lastRenderChunks)
 		{
 			allChanged();
 		}

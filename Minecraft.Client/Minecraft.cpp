@@ -74,6 +74,7 @@
 #include "Common/UI/UIComponent_PressStartToPlay.h"
 #include "DLCTexturePack.h"
 #include "Host\RubyLauncherHost.h"
+#include "Common/HSSettings.h"
 #ifdef _WINDOWS64
 #define STB_IMAGE_WRITE_IMPLEMENTATION
 #include "Windows64/stb_image_write.h"
@@ -4934,6 +4935,7 @@ void Minecraft::main()
 
 	// Ruby Launcher - mods are read and loaded here
 	RubyLoader::onClientBoot();
+	HSSettings::applyAtStartup();	// Hellish Sight: simulation distance
 #ifndef MINECRAFT_SERVER_BUILD
 	EntityRenderDispatcher::staticCtor();
 	TileEntityRenderDispatcher::staticCtor();

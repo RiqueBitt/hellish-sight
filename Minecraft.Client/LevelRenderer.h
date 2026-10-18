@@ -167,6 +167,7 @@ private:
 	int xMinChunk, yMinChunk, zMinChunk;
 	int xMaxChunk, yMaxChunk, zMaxChunk;
 	int lastViewDistance;
+	int lastRenderChunks = -1;	// Hellish Sight
 	int noEntityRenderFrames;
 	int totalEntities;
 	int renderedEntities;

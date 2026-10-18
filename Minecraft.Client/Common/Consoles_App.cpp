@@ -1644,6 +1644,7 @@ void CMinecraftApp::ActionGameSettings(int iPad,eGameSetting eVal)
 
             int level = UIScene_SettingsGraphicsMenu::DistanceToLevel(dist);
             pMinecraft->options->set(Options::Option::RENDER_DISTANCE, 3 - level);
+            UIScene_SettingsGraphicsMenu::ApplyRenderDistance(dist);	// Hellish Sight: chunks (2..32)
         };
 		break;
 	case eGameSetting_Gamma:

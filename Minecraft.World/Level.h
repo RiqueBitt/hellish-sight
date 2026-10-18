@@ -104,6 +104,7 @@ public:
 	CRITICAL_SECTION				m_entitiesCS;		// 4J added
 
 	vector<shared_ptr<Entity> > entities;
+	static int s_simulationChunks;	// Hellish Sight: simulation distance in chunks (2..32)
 
 protected:
 	vector<shared_ptr<Entity> > entitiesToRemove;

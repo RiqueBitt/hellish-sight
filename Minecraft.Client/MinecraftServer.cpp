@@ -2344,6 +2344,23 @@ void MinecraftServer::broadcastStopSavingPacket()
 void MinecraftServer::tick()
 {
 	HSCommands::tick(this);	// Hellish Sight: /schedule
+#ifndef MINECRAFT_SERVER_BUILD
+	// Hellish Sight: the host's render distance (2..32 chunks) is the chunk radius sent to players
+	if (players != nullptr)
+	{
+		int wantRadius = GameRenderer::s_renderChunks;
+		if (wantRadius < PlayerChunkMap::MIN_VIEW_DISTANCE) wantRadius = PlayerChunkMap::MIN_VIEW_DISTANCE;
+		if (wantRadius > PlayerChunkMap::MAX_VIEW_DISTANCE) wantRadius = PlayerChunkMap::MAX_VIEW_DISTANCE;
+		if (players->getViewDistance() != wantRadius)
+		{
+			players->setViewDistance(wantRadius);
+			for (unsigned int li = 0; li < levels.length; li++)
+			{
+				if (levels[li] != nullptr && levels[li]->getTracker() != nullptr) levels[li]->getTracker()->updateMaxRange();
+			}
+		}
+	}
+#endif
 	// Per-substep wall-clock timing. Logs one summary line when total tick
 	// exceeds TICK_SLOW_THRESHOLD_MS.
 	const int64_t TICK_SLOW_THRESHOLD_MS = 60;

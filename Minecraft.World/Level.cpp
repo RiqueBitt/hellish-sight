@@ -27,6 +27,8 @@
 #include "ThreadName.h"
 #include "WeighedRandom.h"
 
+int Level::s_simulationChunks = 10;	// Hellish Sight: simulation distance (chunks)
+
 #include "ConsoleSaveFile.h"
 #include <xuiapp.h>
 #include "../Minecraft.Client/Minecraft.h"
@@ -2485,6 +2487,20 @@ void Level::tick(shared_ptr<Entity> e, bool actual)
 		return;
 	}
 
+	// Hellish Sight: simulation distance - entities further than it from every player stop ticking
+	if (actual && !isClientSide && !e->instanceof(eTYPE_PLAYER) && e->GetType() != eTYPE_ENDERDRAGON && !players.empty())
+	{
+		const double maxDist = static_cast<double>(s_simulationChunks) * 16.0 + 8.0;
+		bool near = false;
+		for (auto &p : players)
+		{
+			if (p == nullptr) continue;
+			const double dx = p->x - e->x, dz = p->z - e->z;
+			if (dx * dx + dz * dz <= maxDist * maxDist) { near = true; break; }
+		}
+		if (!near) return;
+	}
+
 	e->xOld = e->x;
 	e->yOld = e->y;
 	e->zOld = e->z;
@@ -3265,7 +3281,8 @@ void Level::buildAndPrepareChunksToPoll()
 		chunksToPoll.insert(ChunkPos(xx[i], zz[i] ));
 	}
 
-	for( int r = 1; r <= 9; r++ )
+	const int pollRange = s_simulationChunks < 1 ? 1 : (s_simulationChunks > 32 ? 32 : s_simulationChunks);	// Hellish Sight
+	for( int r = 1; r <= pollRange; r++ )
 	{
 		for( int l = 0; l < ( r * 2 ) ; l++ )
 		{
