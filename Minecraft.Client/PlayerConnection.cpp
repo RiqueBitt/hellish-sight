@@ -5,6 +5,9 @@
 #include "ServerPlayerGameMode.h"
 #include "PlayerList.h"
 #include "MinecraftServer.h"
+#include "Host\RubyLauncherHost.h"
+#include "Common\ModNetBus.h"
+#include "Common\ModPaths.h"
 #include "..\Minecraft.World\net.minecraft.commands.h"
 #include "..\Minecraft.World\net.minecraft.network.h"
 #include "..\Minecraft.World\net.minecraft.world.entity.item.h"
@@ -295,11 +298,18 @@ void PlayerConnection::handleMovePlayer(shared_ptr<MovePlayerPacket> packet)
 		}
 
 		// 4J Stu Added to stop server player y pos being different than client when flying
+		const bool bWasFlying = player->abilities.flying;
 		if(player->abilities.mayfly || player->isAllowedToFly() )
 		{
 			player->abilities.flying = packet->isFlying;
 		}
 		else player->abilities.flying = false;
+
+		if (player->abilities.flying != bWasFlying)
+		{
+			if (player->abilities.flying) RubyLoader::fireFlightStarted(player.get());
+			else RubyLoader::fireFlightEnded(player.get());
+		}
 
 		player->doTick(false);
 		player->ySlideOffset = 0;
@@ -810,6 +820,8 @@ void PlayerConnection::handleInteract(shared_ptr<InteractPacket> packet)
 
 		if (packet->action == InteractPacket::INTERACT)
 		{
+			RubyLoader::fireItemInteractEntity(player->getSelectedItem().get(), target.get());
+
 			player->interact(target);
 		}
 		else if (packet->action == InteractPacket::ATTACK)
@@ -1495,6 +1507,12 @@ void PlayerConnection::handlePlayerAbilities(shared_ptr<PlayerAbilitiesPacket> p
 
 void PlayerConnection::handleCustomPayload(shared_ptr<CustomPayloadPacket> customPayloadPacket)
 {
+	if (customPayloadPacket->identifier.compare(0, 5, L"ruby:") == 0)
+	{
+		RubyLoader::onModNetPacket(player.get(), RubyPaths::toNarrow(customPayloadPacket->identifier.substr(5)), byteArrayToString(customPayloadPacket->data));
+		return;
+	}
+
 #if 0
 	if (CustomPayloadPacket.CUSTOM_BOOK_PACKET.equals(customPayloadPacket.identifier))
 	{

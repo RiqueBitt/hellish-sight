@@ -102,6 +102,7 @@ protected:
 
 public:
 	static void staticCtor();
+	static void appendModItems();
 	IUIScene_CreativeMenu();
 
 protected:

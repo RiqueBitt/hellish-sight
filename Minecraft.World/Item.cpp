@@ -1,5 +1,9 @@
 #include "stdafx.h"
 
+#include "../Minecraft.Client/ServerLevel.h"
+#include "../Minecraft.Client/ServerPlayer.h"
+#include "../RubyLauncher/Host/RubyLauncherHost.h"
+
 #include "net.minecraft.locale.h"
 #include "net.minecraft.world.h"
 #include "net.minecraft.world.entity.h"
@@ -851,6 +855,11 @@ int Item::getColor(shared_ptr<ItemInstance> item, int spriteLayer)
 }
 
 void Item::inventoryTick(shared_ptr<ItemInstance> itemInstance, Level *level, shared_ptr<Entity> owner, int slot, bool selected) {
+    if (ServerPlayer* plr = dynamic_cast<ServerPlayer*>(owner.get())) {
+        if (ServerLevel* serverLevel = dynamic_cast<ServerLevel*>(level)) {
+            RubyLoader::fireItemTick(itemInstance.get(), serverLevel, plr, slot);
+        }
+    }
 }
 
 void Item::onCraftedBy(shared_ptr<ItemInstance> itemInstance, Level *level, shared_ptr<Player> player)

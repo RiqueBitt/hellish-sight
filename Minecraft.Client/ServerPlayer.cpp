@@ -8,6 +8,7 @@
 #include "Settings.h"
 #include "PlayerList.h"
 #include "MultiPlayerLevel.h"
+#include "Host\RubyLauncherHost.h"
 
 #include "..\Minecraft.World\net.minecraft.network.packet.h"
 #include "..\Minecraft.World\net.minecraft.world.damagesource.h"
@@ -1497,8 +1498,11 @@ void ServerPlayer::displayClientMessage(int messageId)
 
 void ServerPlayer::completeUsingItem()
 {
+	shared_ptr<ItemInstance> consumed = useItem != nullptr ? useItem->copy() : nullptr;
 	connection->send(std::make_shared<EntityEventPacket>(entityId, EntityEvent::USE_ITEM_COMPLETE));
 	Player::completeUsingItem();
+
+	if (consumed != nullptr) RubyLoader::fireItemCompleteUse(consumed.get(), dynamic_cast<ServerLevel *>(level), this);
 }
 
 void ServerPlayer::startUsingItem(shared_ptr<ItemInstance> instance, int duration)

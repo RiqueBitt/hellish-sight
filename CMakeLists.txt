@@ -68,6 +68,7 @@ set(MINECRAFT_SHARED_DEFINES
   $<$<CONFIG:Debug>:_DEBUG>
   _CRT_NON_CONFORMING_SWPRINTFS
   _CRT_SECURE_NO_WARNINGS
+  _HAS_STD_BYTE=0
 )
 
 # Add platform-specific defines
@@ -77,6 +78,7 @@ list(APPEND MINECRAFT_SHARED_DEFINES ${PLATFORM_DEFINES})
 # Sources
 # ---
 add_subdirectory(Minecraft.World)
+add_subdirectory(RubyLauncher) # Hellish Sight: Lua mod loader (from Hellish Ends); must come after Minecraft.World
 add_subdirectory(Minecraft.Client)
 if(PLATFORM_NAME STREQUAL "Windows64") # Server is only supported on Windows for now
   add_subdirectory(Minecraft.Server)

@@ -30,7 +30,21 @@ private:
 	Texture *stitchResult;
 	vector<StitchedTexture *> animatedTextures; // = new ArrayList<StitchedTexture>();
 
+	struct ModTextureCell
+	{
+		wstring name;
+		int row;
+		int col;
+		vector<int> pixels;
+	};
+
+	vector<ModTextureCell> modTextures;
+	bool m_modTexturesAllocated;
+
 	void loadUVs();
+	void allocateModTextureCells();
+	void blitModTextures(BufferedImage *image);
+	void registerModTextureFallback(const wstring &name, const wstring &fallbackName);
 public:
 	PreStitchedTextureMap(int type, const wstring &name, const wstring &path, BufferedImage *missingTexture, bool mipMap = false);
 

@@ -72,6 +72,7 @@
 #include "Common\UI\IUIScene_CreativeMenu.h"
 #include "Common\UI\UIFontData.h"
 #include "DLCTexturePack.h"
+#include "Host\RubyLauncherHost.h"
 
 #ifdef __ORBIS__
 #include "Orbis\Network\PsPlusUpsellWrapper_Orbis.h"
@@ -2300,6 +2301,8 @@ void Minecraft::tick(bool bFirst, bool bUpdateTextures)
 	app.TickOpacityTimer(iPad);
 
 	// 4J added
+	if (bFirst) RubyLoader::onClientTick();
+
 	if( bFirst ) levelRenderer->destroyedTileManager->tick();
 
 	gui->tick();
@@ -4773,6 +4776,9 @@ void Minecraft::main()
 	useLomp = true;
 
 	MinecraftWorld_RunStaticCtors();
+
+	// Ruby Launcher - mods are read and loaded here
+	RubyLoader::onClientBoot();
 	EntityRenderDispatcher::staticCtor();
 	TileEntityRenderDispatcher::staticCtor();
 	User::staticCtor();

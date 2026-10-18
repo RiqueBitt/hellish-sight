@@ -8,6 +8,8 @@
 #include "net.minecraft.world.entity.monster.h"
 #include "net.minecraft.world.entity.h"
 #include "Biome.h"
+#include "..\RubyLauncher\Registry\WorldGen\OreFeatureRegistry.h"
+#include "..\RubyLauncher\Registry\WorldGen\TreeFeatureRegistry.h"
 #include "net.minecraft.world.level.biome.h"
 
 //public static final Biome[] biomes = new Biome[256];
@@ -284,6 +286,8 @@ float Biome::getTemperature()
 void Biome::decorate(Level *level, Random *random, int xo, int zo)
 {
 	decorator->decorate(level, random, xo, zo);
+	OreFeatureRegistry::decorateChunk(level, random, xo, zo, this);
+	TreeFeatureRegistry::decorateChunk(level, random, xo, zo, this);
 }
 
 int Biome::getGrassColor()

@@ -13,6 +13,8 @@
 #include "..\..\..\Minecraft.World\net.minecraft.world.entity.animal.h"
 #include "..\..\..\Minecraft.World\JavaMath.h"
 
+#include "Host/RubyLauncherHost.h"
+
 // 4J JEV - Images for each tab.
 IUIScene_CreativeMenu::TabSpec **IUIScene_CreativeMenu::specs = nullptr;
 
@@ -664,6 +666,8 @@ void IUIScene_CreativeMenu::staticCtor()
 			ITEM_AUX(Item::potion_Id,MACRO_MAKEPOTION_AUXVAL(MASK_SPLASH, MASK_LEVEL2, MASK_INSTANTDAMAGE))
 
 
+		appendModItems();
+
 		specs = new TabSpec*[eCreativeInventoryTab_COUNT];
 
 	// Top Row
@@ -712,6 +716,39 @@ void IUIScene_CreativeMenu::staticCtor()
 	ECreative_Inventory_Groups miscGroup[] = {eCreativeInventory_Misc};
 	specs[eCreativeInventoryTab_Misc] = new TabSpec(L"Misc", IDS_GROUPNAME_MISCELLANEOUS, 1, miscGroup);
 #endif
+}
+
+void IUIScene_CreativeMenu::appendModItems()
+{
+	const vector<RubyCreativeEntry> entries = RubyLoader::getCreativeEntries();
+
+	for (const RubyCreativeEntry &entry : entries)
+	{
+		if (entry.id <= 0 || entry.id >= Item::ITEM_NUM_COUNT || Item::items[entry.id] == nullptr) continue;
+
+		ECreative_Inventory_Groups group;
+		switch (entry.group)
+		{
+		case RubyCreativeGroup_Food:
+			group = eCreativeInventory_Food;
+			break;
+		case RubyCreativeGroup_Tools:
+			group = eCreativeInventory_ToolsArmourWeapons;
+			break;
+		case RubyCreativeGroup_Decoration:
+			group = eCreativeInventory_Decoration;
+			break;
+		case RubyCreativeGroup_Materials:
+			group = eCreativeInventory_Materials;
+			break;
+		case RubyCreativeGroup_BuildingBlocks:
+		default:
+			group = eCreativeInventory_BuildingBlocks;
+			break;
+		}
+
+		categoryGroups[group].push_back( shared_ptr<ItemInstance>(new ItemInstance(entry.id, 1, entry.aux)) );
+	}
 }
 
 IUIScene_CreativeMenu::IUIScene_CreativeMenu()

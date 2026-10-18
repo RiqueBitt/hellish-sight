@@ -19,6 +19,7 @@
 #include "ResourceLocation.h"
 #include "..\Minecraft.World\ItemEntity.h"
 #include "TextureAtlas.h"
+#include "Host/RubyLauncherHost.h"
 
 bool Textures::MIPMAP = true;
 C4JRender::eTextureFormat Textures::TEXTURE_FORMAT = C4JRender::TEXTURE_FORMAT_RxGyBzAw;
@@ -1387,6 +1388,17 @@ Icon *Textures::getMissingIcon(int type)
 
 BufferedImage *Textures::readImage(TEXTURE_NAME texId, const wstring& name)	// 4J was InputStream *in
 {
+	if (name.size() > 6 && name.compare(0, 6, L"armor/") == 0)
+	{
+		std::wstring drive;
+		std::wstring texturePath;
+
+		if (RubyLoader::resolveArmorTexture(name, drive, texturePath))
+		{
+			return new BufferedImage(texturePath, false, false, drive);
+		}
+	}
+
 	BufferedImage *img=nullptr;
 	MemSect(32);
 	// is this image one of the Title Update ones?

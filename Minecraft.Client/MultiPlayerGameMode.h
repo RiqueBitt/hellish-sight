@@ -23,6 +23,17 @@ protected:
 
 public:
 	MultiPlayerGameMode(Minecraft *minecraft, ClientConnection *connection);
+
+	// Ruby Launcher (HUD API): read-only view of the block currently being mined.
+	bool getRubyDestroyState(int &x, int &y, int &z, float &progress) const
+	{
+		if (!isDestroying) return false;
+		x = xDestroyBlock;
+		y = yDestroyBlock;
+		z = zDestroyBlock;
+		progress = destroyProgress;
+		return true;
+	}
 	static void creativeDestroyBlock(Minecraft *minecraft, MultiPlayerGameMode *gameMode, int x, int y, int z, int face);
 	void adjustPlayer(shared_ptr<Player> player);
 	bool isCutScene();

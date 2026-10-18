@@ -29,6 +29,7 @@
 #include "..\Minecraft.World\LevelChunk.h"
 #include "..\Minecraft.World\Biome.h"
 #include <Common/UI/UI.h>
+#include "Client/Hud/ModHud.h"
 
 ResourceLocation Gui::PUMPKIN_BLUR_LOCATION = ResourceLocation(TN__BLUR__MISC_PUMPKINBLUR);
 
@@ -658,6 +659,19 @@ void Gui::render(float a, bool mouseFree, int xMouse, int yMouse)
 			glDisable(GL_RESCALE_NORMAL);
 		}
 #endif // RENDER_HUD
+
+		// Ruby Launcher: HUD layers registered by client mods (hud.addLayer).
+		// Lives outside RENDER_HUD: on Windows64 the classic HUD block is compiled out (Iggy draws the HUD).
+		if (bDisplayGui)
+		{
+			RubyHud::Viewport viewport;
+			viewport.pad = iPad;
+			viewport.left = bTwoPlayerSplitscreen ? iWidthOffset : 0;
+			viewport.top = iSafezoneTopYHalf;
+			viewport.width = screenWidth;
+			viewport.height = screenHeight;
+			RubyHud::renderLayers(minecraft, viewport);
+		}
 
 		// 4J - do render of crouched player. This code is largely taken from the inventory render of the player, with some special hard-coded positions
 		// worked out by hand from the xui implementation of the crouch icon

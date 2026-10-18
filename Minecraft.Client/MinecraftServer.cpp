@@ -60,6 +60,7 @@
 #include "PlayerChunkMap.h"
 #include "Common\Telemetry\TelemetryManager.h"
 #include "PlayerConnection.h"
+#include "Host\RubyLauncherHost.h"
 #ifdef _XBOX_ONE
 #include "Durango\Network\NetworkPlayerDurango.h"
 #endif
@@ -1749,6 +1750,8 @@ void MinecraftServer::run(int64_t seed, void *lpParameter)
             }
         }
 
+        RubyLoader::onServerStart(server);
+
         int64_t lastTime = getCurrentTimeMillis();
         int64_t unprocessedTime = 0;
         while (running && !s_bServerHalted)
@@ -2126,6 +2129,7 @@ void MinecraftServer::tick()
 
 	tickCount++;
 
+	RubyLoader::onServerTick(this);
 	// 4J We need to update client difficulty levels based on the servers
 	Minecraft *pMinecraft = Minecraft::GetInstance();
 	// 4J-PB - sending this on the host changing the difficulty in the menus

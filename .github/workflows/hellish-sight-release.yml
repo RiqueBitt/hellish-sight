@@ -1,6 +1,6 @@
 name: Hellish Sight Release
 
-# Hellish Sight (mod hub based on Hellish Ends): builds the Windows client and publishes it as a GitHub release.
+# Hellish Sight (vanilla Minecraft Legacy Console mod hub): builds the Windows client and publishes it as a GitHub release.
 # The version number lives in HELLISH_SIGHT_VERSION.
 #  - Push to main            -> release  v<version>            (marked latest)
 #  - Push to feature/**      -> pre-release v<version>-rc<run>  (test build, never latest)
@@ -106,11 +106,12 @@ jobs:
         prerelease: ${{ steps.rel.outputs.prerelease }}
         make_latest: ${{ steps.rel.outputs.latest }}
         body: |
-          **Hellish Sight 2.0 (in development)** — big-world rewrite: sparse chunk table, region-file saves and a world border at ±29,999,984.
+          **Hellish Sight 2.0 (in development)** — vanilla Minecraft (no extra blocks, biomes or textures) + Lua mod loader + big-world rewrite (sparse chunk table, region-file saves, Java-style Far Lands).
+          Mods draw their own HUD through the `hud` Lua API — e.g. **Glance** is a separate Workshop mod.
           Test builds may corrupt worlds: back up your saves.
 
           ### Install
           - **Emerald Legacy Launcher:** Workshop → Versions → *Hellish Sight* → Install. Then install mods (e.g. **Glance**) choosing *Hellish Sight*.
           - **Manual:** extract `${{ env.ZIP_NAME }}` to a folder and run `Minecraft.Client.exe`. Put mods in the `mods` folder next to it.
 
-          Requires Windows 7+ and a DirectX 11 GPU. Based on [Hellish Ends](https://github.com/deadvoxelx/ThatModdedRepo) by DeadVoxelx.
+          Requires Windows 7+ and a DirectX 11 GPU. Based on vanilla [MinecraftConsoles](https://github.com/smartcmd/MinecraftConsoles); Lua mod loader (Ruby Launcher) from [Hellish Ends](https://github.com/deadvoxelx/ThatModdedRepo) by DeadVoxelx.
