@@ -299,8 +299,8 @@ namespace HSMainMenu
 		{
 			State &s = S();
 			const int w = (std::min)(420, s.sw - 40), x = (s.sw - w) / 2, y = 28, h = s.sh - 84;
-			P().rect(0, 0, s.sw, s.sh, 0x80000000);
-			P().rect(x, y, x + w, y + h, 0xE0141418);
+			P().rect(0, 0, s.sw, s.sh, 0xC0000000);
+			P().rect(x, y, x + w, y + h, 0xFA141418);
 			P().rect(x, y, x + w, y + 2, 0xFFC8321E);
 			const std::wstring title = L"Mods instalados";
 			text(title, x + (w - font()->width(title)) / 2, y + 8, 0xFFFFC040);
