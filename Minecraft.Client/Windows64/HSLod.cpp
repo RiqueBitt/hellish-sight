@@ -21,6 +21,9 @@
 
 #include <d3dcompiler.h>
 #include <atomic>
+#include <chrono>
+#include <climits>
+#include <cstdint>
 #include <condition_variable>
 #include <cmath>
 #include <cstdio>

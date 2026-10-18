@@ -47,7 +47,7 @@ SOFTWARE.
 #define THUMBNAIL_DOWNSAMPLE_TARGET    4 // 64x64
 
 #define NUM_COMMAND_HANDLES 0x800000
-#define MAX_COMMAND_BUFFERS 16000
+#define MAX_COMMAND_BUFFERS 131072	// Hellish Sight: was 16000, too few for 32-chunk render distance
 
 class Renderer
 {
@@ -471,7 +471,7 @@ public:
     BYTE reservedRendererByte1;
     BYTE paddingAfterRendererByte1[3];
     DWORD reservedRendererDword1;
-    int16_t *m_vertexIdxToBufferIdx;
+    int32_t *m_vertexIdxToBufferIdx;
     CommandBuffer **m_commandBuffers;
     DirectX::XMMATRIX *m_commandMatrices;
     int *m_bufferIdxToVertexIdx;

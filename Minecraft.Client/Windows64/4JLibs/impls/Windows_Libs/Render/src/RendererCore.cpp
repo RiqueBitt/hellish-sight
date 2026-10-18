@@ -680,14 +680,14 @@ void Renderer::Initialise(ID3D11Device *pDevice, IDXGISwapChain *pSwapChain)
 
     PROFILER_INIT();
 
-    m_vertexIdxToBufferIdx = new int16_t[NUM_COMMAND_HANDLES];
+    m_vertexIdxToBufferIdx = new int32_t[NUM_COMMAND_HANDLES];
     m_commandBuffers = new CommandBuffer *[MAX_COMMAND_BUFFERS];
     m_commandMatrices = new DirectX::XMMATRIX[MAX_COMMAND_BUFFERS];
     m_bufferIdxToVertexIdx = new int[MAX_COMMAND_BUFFERS];
     m_commandPrimitiveTypes = new uint8_t[MAX_COMMAND_BUFFERS];
     m_commandVertexTypes = new uint8_t[MAX_COMMAND_BUFFERS];
 
-    std::memset(m_vertexIdxToBufferIdx, 0xFF, NUM_COMMAND_HANDLES * sizeof(int16_t));
+    std::memset(m_vertexIdxToBufferIdx, 0xFF, NUM_COMMAND_HANDLES * sizeof(int32_t));
     std::memset(m_commandBuffers, 0, MAX_COMMAND_BUFFERS * sizeof(CommandBuffer *));
     std::memset(m_bufferIdxToVertexIdx, 0, MAX_COMMAND_BUFFERS * sizeof(int));
     std::memset(m_commandPrimitiveTypes, 0, MAX_COMMAND_BUFFERS * sizeof(uint8_t));
