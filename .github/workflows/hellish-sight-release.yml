@@ -1,9 +1,11 @@
 name: Hellish Sight Release
 
 # Hellish Sight (mod hub based on Hellish Ends): builds the Windows client and publishes it as a GitHub release.
-#  - Push a tag like v1.0.0  -> builds and publishes release "Hellish Sight v1.0.0" (latest)
-#  - Push a tag like v1.0.0-rc1 -> same, but as a pre-release (test build)
-#  - Push to main/feature/** or run manually -> builds and uploads the zip as a workflow artifact only
+# The version number lives in HELLISH_SIGHT_VERSION.
+#  - Push to main            -> release  v<version>            (marked latest)
+#  - Push to feature/**      -> pre-release v<version>-rc<run>  (test build, never latest)
+#  - Push a tag v*           -> release with that tag (suffix like -rc1 => pre-release)
+#  - Run manually            -> build + workflow artifact only
 #
 # The Emerald Legacy Launcher installs this version from:
 #   https://github.com/RiqueBitt/hellish-sight/releases/latest/download/HellishSightWindows64.zip
@@ -71,15 +73,38 @@ jobs:
         path: ${{ env.ZIP_NAME }}
         retention-days: 7
 
+    - name: Compute release tag
+      id: rel
+      shell: pwsh
+      run: |
+        $ver = (Get-Content HELLISH_SIGHT_VERSION -Raw).Trim()
+        $ref = "${{ github.ref }}"
+        if ($ref -like "refs/tags/v*") {
+          $tag = "${{ github.ref_name }}"
+        } elseif ($ref -eq "refs/heads/main") {
+          $tag = "v$ver"
+        } elseif ($ref -like "refs/heads/feature/*") {
+          $tag = "v$ver-rc${{ github.run_number }}"
+        } else {
+          $tag = ""
+        }
+        $pre = if ($tag -match "-") { "true" } else { "false" }
+        $latest = if ($pre -eq "true") { "false" } else { "true" }
+        "tag=$tag" >> $env:GITHUB_OUTPUT
+        "prerelease=$pre" >> $env:GITHUB_OUTPUT
+        "latest=$latest" >> $env:GITHUB_OUTPUT
+        Write-Host "Release tag: '$tag' (prerelease=$pre)"
+
     - name: Publish release
-      if: startsWith(github.ref, 'refs/tags/v')
+      if: steps.rel.outputs.tag != '' && github.event_name == 'push'
       uses: softprops/action-gh-release@v2
       with:
-        name: Hellish Sight ${{ github.ref_name }}
+        tag_name: ${{ steps.rel.outputs.tag }}
+        target_commitish: ${{ github.sha }}
+        name: Hellish Sight ${{ steps.rel.outputs.tag }}
         files: ${{ env.ZIP_NAME }}
-        # Tags with a suffix (v1.0.0-rc1) are test builds: pre-release, never "latest".
-        prerelease: ${{ contains(github.ref_name, '-') }}
-        make_latest: ${{ contains(github.ref_name, '-') && 'false' || 'true' }}
+        prerelease: ${{ steps.rel.outputs.prerelease }}
+        make_latest: ${{ steps.rel.outputs.latest }}
         body: |
           **Hellish Sight** — a mod hub built on Hellish Ends: run many Lua mods together, with extra APIs (HUD API included).
 
