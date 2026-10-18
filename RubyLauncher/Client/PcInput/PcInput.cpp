@@ -84,7 +84,7 @@ namespace HSPcInput
 				case eToolTipButtonRT: return { 0, L"PgDn" };
 				case eToolTipButtonLB: return { 0, L"Q" };
 				case eToolTipButtonRB: return { 0, L"E" };
-				case eToolTipButtonLS: return { 0, L"Shift" };
+				case eToolTipButtonLS: return { 0, L"Setas" };
 				case eToolTipButtonRS: return { 3, L"" };
 				default: return { 0, L"Tab" };
 				}
@@ -271,7 +271,8 @@ namespace HSPcInput
 		Minecraft *mc = Minecraft::GetInstance();
 		if (mc == nullptr || mc->font == nullptr || mc->width_phys <= 0 || mc->height_phys <= 0) return;
 
-		const bool tooltips = keyboardPrompts(0) && s.publishedFrame + 1 >= s.frame;
+		// the chat input sits where the bar is: hide the bar while a screen (chat) is open
+		const bool tooltips = keyboardPrompts(0) && s.publishedFrame + 1 >= s.frame && mc->screen == nullptr;
 		UIScene *top = ui.GetTopScene(0);
 		const bool controls = keyboardPrompts(0) && top != nullptr && top->getSceneType() == eUIScene_ControlsMenu;
 		const bool toast = GetTickCount() < s.toastUntil;
