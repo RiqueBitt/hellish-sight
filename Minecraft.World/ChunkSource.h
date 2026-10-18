@@ -1,6 +1,7 @@
 #pragma once
 
 #include "Biome.h"
+#include "ChunkTable.h"
 class ProgressListener;
 class TilePos;
 
@@ -73,7 +74,7 @@ public:
 	virtual bool tick() = 0;
 	virtual bool shouldSave() = 0;
 
-	virtual LevelChunk **getCache() { return nullptr; }		// 4J added
+	virtual ChunkTable *getChunkTable() { return nullptr; }	// Hellish Sight: sparse chunk table (was 4J getCache())
 	virtual void dataReceived(int x, int z) {}				// 4J added
 
 	/**

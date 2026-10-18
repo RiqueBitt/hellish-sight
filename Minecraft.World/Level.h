@@ -9,6 +9,7 @@ using namespace std;
 #include "ParticleTypes.h"
 #include "biome.h"
 #include "C4JThread.h"
+#include "ChunkTable.h"
 
 #ifdef __PSVITA__
 #include "..\Minecraft.Client\PSVita\PSVitaExtras\CustomSet.h"
@@ -524,7 +525,7 @@ public:
 	int getAuxValueForMap(PlayerUID xuid, int dimension, int centreXC, int centreZC, int scale);
 
 	// 4J - optimisation - keep direct reference of underlying cache here
-	LevelChunk					**chunkSourceCache;
+	ChunkTable					*chunkSourceTable = nullptr;	// Hellish Sight: sparse table (was LevelChunk **chunkSourceCache)
 	int							chunkSourceXZSize;
 
 	// 4J - added for implementation of finite limit to number of item entities, tnt and falling block entities

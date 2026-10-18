@@ -16,13 +16,13 @@ private:
 
 	vector<LevelChunk *> loadedChunkList;
 
-	LevelChunk **cache;
+	ChunkTable m_table;			// Hellish Sight: sparse table (was LevelChunk **cache[XZSIZE*XZSIZE])
 	// 4J - added for multithreaded support
 	CRITICAL_SECTION m_csLoadCreate;
 	// 4J - size of cache is defined by size of one side - must be even
 	int XZSIZE;
 	int XZOFFSET;
-	bool *hasData;
+	ChunkFlagGrid m_hasData;	// Hellish Sight: sparse flags (was bool hasData[XZSIZE*XZSIZE])
 
 	Level *level;
 
@@ -44,5 +44,5 @@ public:
 	virtual void recreateLogicStructuresForChunk(int chunkX, int chunkZ);
 	virtual void dataReceived(int x, int z);	// 4J added
 
-	virtual LevelChunk **getCache() { return cache; }		// 4J added
+	virtual ChunkTable *getChunkTable() { return &m_table; }	// Hellish Sight
 };

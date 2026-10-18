@@ -20,13 +20,13 @@ private:
 public:
 	bool autoCreate;
 private:
-	LevelChunk **cache;
+	ChunkTable m_table;			// Hellish Sight: sparse table (was LevelChunk **cache[XZSIZE*XZSIZE])
     vector<LevelChunk *> m_loadedChunkList;
     ServerLevel *level;
 
 #ifdef _LARGE_WORLDS
 	deque<LevelChunk *> m_toDrop;
-	LevelChunk **m_unloadedCache;
+	ChunkTable m_unloaded;		// Hellish Sight: sparse table (was m_unloadedCache[XZSIZE*XZSIZE])
 #endif
 
 	// 4J - added for multithreaded support
@@ -52,7 +52,7 @@ public:
 	void updateOverwriteHellChunk(LevelChunk* origChunk, LevelChunk* playerChunk, int xMin, int xMax, int zMin, int zMax);
 
 #endif
-	virtual LevelChunk **getCache() { return cache; }		// 4J added
+	virtual ChunkTable *getChunkTable() { return &m_table; }	// Hellish Sight
 
 	// 4J-JEV Added; Remove chunk from the toDrop queue.
 #ifdef _LARGE_WORLDS	

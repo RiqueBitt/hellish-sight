@@ -106,7 +106,8 @@ jobs:
         prerelease: ${{ steps.rel.outputs.prerelease }}
         make_latest: ${{ steps.rel.outputs.latest }}
         body: |
-          **Hellish Sight** — a mod hub built on Hellish Ends: run many Lua mods together, with extra APIs (HUD API included).
+          **Hellish Sight 2.0 (in development)** — big-world rewrite: sparse chunk table, region-file saves and a world border at ±29,999,984.
+          Test builds may corrupt worlds: back up your saves.
 
           ### Install
           - **Emerald Legacy Launcher:** Workshop → Versions → *Hellish Sight* → Install. Then install mods (e.g. **Glance**) choosing *Hellish Sight*.
