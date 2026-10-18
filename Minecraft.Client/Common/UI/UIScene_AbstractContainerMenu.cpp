@@ -216,10 +216,13 @@ void UIScene_AbstractContainerMenu::tick()
 	const bool hsViewer = HSRecipeViewer::enabledFor(m_iPad) && m_parentLayer->getViewport() == C4JRender::VIEWPORT_TYPE_FULLSCREEN;
 	if (hsViewer && HSRecipeViewer::wantsFreePointer())
 	{
-		m_fPointerMinX = 0.0f;
-		m_fPointerMinY = 0.0f;
-		m_fPointerMaxX = static_cast<float>(m_movieWidth);
-		m_fPointerMaxY = static_cast<float>(m_movieHeight);
+		// pointer coordinates are local to MainPanel
+		const float mainX = static_cast<float>(m_controlMainPanel.getXPos());
+		const float mainY = static_cast<float>(m_controlMainPanel.getYPos());
+		m_fPointerMinX = -mainX;
+		m_fPointerMinY = -mainY;
+		m_fPointerMaxX = static_cast<float>(m_movieWidth) - mainX;
+		m_fPointerMaxY = static_cast<float>(m_movieHeight) - mainY;
 	}
 #endif
 
@@ -236,22 +239,16 @@ void UIScene_AbstractContainerMenu::tick()
 		info.pad = m_iPad;
 		info.screenW = rw;
 		info.screenH = rh;
-		// panel bounds from the slots / controls themselves (same space as the pointer)
-		float bx0, by0, bx1, by1;
-		HS_ContentBounds(bx0, by0, bx1, by1);
-		info.panelX0 = bx0 * sx;
-		info.panelX1 = bx1 * sx;
-		info.panelY0 = by0 * sy;
-		info.panelY1 = by1 * sy;
-		info.pointerX = (m_pointerPos.x + m_fPointerImageOffsetX) * sx;
-		info.pointerY = (m_pointerPos.y + m_fPointerImageOffsetY) * sy;
+		// the pointer, the panel and the slots are all in MainPanel's local space
+		const float mainX = static_cast<float>(m_controlMainPanel.getXPos());
+		const float mainY = static_cast<float>(m_controlMainPanel.getYPos());
+		info.panelX0 = (m_fPanelMinX + mainX) * sx;
+		info.panelX1 = (m_fPanelMaxX + mainX) * sx;
+		info.panelY0 = (m_fPanelMinY + mainY) * sy;
+		info.panelY1 = (m_fPanelMaxY + mainY) * sy;
+		info.pointerX = (m_pointerPos.x + m_fPointerImageOffsetX + mainX) * sx;
+		info.pointerY = (m_pointerPos.y + m_fPointerImageOffsetY + mainY) * sy;
 		info.hovered = HS_HoveredItem();
-		{
-			wchar_t dbg[256];
-			swprintf_s(dbg, 256, L"mv %dx%d rd %dx%d ptr %.0f,%.0f pnl %.0f..%.0f main %d,%d bnd %.0f..%.0f scr %d", m_movieWidth, m_movieHeight, rw, rh,
-				m_pointerPos.x, m_pointerPos.y, m_fPanelMinX, m_fPanelMaxX, m_controlMainPanel.getXPos(), m_controlMainPanel.getYPos(), bx0, bx1, ui.getScreenWidth());
-			info.debug = dbg;
-		}
 		if (getSceneType() == eUIScene_ClassicCraftingMenu) info.craftGrid = 3;
 		else if (getSceneType() == eUIScene_InventoryMenu && app.GetGameSettings(m_iPad, eGameSetting_ClassicCrafting)) info.craftGrid = 2;
 		Minecraft *mc = Minecraft::GetInstance();
