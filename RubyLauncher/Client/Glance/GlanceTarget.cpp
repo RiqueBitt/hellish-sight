@@ -22,6 +22,10 @@
 #include "Mob.h"
 #include "Player.h"
 #include "ItemEntity.h"
+#include "MultiEntityMob.h"
+#include "MultiEntityMobPart.h"
+#include "BossMob.h"
+#include "BossMobPart.h"
 
 #include <algorithm>
 #include <cstdio>
@@ -139,7 +143,8 @@ namespace Glance
 			out.tileId = tileId;
 			out.data = data;
 
-			out.id = IDMapping::get()->getByID(tileId, data);
+			out.id = IDMapping::get()->getByID(tileId, tile->cloneTileData(level, hit->x, hit->y, hit->z));
+			if (out.id == "minecraft:air") out.id = "minecraft:tile_" + std::to_string(tileId);
 			out.modId = namespaceOf(out.id);
 			out.modName = modDisplayName(out.modId);
 
@@ -199,6 +204,27 @@ namespace Glance
 			return true;
 		}
 
+		// Multi-part mobs (e.g. the Ender Dragon) expose pickable part entities
+		// that are not registered in EntityIO; resolve them to their owner.
+		shared_ptr<Entity> resolveOwner(shared_ptr<Entity> entity)
+		{
+			if (shared_ptr<MultiEntityMobPart> part = dynamic_pointer_cast<MultiEntityMobPart>(entity))
+			{
+				if (shared_ptr<MultiEntityMob> parent = part->parentMob.lock())
+				{
+					if (shared_ptr<Entity> owner = dynamic_pointer_cast<Entity>(parent)) return owner;
+				}
+			}
+			if (shared_ptr<BossMobPart> part = dynamic_pointer_cast<BossMobPart>(entity))
+			{
+				if (part->bossMob != nullptr)
+				{
+					if (Entity *owner = dynamic_cast<Entity *>(part->bossMob)) return owner->shared_from_this();
+				}
+			}
+			return entity;
+		}
+
 		std::wstring entityName(const shared_ptr<Entity> &entity)
 		{
 			if (shared_ptr<Player> player = dynamic_pointer_cast<Player>(entity))
@@ -218,20 +244,24 @@ namespace Glance
 				if (stack != nullptr) return stack->getHoverName();
 			}
 
-			const int nameId = EntityIO::getNameId(EntityIO::getId(entity));
+			// String-based lookup only: EntityIO::getId(shared_ptr) dereferences an
+			// end() iterator for unregistered types.
+			const std::wstring encodeId = EntityIO::getEncodeId(entity);
+			const int nameId = encodeId.empty() ? -1 : EntityIO::getNameId(EntityIO::getId(encodeId));
 			if (nameId > 0)
 			{
 				const std::wstring name = localized(static_cast<unsigned int>(nameId));
 				if (!name.empty()) return name;
 			}
 
-			return EntityIO::getEncodeId(entity);
+			return encodeId.empty() ? std::wstring(L"Entity") : encodeId;
 		}
 
 		bool resolveEntity(HitResult *hit, Target &out)
 		{
 			shared_ptr<Entity> entity = hit->entity;
 			if (entity == nullptr) return false;
+			entity = resolveOwner(entity);
 
 			out.kind = TargetKind::Entity;
 			out.entityId = entity->entityId;

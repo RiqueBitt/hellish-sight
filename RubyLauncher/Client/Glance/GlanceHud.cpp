@@ -249,12 +249,12 @@ namespace Glance
 			Row row;
 			if (target.growth >= 0.999f)
 			{
-				row.text = L"§7" + m_config.growthLabel + L": §a" + m_config.matureLabel;
+				row.text = L"\u00A77" + m_config.growthLabel + L": \u00A7a" + m_config.matureLabel;
 			}
 			else
 			{
 				const int percent = static_cast<int>(target.growth * 100.0f + 0.5f);
-				row.text = L"§7" + m_config.growthLabel + L": §f" + std::to_wstring(percent) + L"%";
+				row.text = L"\u00A77" + m_config.growthLabel + L": \u00A7f" + std::to_wstring(percent) + L"%";
 			}
 			row.width = font->width(row.text);
 			rows.push_back(row);
@@ -271,7 +271,7 @@ namespace Glance
 		if (m_config.showModName && !target.modName.empty())
 		{
 			Row row;
-			row.text = L"§o" + target.modName;
+			row.text = L"\u00A7o" + target.modName;
 			row.color = m_config.modNameColor;
 			row.width = font->width(row.text);
 			rows.push_back(row);
@@ -299,7 +299,11 @@ namespace Glance
 		const int textY = y + (std::max)(0, (height - textHeight) / 2);
 
 		// ---- Panel -----------------------------------------------------------
+		// Don't write depth for the background, or it clips the 3D block icon
+		// (same approach the engine uses for its own popups).
+		glDepthMask(false);
 		drawPanel(x, y, width, height);
+		glDepthMask(true);
 
 		// ---- Item icons (lit) ------------------------------------------------
 		int toolX = 0, toolY = 0;
