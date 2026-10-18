@@ -236,10 +236,16 @@ void UIScene_AbstractContainerMenu::tick()
 		info.pad = m_iPad;
 		info.screenW = rw;
 		info.screenH = rh;
-		info.panelX0 = m_fPanelMinX * sx;
-		info.panelX1 = m_fPanelMaxX * sx;
-		info.panelY0 = m_fPanelMinY * sy;
-		info.panelY1 = m_fPanelMaxY * sy;
+		// the background panel's position is relative to MainPanel
+		float mainX = static_cast<float>(m_controlMainPanel.getXPos());
+		float mainY = static_cast<float>(m_controlMainPanel.getYPos());
+		const float panelW = m_fPanelMaxX - m_fPanelMinX;
+		float px0 = m_fPanelMinX + mainX;
+		if (px0 < 0.0f || px0 + panelW > static_cast<float>(m_movieWidth)) px0 = (static_cast<float>(m_movieWidth) - panelW) * 0.5f;	// panels are centred
+		info.panelX0 = px0 * sx;
+		info.panelX1 = (px0 + panelW) * sx;
+		info.panelY0 = (m_fPanelMinY + mainY) * sy;
+		info.panelY1 = (m_fPanelMaxY + mainY) * sy;
 		info.pointerX = (m_pointerPos.x + m_fPointerImageOffsetX) * sx;
 		info.pointerY = (m_pointerPos.y + m_fPointerImageOffsetY) * sy;
 		info.hovered = HS_HoveredItem();
