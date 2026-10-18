@@ -29,13 +29,7 @@ ServerChunkCache::ServerChunkCache(ServerLevel *level, ChunkStorage *storage, Ch
     this->source = source;
 	this->m_XZSize = source->m_XZSize;
 
-	this->cache = new LevelChunk *[XZSIZE * XZSIZE];
-	memset(this->cache, 0, XZSIZE * XZSIZE * sizeof(LevelChunk *));
-
-#ifdef _LARGE_WORLDS
-	m_unloadedCache = new LevelChunk *[XZSIZE * XZSIZE];
-	memset(m_unloadedCache, 0, XZSIZE * XZSIZE * sizeof(LevelChunk *));
-#endif
+	// Hellish Sight: m_table / m_unloaded are sparse and allocate on demand.
 
 	InitializeCriticalSectionAndSpinCount(&m_csLoadCreate,4000);
 }
@@ -45,15 +39,10 @@ ServerChunkCache::~ServerChunkCache()
 {
 	storage->WaitForAll();		// MGH -  added to fix crash bug 175183
 	delete emptyChunk;
-	delete cache;
 	delete source;
 
 #ifdef _LARGE_WORLDS
-	for(unsigned int i = 0; i < XZSIZE * XZSIZE; ++i)
-	{
-		delete m_unloadedCache[i];
-	}
-	delete m_unloadedCache;
+	m_unloaded.forEach([](LevelChunk *chunk) { delete chunk; });
 #endif
 
 	for (auto& it : m_loadedChunkList)
@@ -71,8 +60,7 @@ bool ServerChunkCache::hasChunk(int x, int z)
 	// of chunks around them when they tick
 	if( ( ix < 0 ) || ( ix >= XZSIZE ) ) return true;
 	if( ( iz < 0 ) || ( iz >= XZSIZE ) ) return true;
-	int idx = ix * XZSIZE + iz;
-	LevelChunk *lc = cache[idx];
+	LevelChunk *lc = m_table.get(x, z);
 	if( lc == nullptr ) return false;
 	return true;
 }
@@ -88,8 +76,7 @@ void ServerChunkCache::drop(const int x, const int z)
 	const int iz = z + XZOFFSET;
 	if ((ix < 0) || (ix >= XZSIZE)) return;
 	if ((iz < 0) || (iz >= XZSIZE)) return;
-	const int idx = ix * XZSIZE + iz;
-	LevelChunk* chunk = cache[idx];
+	LevelChunk* chunk = m_table.get(x, z);
 
 	if (chunk != nullptr)
 	{
@@ -118,7 +105,6 @@ LevelChunk *ServerChunkCache::create(int x, int z, bool asyncPostProcess)	// 4J 
 	// Check we're in range of the stored level
 	if( ( ix < 0 ) || ( ix >= XZSIZE ) ) return emptyChunk;
 	if( ( iz < 0 ) || ( iz >= XZSIZE ) ) return emptyChunk;
-	int idx = ix * XZSIZE + iz;
 
 	if ( (int)(size_t)TlsGetValue(s_tlsIdxCreateDepth) > 0 )
 	{
@@ -126,7 +112,7 @@ LevelChunk *ServerChunkCache::create(int x, int z, bool asyncPostProcess)	// 4J 
 	}
 	TlsSetValue(s_tlsIdxCreateDepth, (void *)(size_t)1);
 
-	LevelChunk *chunk = cache[idx];
+	LevelChunk *chunk = m_table.get(x, z);
 	LevelChunk *lastChunk = chunk;
 
 	if( ( chunk == nullptr ) || ( chunk->x != x ) || ( chunk->z != z ) )
@@ -151,11 +137,8 @@ LevelChunk *ServerChunkCache::create(int x, int z, bool asyncPostProcess)	// 4J 
 
 		LeaveCriticalSection(&m_csLoadCreate);
 
-#if ( defined _WIN64 || defined __LP64__ )
-		if( InterlockedCompareExchangeRelease64((LONG64 *)&cache[idx],(LONG64)chunk,(LONG64)lastChunk) == (LONG64)lastChunk )
-#else
-		if( InterlockedCompareExchangeRelease((LONG *)&cache[idx],(LONG)chunk,(LONG)lastChunk) == (LONG)lastChunk )
-#endif // _DURANGO
+		// Hellish Sight: same compare-exchange semantics as the 4J array slot.
+		if( m_table.compareExchange(x, z, lastChunk, chunk) )
 		{
 			// Successfully updated the cache
 			EnterCriticalSection(&m_csLoadCreate);
@@ -219,7 +202,7 @@ LevelChunk *ServerChunkCache::create(int x, int z, bool asyncPostProcess)	// 4J 
 			chunk->unload(true);
 			delete chunk;
 			TlsSetValue(s_tlsIdxCreateDepth, (void *)(size_t)0);
-			return cache[idx];
+			return m_table.get(x, z);
 		}
     }
 
@@ -240,9 +223,8 @@ LevelChunk *ServerChunkCache::getChunk(int x, int z)
 	// Check we're in range of the stored level
 	if( ( ix < 0 ) || ( ix >= XZSIZE ) ) return emptyChunk;
 	if( ( iz < 0 ) || ( iz >= XZSIZE ) ) return emptyChunk;
-	int idx = ix * XZSIZE + iz;
 
-	LevelChunk *lc = cache[idx];
+	LevelChunk *lc = m_table.get(x, z);
 	if( lc )
 	{
 		return lc;
@@ -268,15 +250,14 @@ LevelChunk *ServerChunkCache::getChunkLoadedOrUnloaded(int x, int z)
 	// Check we're in range of the stored level
 	if( ( ix < 0 ) || ( ix >= XZSIZE ) ) return emptyChunk;
 	if( ( iz < 0 ) || ( iz >= XZSIZE ) ) return emptyChunk;
-	int idx = ix * XZSIZE + iz;
 
-	LevelChunk *lc = cache[idx];
+	LevelChunk *lc = m_table.get(x, z);
 	if( lc )
 	{
 		return lc;
 	}
 
-	lc = m_unloadedCache[idx];
+	lc = m_unloaded.get(x, z);
 	if( lc )
 	{
 		return lc;
@@ -377,11 +358,7 @@ LevelChunk *ServerChunkCache::load(int x, int z)
     LevelChunk *levelChunk = nullptr;
 
 #ifdef _LARGE_WORLDS
-	int ix = x + XZOFFSET;
-	int iz = z + XZOFFSET;
-	int idx = ix * XZSIZE + iz;
-	levelChunk = m_unloadedCache[idx];
-	m_unloadedCache[idx] = nullptr;
+	levelChunk = m_unloaded.take(x, z);
 	if(levelChunk == nullptr)
 #endif
 	{
@@ -934,11 +911,8 @@ bool ServerChunkCache::tick()
                         auto it = std::find(m_loadedChunkList.begin(), m_loadedChunkList.end(), chunk);
                         if(it != m_loadedChunkList.end()) m_loadedChunkList.erase(it);
 
-						int ix = chunk->x + XZOFFSET;
-						int iz = chunk->z + XZOFFSET;
-						int idx = ix * XZSIZE + iz;
-						m_unloadedCache[idx] = chunk;
-						cache[idx] = nullptr;
+						m_unloaded.set(chunk->x, chunk->z, chunk);
+						m_table.set(chunk->x, chunk->z, nullptr);
 					}
 					else
 					{

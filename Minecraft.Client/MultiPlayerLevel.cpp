@@ -33,7 +33,7 @@ MultiPlayerLevel::MultiPlayerLevel(ClientConnection *connection, LevelSettings *
 	// 4J - this this used to be called in parent ctor via a virtual fn
 	chunkSource = createChunkSource();
 	// 4J - optimisation - keep direct reference of underlying cache here
-	chunkSourceCache = chunkSource->getCache();
+	chunkSourceTable = chunkSource->getChunkTable();
 	chunkSourceXZSize = chunkSource->m_XZSize;
 
 	// This also used to be called in parent ctor, but can't be called until chunkSource is created. Call now if required.

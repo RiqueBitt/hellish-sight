@@ -15,8 +15,6 @@ MultiPlayerChunkCache::MultiPlayerChunkCache(Level *level)
 	XZSIZE = level->dimension->getXZSize(); // 4J Added
 	XZOFFSET = XZSIZE/2; // 4J Added
 	m_XZSize = XZSIZE;
-	hasData = new bool[XZSIZE * XZSIZE];
-	memset(hasData, 0, sizeof(bool) * XZSIZE * XZSIZE);
 
 	emptyChunk = new EmptyLevelChunk(level, byteArray(16 * 16 * Level::maxBuildHeight), 0, 0);
 
@@ -93,8 +91,7 @@ MultiPlayerChunkCache::MultiPlayerChunkCache(Level *level)
 
 	this->level = level;
 
-	this->cache = new LevelChunk *[XZSIZE * XZSIZE];
-	memset(this->cache, 0, XZSIZE * XZSIZE * sizeof(LevelChunk *));
+	// Hellish Sight: m_table / m_hasData are sparse and allocate on demand.
 	InitializeCriticalSectionAndSpinCount(&m_csLoadCreate,4000);
 }
 
@@ -102,8 +99,6 @@ MultiPlayerChunkCache::~MultiPlayerChunkCache()
 {
 	delete emptyChunk;
 	delete waterChunk;
-	delete cache;
-	delete hasData;
 
     for (auto& it : loadedChunkList)
     {
@@ -129,14 +124,13 @@ bool MultiPlayerChunkCache::reallyHasChunk(int x, int z)
 	// Check we're in range of the stored level - if we aren't, then consider that we do have that chunk as we'll be able to use the water chunk there
 	if( ( ix < 0 ) || ( ix >= XZSIZE ) ) return true;
 	if( ( iz < 0 ) || ( iz >= XZSIZE ) ) return true;
-	int idx = ix * XZSIZE + iz;
 
-	LevelChunk *chunk = cache[idx];
+	LevelChunk *chunk = m_table.get(x, z);
 	if( chunk == nullptr )
 	{
 		return false;
 	}
-	return hasData[idx];
+	return m_hasData.get(x, z) != nullptr;
 }
 
 void MultiPlayerChunkCache::drop(const int x, const int z)
@@ -145,8 +139,7 @@ void MultiPlayerChunkCache::drop(const int x, const int z)
 	const int iz = z + XZOFFSET;
 	if ((ix < 0) || (ix >= XZSIZE)) return;
 	if ((iz < 0) || (iz >= XZSIZE)) return;
-	const int idx = ix * XZSIZE + iz;
-	LevelChunk* chunk = cache[idx];
+	LevelChunk* chunk = m_table.get(x, z);
 
 	if (chunk != nullptr && !chunk->isEmpty())
 	{
@@ -168,8 +161,7 @@ LevelChunk *MultiPlayerChunkCache::create(int x, int z)
 	// Check we're in range of the stored level
 	if( ( ix < 0 ) || ( ix >= XZSIZE ) ) return ( waterChunk ? waterChunk : emptyChunk );
 	if( ( iz < 0 ) || ( iz >= XZSIZE ) ) return ( waterChunk ? waterChunk : emptyChunk );
-	int idx = ix * XZSIZE + iz;
-	LevelChunk *chunk = cache[idx];
+	LevelChunk *chunk = m_table.get(x, z);
 	LevelChunk *lastChunk = chunk;
 
 	if( chunk == nullptr )
@@ -191,7 +183,7 @@ LevelChunk *MultiPlayerChunkCache::create(int x, int z)
 			chunk = new LevelChunk(level, x, z, serverChunk);
 			// Let renderer know that this chunk has been created - it might have made render data from the EmptyChunk if it got to a chunk before the server sent it
 			level->setTilesDirty( x * 16 , 0 , z * 16 , x * 16 + 15, 127, z * 16 + 15);
-			hasData[idx] = true;
+			m_hasData.set(x, z, chunkFlagSet());
 		}
 		else
 		{
@@ -209,11 +201,8 @@ LevelChunk *MultiPlayerChunkCache::create(int x, int z)
 
 		LeaveCriticalSection(&m_csLoadCreate);
 
-#if ( defined _WIN64 || defined __LP64__ )
-		if( InterlockedCompareExchangeRelease64((LONG64 *)&cache[idx],(LONG64)chunk,(LONG64)lastChunk) == (LONG64)lastChunk )
-#else
-		if( InterlockedCompareExchangeRelease((LONG *)&cache[idx],(LONG)chunk,(LONG)lastChunk) == (LONG)lastChunk )
-#endif // _DURANGO
+		// Hellish Sight: same compare-exchange semantics as the 4J array slot.
+		if( m_table.compareExchange(x, z, lastChunk, chunk) )
 		{
 			// If we're sharing with the server, we'll need to calculate our heightmap now, which isn't shared. If we aren't sharing with the server,
 			// then this will be calculated when the chunk data arrives.
@@ -232,7 +221,7 @@ LevelChunk *MultiPlayerChunkCache::create(int x, int z)
 			// Something else must have updated the cache. Return that chunk and discard this one. This really shouldn't be happening
 			// in multiplayer
 			delete chunk;
-			return cache[idx];
+			return m_table.get(x, z);
 		}
 
 	}
@@ -251,9 +240,8 @@ LevelChunk *MultiPlayerChunkCache::getChunk(int x, int z)
 	// Check we're in range of the stored level
 	if( ( ix < 0 ) || ( ix >= XZSIZE ) ) return ( waterChunk ? waterChunk : emptyChunk );
 	if( ( iz < 0 ) || ( iz >= XZSIZE ) ) return ( waterChunk ? waterChunk : emptyChunk );
-	int idx = ix * XZSIZE + iz;
 
-	LevelChunk *chunk = cache[idx];
+	LevelChunk *chunk = m_table.get(x, z);
 	if( chunk == nullptr )
 	{
 		return emptyChunk;
@@ -313,6 +301,5 @@ void MultiPlayerChunkCache::dataReceived(int x, int z)
 	// Check we're in range of the stored level
 	if( ( ix < 0 ) || ( ix >= XZSIZE ) ) return;
 	if( ( iz < 0 ) || ( iz >= XZSIZE ) ) return;
-	int idx = ix * XZSIZE + iz;
-	hasData[idx] = true;
+	m_hasData.set(x, z, chunkFlagSet());
 }

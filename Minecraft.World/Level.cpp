@@ -1319,8 +1319,7 @@ int Level::getBrightness(LightLayer::variety layer, int x, int y, int z)
 
 	if( ( ix < 0 ) || ( ix >= chunkSourceXZSize ) ) return 0;
 	if( ( iz < 0 ) || ( iz >= chunkSourceXZSize ) ) return 0;
-	int idx = ix * chunkSourceXZSize + iz;
-	LevelChunk *c = chunkSourceCache[idx];
+	LevelChunk *c = ( chunkSourceTable != nullptr ) ? chunkSourceTable->get(xc, zc) : nullptr;
 
 	if( c == nullptr ) return (int)layer;
 
@@ -1368,8 +1367,7 @@ void Level::getNeighbourBrightnesses(int *brightnesses, LightLayer::variety laye
 			return;
 		}
 
-		int idx = ix * chunkSourceXZSize + iz;
-		LevelChunk *c = chunkSourceCache[idx];
+		LevelChunk *c = ( chunkSourceTable != nullptr ) ? chunkSourceTable->get(xc, zc) : nullptr;
 
 		// 4J Stu - The java LightLayer was an enum class type with a member "surrounding" which is what we
 		// were returning here. Surrounding has the same value as the enum value in our C++ code, so just cast

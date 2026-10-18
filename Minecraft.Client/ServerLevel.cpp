@@ -110,7 +110,7 @@ ServerLevel::ServerLevel(MinecraftServer *server, shared_ptr<LevelStorage>levelS
 	// 4J - this this used to be called in parent ctor via a virtual fn
 	chunkSource = createChunkSource();
 	// 4J - optimisation - keep direct reference of underlying cache here
-	chunkSourceCache = chunkSource->getCache();
+	chunkSourceTable = chunkSource->getChunkTable();
 	chunkSourceXZSize = chunkSource->m_XZSize;
 
 	// 4J - The listener used to be added in MinecraftServer::loadLevel but we need it to be set up before we do the next couple of things, or else chunks get loaded before we have the entity tracker set up to listen to them
