@@ -236,16 +236,13 @@ void UIScene_AbstractContainerMenu::tick()
 		info.pad = m_iPad;
 		info.screenW = rw;
 		info.screenH = rh;
-		// the background panel's position is relative to MainPanel
-		float mainX = static_cast<float>(m_controlMainPanel.getXPos());
-		float mainY = static_cast<float>(m_controlMainPanel.getYPos());
-		const float panelW = m_fPanelMaxX - m_fPanelMinX;
-		float px0 = m_fPanelMinX + mainX;
-		if (px0 < 0.0f || px0 + panelW > static_cast<float>(m_movieWidth)) px0 = (static_cast<float>(m_movieWidth) - panelW) * 0.5f;	// panels are centred
-		info.panelX0 = px0 * sx;
-		info.panelX1 = (px0 + panelW) * sx;
-		info.panelY0 = (m_fPanelMinY + mainY) * sy;
-		info.panelY1 = (m_fPanelMaxY + mainY) * sy;
+		// panel bounds from the slots / controls themselves (same space as the pointer)
+		float bx0, by0, bx1, by1;
+		HS_ContentBounds(bx0, by0, bx1, by1);
+		info.panelX0 = bx0 * sx;
+		info.panelX1 = bx1 * sx;
+		info.panelY0 = by0 * sy;
+		info.panelY1 = by1 * sy;
 		info.pointerX = (m_pointerPos.x + m_fPointerImageOffsetX) * sx;
 		info.pointerY = (m_pointerPos.y + m_fPointerImageOffsetY) * sy;
 		info.hovered = HS_HoveredItem();
@@ -449,4 +446,48 @@ shared_ptr<ItemInstance> UIScene_AbstractContainerMenu::HS_HoveredItem()
 	const float px = m_pointerPos.x + m_fPointerImageOffsetX, py = m_pointerPos.y + m_fPointerImageOffsetY;
 	if (px < itemPos.x || py < itemPos.y || px > itemPos.x + itemSize.x || py > itemPos.y + itemSize.y) return nullptr;
 	return getSlotItem(m_eCurrSection, index);
+}
+
+// Hellish Sight: bounds of everything the container shows (slots, tabs, buttons) plus the panel border,
+// in pointer (movie) coordinates. Used to keep the recipe viewer's item list beside the panel.
+void UIScene_AbstractContainerMenu::HS_ContentBounds(float &x0, float &y0, float &x1, float &y1)
+{
+	x0 = y0 = 1e9f;
+	x1 = y1 = -1e9f;
+	float slotW = 0.0f;
+	for (int iSection = m_eFirstSection; iSection < m_eMaxSection; ++iSection)
+	{
+		const ESceneSection eSection = static_cast<ESceneSection>(iSection);
+		if (!IsVisible(eSection)) continue;
+		UIVec2D sectionPos;
+		GetPositionOfSection(eSection, &sectionPos);
+		int count = 1;
+		if (IsSectionSlotList(eSection))
+		{
+			int cols = 0, rows = 0;
+			count = GetSectionDimensions(eSection, &cols, &rows);
+		}
+		for (int i = 0; i < count && i < 256; ++i)
+		{
+			UIVec2D pos, size;
+			GetItemScreenData(eSection, i, &pos, &size);
+			pos += sectionPos;
+			if (size.x <= 0.0f || size.y <= 0.0f) continue;
+			x0 = (std::min)(x0, pos.x);
+			y0 = (std::min)(y0, pos.y);
+			x1 = (std::max)(x1, pos.x + size.x);
+			y1 = (std::max)(y1, pos.y + size.y);
+			if (IsSectionSlotList(eSection)) slotW = (std::max)(slotW, size.x);
+		}
+	}
+	if (x1 < x0)
+	{
+		// nothing found: centred panel
+		const float w = m_fPanelMaxX - m_fPanelMinX, h = m_fPanelMaxY - m_fPanelMinY;
+		x0 = (m_movieWidth - w) * 0.5f; x1 = x0 + w;
+		y0 = (m_movieHeight - h) * 0.5f; y1 = y0 + h;
+		return;
+	}
+	const float border = slotW > 0.0f ? slotW * 0.6f : 16.0f;
+	x0 -= border; y0 -= border; x1 += border; y1 += border;
 }

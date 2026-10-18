@@ -73,4 +73,5 @@ public:
 
 	// Hellish Sight: item in the slot under the pointer (nullptr when not over a slot)
 	shared_ptr<ItemInstance> HS_HoveredItem();
+	void HS_ContentBounds(float &x0, float &y0, float &x1, float &y1);
 };

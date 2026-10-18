@@ -740,7 +740,7 @@ namespace HSRecipeViewer
 			WinLayout w = winLayout();
 
 			// dim the game and the container behind the window
-			fillGradient(0, 0, sw, sh, 0xC0101010, 0xD0101010);
+			fillGradient(0, 0, sw, sh, 0xE8101010, 0xF0101010);
 
 			if (!g_drawing && inside(w.x - 26, w.y - 24, w.w + 30, w.h + 28)) g_hit.type = H_Window;
 
