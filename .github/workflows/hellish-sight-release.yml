@@ -83,6 +83,12 @@ jobs:
       shell: pwsh
       run: Copy-Item Minecraft.Client/Windows64/ShaderPack_MakeUp_LICENSE.txt ./build/windows64/Minecraft.Client/Release/
 
+    - name: Bundle content mods
+      shell: pwsh
+      run: |
+        New-Item -ItemType Directory -Force -Path ./build/windows64/Minecraft.Client/Release/mods | Out-Null
+        Copy-Item -Recurse -Force content/mods/* ./build/windows64/Minecraft.Client/Release/mods/
+
     # Hellish Sight: "Servidores Java" - Reunion proxy (AGPL-3.0) + a trimmed Java runtime
     - name: Setup Java 22
       uses: actions/setup-java@v4

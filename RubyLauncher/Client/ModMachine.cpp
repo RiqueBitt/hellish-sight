@@ -53,7 +53,7 @@ namespace ModMachines
 		{
 			int aux = -1;
 			lookup(r.in, r.inId, aux);
-			r.inAux = (r.in.find('@') != std::string::npos) ? aux : -1;	// "id@aux" pins the aux value
+			r.inAux = aux > 0 ? aux : -1;	// names of aux variants (lapis, charcoal...) only match that variant
 			int outAux = 0;
 			lookup(r.out, r.outId, outAux);
 			r.outAux = outAux < 0 ? 0 : outAux;
@@ -61,14 +61,14 @@ namespace ModMachines
 			{
 				int ea = -1;
 				lookup(r.extra, r.extraId, ea);
-				r.extraAux = -1;
+				r.extraAux = ea > 0 ? ea : -1;
 			}
 		}
 		for (auto &f : def.fuels)
 		{
 			int a = -1;
 			lookup(f.item, f.id, a);
-			f.aux = -1;
+			f.aux = a > 0 ? a : -1;
 		}
 	}
 
@@ -146,7 +146,7 @@ int ModMachineTileEntity::powerTicks(shared_ptr<ItemInstance> item)
 	if (d == nullptr || item == nullptr) return 0;
 	for (auto &f : d->fuels)
 	{
-		if (f.id != 0 && f.id == item->id) return f.ticks;
+		if (f.id != 0 && f.id == item->id && (f.aux < 0 || f.aux == item->getAuxValue())) return f.ticks;
 	}
 	if (d->furnaceFuels) return FurnaceTileEntity::getBurnDuration(item);
 	return 0;
@@ -184,7 +184,7 @@ void ModMachineTileEntity::tick()
 	if (r != nullptr && r->extraId != 0)
 	{
 		shared_ptr<ItemInstance> ex = getItem(SLOT_FUEL);
-		hasExtra = ex != nullptr && ex->id == r->extraId && ex->count > 0;
+		hasExtra = ex != nullptr && ex->id == r->extraId && (r->extraAux < 0 || ex->getAuxValue() == r->extraAux) && ex->count > 0;
 	}
 
 	const bool usesPower = d->needsPower && (r == nullptr || r->extraId == 0);

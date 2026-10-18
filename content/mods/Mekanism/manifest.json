@@ -1,0 +1,7 @@
+{
+  "name": "Mekanism",
+  "version": "26.3-hs1",
+  "modId": "mekanism",
+  "clientMain": "module/client.lua",
+  "serverMain": "module/server.lua"
+}
