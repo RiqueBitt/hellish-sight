@@ -1,4 +1,5 @@
 #include "stdafx.h"
+#include "../Minecraft.World/Icon.h"
 #include "PlayerRenderer.h"
 #include "SkullTileRenderer.h"
 #include "../Minecraft.World/SkullTileEntity.h"

@@ -1,4 +1,5 @@
 #include "stdafx.h"
+#include "../Minecraft.World/Icon.h"
 #include "SnowManModel.h"
 #include "../Minecraft.World/net.minecraft.world.entity.animal.h"
 #include "../Minecraft.World/net.minecraft.world.level.tile.h"

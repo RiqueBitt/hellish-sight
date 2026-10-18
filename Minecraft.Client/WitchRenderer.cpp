@@ -1,4 +1,5 @@
 #include "stdafx.h"
+#include "../Minecraft.World/Icon.h"
 #include "EntityRenderDispatcher.h"
 #include "WitchRenderer.h"
 #include "WitchModel.h"

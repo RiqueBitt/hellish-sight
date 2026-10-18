@@ -1,4 +1,5 @@
 #include "stdafx.h"
+#include "../Minecraft.World/Icon.h"
 #include "HumanoidMobRenderer.h"
 #include "SkullTileRenderer.h"
 #include "HumanoidModel.h"
