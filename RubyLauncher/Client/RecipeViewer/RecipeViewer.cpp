@@ -14,6 +14,7 @@
 #include "net.minecraft.world.inventory.h"
 #include "net.minecraft.world.entity.player.h"
 #include "HtmlString.h"
+#include "Common/UI/UI.h"
 
 #include <algorithm>
 #include <cwctype>
@@ -663,7 +664,6 @@ namespace HSRecipeViewer
 			case Layout_Smelting:
 				itemSlot(ox, oy, ingStack(r, 0), H_RecipeSlot, recipeIndex, true);
 				if (g_drawing) flame(ox + 2, oy + 20);
-				itemSlot(ox, oy + 36 - 2 - 0, RVStack(), H_Window, recipeIndex, false);
 				arrowRight(ox + 26, oy + 1);
 				itemSlot(ox + 56, oy - 4, r.outputs.empty() ? RVStack() : r.outputs[0], H_RecipeSlot, recipeIndex, true, true, 26);
 				drawLines(r, ox + 26, oy + 24, 2);
@@ -1191,8 +1191,8 @@ namespace HSRecipeViewer
 			tooltip(lines, static_cast<int>(g_px), static_cast<int>(g_py));
 		}
 
-		// our own pointer when it is over the overlay (the container's pointer is underneath)
-		if (overUi())
+		// our own pointer over the recipe window (the container's pointer is underneath it)
+		if (s.viewOpen)
 		{
 			const int x = static_cast<int>(g_px), y = static_cast<int>(g_py);
 			std::shared_ptr<MultiplayerLocalPlayer> player = mc->localplayers[s.scene.pad];
