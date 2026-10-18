@@ -1,0 +1,75 @@
+name: Import vanilla base (Legacy Revelations)
+
+# Mirrors a snapshot of Legacy Revelations into branch base/revelations
+# (no history, CI folders stripped) to be used as the vanilla base of
+# Hellish Sight. Runs when this branch is pushed.
+
+on:
+  push:
+    branches:
+      - 'tools/import'
+
+permissions:
+  contents: write
+
+jobs:
+  import:
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    steps:
+    - name: Diagnose source server
+      run: |
+        {
+          echo "## Diagnóstico git.revela.dev"
+          echo '```'
+          for u in https://git.revela.dev https://git.revela.dev/itsRevela/LCE-Revelations https://git.revela.dev/api/v1/repos/itsRevela/LCE-Revelations "https://git.revela.dev/api/v1/repos/search?q=revelations&limit=10"; do
+            echo "### $u"; curl -sS -m 20 -o /tmp/body -w 'HTTP %{http_code}\n' "$u" 2>&1; head -c 600 /tmp/body | tr -d '\r'; echo
+          done
+          echo '```'
+        } >> $GITHUB_STEP_SUMMARY
+
+    - name: Clone Legacy Revelations
+      run: |
+        ok=""
+        for u in https://git.revela.dev/itsRevela/LCE-Revelations.git https://git.revela.dev/itsRevela/LCE-Revelations https://git.revela.dev/itsrevela/lce-revelations.git; do
+          if GIT_TERMINAL_PROMPT=0 git clone --depth 1 "$u" rev 2> clone_err.txt; then ok="$u"; break; fi
+          { echo "### clone falhou: $u"; echo '```'; tail -5 clone_err.txt; echo '```'; } >> $GITHUB_STEP_SUMMARY
+          rm -rf rev
+        done
+        [ -n "$ok" ] || exit 1
+        cd rev
+        echo "SRC_SHA=$(git rev-parse HEAD)" >> $GITHUB_ENV
+        echo "SRC_BRANCH=$(git rev-parse --abbrev-ref HEAD)" >> $GITHUB_ENV
+        { echo "### clone ok: $ok"; git log -1 --format='%H %ad %s'; du -sh .; } >> $GITHUB_STEP_SUMMARY
+
+    - name: Report large files and CI folders
+      run: |
+        cd rev
+        find . -path ./.git -prune -o -type f -size +90M -print || true
+        ls -la .github .gitea .forgejo 2>/dev/null || true
+
+    - name: Create snapshot commit
+      run: |
+        cd rev
+        mkdir -p ../ci-original
+        for d in .github .gitea .forgejo; do [ -d "$d" ] && cp -r "$d" "../ci-original/$d"; done
+        rm -rf .git .github .gitea .forgejo
+        git init -q -b base/revelations
+        git config user.name "github-actions[bot]"
+        git config user.email "github-actions[bot]@users.noreply.github.com"
+        git add -A
+        git commit -q -m "Import Legacy Revelations snapshot ${SRC_SHA}" -m "Source: https://git.revela.dev/itsRevela/LCE-Revelations (branch ${SRC_BRANCH}). Vanilla base for Hellish Sight; CI folders removed."
+        git count-objects -vH
+
+    - name: Upload original CI config (reference)
+      uses: actions/upload-artifact@v6
+      with:
+        name: revelations-ci-original
+        path: ci-original
+        if-no-files-found: ignore
+
+    - name: Push to base/revelations
+      run: |
+        cd rev
+        git remote add origin "https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/${{ github.repository }}.git"
+        git push --force origin base/revelations
