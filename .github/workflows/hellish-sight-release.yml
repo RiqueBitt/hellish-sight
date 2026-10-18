@@ -56,6 +56,22 @@ jobs:
         buildPreset: windows64-release
         buildPresetAdditionalArgs: "['--target', 'Minecraft.Client', '--', '-k', '0']"
 
+    - name: Report compile errors
+      # GitHub only shows 10 annotations per step, so on failure rebuild the failed
+      # files (incremental, fast) and post the full error list as a commit comment.
+      if: failure()
+      shell: pwsh
+      env:
+        GH_TOKEN: ${{ github.token }}
+      run: |
+        cmake --build --preset windows64-release --target Minecraft.Client -- -k 0 2>&1 | Tee-Object -FilePath build-errors.log | Out-Null
+        $errs = Select-String -Path build-errors.log -Pattern 'error C\d+|error LNK\d+|fatal error' | ForEach-Object { $_.Line.Trim() } | Sort-Object -Unique
+        $errs = $errs | ForEach-Object { $_ -replace '^.*?\\(RubyLauncher|Minecraft\.[A-Za-z]+)\\', '$1/' }
+        $body = "Compile errors (" + $errs.Count + "):`n``````n" + (($errs | Select-Object -First 200) -join "`n") + "`n``````"
+        $body | Out-File -Encoding utf8 body.txt
+        gh api "repos/${{ github.repository }}/commits/${{ github.sha }}/comments" -F body=@body.txt | Out-Null
+        Write-Host $body
+
     - name: Verify build output
       shell: pwsh
       run: |
