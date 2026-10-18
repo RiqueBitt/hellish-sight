@@ -581,13 +581,24 @@ void LocalPlayer::aiStep()
 		}
 		else
 		{
-			const double eyeY = hsTarget->y + hsTarget->getHeadHeight();
-			setPos(hsTarget->x, eyeY - getHeadHeight(), hsTarget->z);
+			const double eyeOff = hsTarget->getHeadHeight() - getHeadHeight();
+			setPos(hsTarget->x, hsTarget->y + eyeOff, hsTarget->z);
+			// copy the target's previous position / rotation too so the camera interpolates smoothly
+			xo = xOld = hsTarget->xo;
+			yo = yOld = hsTarget->yo + eyeOff;
+			zo = zOld = hsTarget->zo;
 			xd = yd = zd = 0;
-			float yaw = hsTarget->yRot;
-			if (hsTarget->instanceof(eTYPE_LIVINGENTITY)) yaw = dynamic_pointer_cast<LivingEntity>(hsTarget)->yHeadRot;
+			float yaw = hsTarget->yRot, yawO = hsTarget->yRotO;
+			if (hsTarget->instanceof(eTYPE_LIVINGENTITY))
+			{
+				shared_ptr<LivingEntity> living = dynamic_pointer_cast<LivingEntity>(hsTarget);
+				yaw = living->yHeadRot;
+				yawO = living->yHeadRotO;
+			}
 			yRot = yaw;
+			yRotO = yawO;
 			xRot = hsTarget->xRot;
+			xRotO = hsTarget->xRotO;
 		}
 	}
 }

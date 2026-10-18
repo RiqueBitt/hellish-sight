@@ -2645,3 +2645,35 @@ void LevelChunk::reorderBlocksAndDataToXZY(int y0, int xs, int ys, int zs, byteA
 	//	buffer.data = newBuffer.data;
 	//}
 }
+
+// Hellish Sight: a chunk may hold ids that have no tile any more (a mod was removed, or the world
+// was made by an older build that cut mod ids to 8 bits). Every renderer and most game code does
+// Tile::tiles[id]->..., so such ids are turned into air when the chunk is loaded.
+int LevelChunk::hsSanitizeTiles()
+{
+	std::vector<unsigned char> ids(16 * 16 * Level::maxBuildHeight);
+	byteArray arr(ids.data(), static_cast<unsigned int>(ids.size()));
+	getBlockData(arr);
+	int fixed = 0;
+	for (int x = 0; x < 16; ++x)
+	{
+		for (int z = 0; z < 16; ++z)
+		{
+			for (int y = 0; y < Level::maxBuildHeight; ++y)
+			{
+				const int iy = y >= Level::COMPRESSED_CHUNK_SECTION_HEIGHT ? y - Level::COMPRESSED_CHUNK_SECTION_HEIGHT : y;
+				const int off = y >= Level::COMPRESSED_CHUNK_SECTION_HEIGHT ? Level::COMPRESSED_CHUNK_SECTION_TILES : 0;
+				const int low = ids[off + ((x << 11) | (z << 7) | iy)];
+				const int full = hsFullTile(low, x, y, z);
+				if (full == 0) continue;
+				if (full < Tile::TILE_NUM_COUNT && Tile::tiles[full] != nullptr) continue;
+				CompressedTileStorage *blocks = y >= Level::COMPRESSED_CHUNK_SECTION_HEIGHT ? upperBlocks : lowerBlocks;
+				blocks->set(x, iy, z, 0);
+				if (m_hsHigh != nullptr) m_hsHigh->set(x, y, z, 0);
+				++fixed;
+			}
+		}
+	}
+	if (fixed > 0) setUnsaved(true);
+	return fixed;
+}

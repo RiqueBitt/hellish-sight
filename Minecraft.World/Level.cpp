@@ -964,8 +964,9 @@ bool Level::setTileAndData(int x, int y, int z, int tile, int data, int updateFl
 Material *Level::getMaterial(int x, int y, int z)
 {
 	int t = getTile(x, y, z);
-	if (t == 0) return Material::air;
-	return Tile::tiles[t]->material;
+	if (t <= 0 || t >= Tile::TILE_NUM_COUNT) return Material::air;
+	Tile *tile = Tile::tiles[t];	// Hellish Sight: unknown ids count as air
+	return tile != nullptr ? tile->material : Material::air;
 }
 
 int Level::getData(int x, int y, int z)

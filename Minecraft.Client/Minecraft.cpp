@@ -3633,6 +3633,15 @@ void Minecraft::tick(bool bFirst, bool bUpdateTextures)
 			wheel = g_KBMInput.GetMouseWheel();
 		}
 #endif
+		// Hellish Sight: in spectator mode the wheel changes the flying speed (Java 1.8), there is no hotbar
+		if (wheel != 0 && player->isSpectator())
+		{
+			float speed = player->abilities.getFlyingSpeed() + (wheel > 0 ? 0.005f : -0.005f);
+			if (speed < 0.0f) speed = 0.0f;
+			if (speed > 0.2f) speed = 0.2f;
+			player->abilities.setFlyingSpeed(speed);
+			wheel = 0;
+		}
 		if (wheel != 0)
 		{
 			player->inventory->swapPaint(wheel);

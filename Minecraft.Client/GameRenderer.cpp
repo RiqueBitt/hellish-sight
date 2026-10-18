@@ -624,7 +624,8 @@ void GameRenderer::moveCameraToPlayer(float a)
 				yd = Mth::sin(xRot / 180 * PI) * cameraDist;
 			}
 
-			for (int i = 0; i < 8; i++)
+			// Hellish Sight: the spectator camera goes through blocks, so it is never pulled in by them
+			for (int i = 0; i < 8 && !localplayer->isSpectator(); i++)
 			{
 				float xo = static_cast<float>((i & 1) * 2 - 1);
 				float yo = static_cast<float>(((i >> 1) & 1) * 2 - 1);

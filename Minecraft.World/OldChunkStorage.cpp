@@ -474,6 +474,7 @@ LevelChunk *OldChunkStorage::load(Level *level, DataInputStream *dis)
 	CompoundTag *tag = NbtIo::read(dis);
 
 	levelChunk->hsLoadHigh(tag);	// Hellish Sight: mod tile ids >= 256
+	levelChunk->hsSanitizeTiles();
 	if (tag != nullptr && tag->contains(L"HSHighIds")) delete [] tag->getByteArray(L"HSHighIds").data;
 
 	loadEntities(levelChunk, level, tag);
@@ -513,6 +514,7 @@ LevelChunk *OldChunkStorage::load(Level *level, CompoundTag *tag)
 	levelChunk->setBlockData(tag->getByteArray(L"Blocks"));
 	delete [] tag->getByteArray(L"Blocks").data;
 	levelChunk->hsLoadHigh(tag);	// Hellish Sight
+	levelChunk->hsSanitizeTiles();
 	if (tag->contains(L"HSHighIds")) delete [] tag->getByteArray(L"HSHighIds").data;
 	//	levelChunk->blocks = tag->getByteArray(L"Blocks");
 

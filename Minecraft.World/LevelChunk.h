@@ -57,6 +57,7 @@ public:
 	void hsReplaceHigh(HSHighIds *fresh);	// takes ownership
 	void hsSaveHigh(CompoundTag *tag);
 	void hsLoadHigh(CompoundTag *tag);
+	int hsSanitizeTiles();	// clears ids with no registered tile (removed mods, worlds from old builds)
 	bool isRenderChunkEmpty(int y);
 	void setBlockData(byteArray data);	// Set block data to that passed in in the input array of size 32768
 	void getBlockData(byteArray data);	// Sets data in passed in array of size 32768, from the block data in this chunk
