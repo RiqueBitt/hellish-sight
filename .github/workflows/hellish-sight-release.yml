@@ -1,0 +1,87 @@
+name: Hellish Sight Release
+
+# Builds the Windows client and publishes it as a GitHub release.
+#  - Push a tag like v1.0.0  -> builds and publishes release "Hellish Sight v1.0.0"
+#  - Push to main/feature/** or run manually -> builds and uploads the zip as a workflow artifact only
+#
+# The Emerald Legacy Launcher installs this version from:
+#   https://github.com/RiqueBitt/hellish-sight/releases/latest/download/HellishSightWindows64.zip
+
+on:
+  workflow_dispatch:
+  push:
+    tags:
+      - 'v*'
+    branches:
+      - 'main'
+      - 'feature/**'
+    paths-ignore:
+      - '**.md'
+
+permissions:
+  contents: write
+
+concurrency:
+  group: hellish-sight-release-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build:
+    runs-on: windows-latest
+    timeout-minutes: 120
+
+    env:
+      GITHUB_REPOSITORY: ${{ github.repository }}
+      ZIP_NAME: HellishSightWindows64.zip
+
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v6
+
+    - name: Setup MSVC
+      uses: ilammy/msvc-dev-cmd@v1
+
+    - name: Setup CMake
+      uses: lukka/get-cmake@latest
+
+    - name: Build client (Release)
+      uses: lukka/run-cmake@v10
+      env:
+        VCPKG_ROOT: "" # Disable vcpkg for CI builds
+      with:
+        configurePreset: windows64
+        buildPreset: windows64-release
+        buildPresetAdditionalArgs: "['--target', 'Minecraft.Client']"
+
+    - name: Verify build output
+      shell: pwsh
+      run: |
+        $out = "./build/windows64/Minecraft.Client/Release"
+        if (-not (Test-Path "$out/Minecraft.Client.exe")) { throw "Minecraft.Client.exe was not produced" }
+        Get-ChildItem $out | Select-Object Name, Length | Format-Table -AutoSize
+
+    - name: Zip build
+      run: 7z a -r ${{ env.ZIP_NAME }} ./build/windows64/Minecraft.Client/Release/* "-x!*.ipdb" "-x!*.iobj" "-x!*.pdb" "-x!*.lib" "-x!*.exp"
+
+    - name: Upload artifact
+      uses: actions/upload-artifact@v6
+      with:
+        name: hellish-sight-windows64
+        path: ${{ env.ZIP_NAME }}
+        retention-days: 7
+
+    - name: Publish release
+      if: startsWith(github.ref, 'refs/tags/v')
+      uses: softprops/action-gh-release@v2
+      with:
+        name: Hellish Sight ${{ github.ref_name }}
+        files: ${{ env.ZIP_NAME }}
+        make_latest: true
+        body: |
+          **Hellish Sight** — Hellish Ends with the built-in **Glance** HUD API (see what you're looking at).
+
+          ### Install
+          - **Emerald Legacy Launcher:** Workshop → Versions → *Hellish Sight* → Install. Then install the **Glance** mod from the Workshop.
+          - **Manual:** extract `${{ env.ZIP_NAME }}` to a folder and run `Minecraft.Client.exe`.
+
+          Requires Windows 7+ and a DirectX 11 GPU. Based on [Hellish Ends](https://github.com/deadvoxelx/ThatModdedRepo).
