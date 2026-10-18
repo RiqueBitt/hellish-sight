@@ -314,6 +314,13 @@ int BlockRegistry::registerMachine(const std::wstring& path, const std::string& 
 	def.furnaceRecipes = table.get_or("furnaceRecipes", false);
 	def.furnaceFuels = table.get_or("furnaceFuels", false);
 	def.needsPower = table.get_or("needsPower", true);
+	const std::string kind = table.get_or<std::string>("kind", "processor");
+	def.kind = kind == "generator" ? MachineKind_Generator : kind == "storage" ? MachineKind_Storage : kind == "cable" ? MachineKind_Cable : MachineKind_Processor;
+	def.energyCapacity = table.get_or("energyCapacity", 0);
+	def.energyPerTick = table.get_or("energyPerTick", 0);
+	def.generation = table.get_or("generation", 0);
+	def.generatorType = table.get_or<std::string>("generatorType", "burn") == "solar" ? 1 : 0;
+	def.transfer = table.get_or("transfer", 0);
 
 	sol::optional<sol::table> recipes = table["recipes"];
 	if (recipes)

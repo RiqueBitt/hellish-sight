@@ -51,7 +51,17 @@ struct ModMachineDef
 	std::vector<ModMachineFuel> fuels;
 	std::wstring iconFront, iconFrontActive, iconSide, iconTop, iconBottom;
 	bool resolved = false;
+
+	// Hellish Sight energy (FE). kind: 0 processor, 1 generator, 2 storage (energy cube), 3 cable
+	int kind = 0;
+	int energyCapacity = 0;		// FE buffer; processors with energyPerTick > 0 run on it
+	int energyPerTick = 0;		// processor usage while working
+	int generation = 0;			// generator FE/t
+	int generatorType = 0;		// 0 burn (fuel slot), 1 solar (daylight + open sky)
+	int transfer = 0;			// max FE/t pushed out (generators, cubes, cables)
 };
+
+enum ModMachineKind { MachineKind_Processor = 0, MachineKind_Generator, MachineKind_Storage, MachineKind_Cable };
 
 namespace ModMachines
 {
@@ -82,7 +92,17 @@ public:
 
 	ModMachineDef *def();
 
+	// energy
+	int getEnergy() const { return m_energy; }
+	int capacity();
+	int receiveEnergy(int amount, int intoFace, bool fromCable);	// returns accepted FE
+
 private:
+	void pushEnergy(int face, int amount);
+	void tickEnergyBlock(ModMachineDef *d);
+	void updateGauge(ModMachineDef *d);
+	int m_energy = 0;
+	int m_burn = 0, m_burnTotal = 0;
 	const ModMachineRecipe *findRecipe(shared_ptr<ItemInstance> input, const ModMachineRecipe &tmp, ModMachineRecipe &furnaceOut);
 	int powerTicks(shared_ptr<ItemInstance> item);
 
@@ -104,6 +124,10 @@ public:
 	virtual void setPlacedBy(Level *level, int x, int y, int z, shared_ptr<LivingEntity> by, shared_ptr<ItemInstance> itemInstance);
 	virtual void onRemove(Level *level, int x, int y, int z, int id, int data);
 	virtual void animateTick(Level *level, int xt, int yt, int zt, Random *random);
+	virtual void updateShape(LevelSource *level, int x, int y, int z, int forceData = -1, shared_ptr<TileEntity> forceEntity = shared_ptr<TileEntity>());
+	virtual bool isSolidRender(bool isServerLevel = false);
+	virtual bool isCubeShaped();
+	bool isCable() const;
 
 	static void setActive(Level *level, int x, int y, int z, bool active);
 

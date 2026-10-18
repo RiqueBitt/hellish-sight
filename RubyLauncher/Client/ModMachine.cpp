@@ -162,6 +162,11 @@ void ModMachineTileEntity::tick()
 	}
 	ModMachineDef *d = def();
 	if (d == nullptr) return;
+	if (d->kind != MachineKind_Processor)
+	{
+		tickEnergyBlock(d);
+		return;
+	}
 
 	bool changed = false;
 	ModMachineRecipe furnaceTmp;
@@ -188,9 +193,25 @@ void ModMachineTileEntity::tick()
 	}
 
 	const bool usesPower = d->needsPower && (r == nullptr || r->extraId == 0);
+	const bool electric = d->energyPerTick > 0;
+
+	// electric machines: power items in the bottom slot charge the FE buffer
+	if (electric)
+	{
+		shared_ptr<ItemInstance> fuel = getItem(SLOT_FUEL);
+		const int ticks = (r == nullptr || r->extraId == 0 || fuel == nullptr || fuel->id != r->extraId) ? powerTicks(fuel) : 0;
+		const int fe = ticks * d->energyPerTick;
+		if (fe > 0 && m_energy + fe <= capacity())
+		{
+			m_energy += fe;
+			fuel->count--;
+			if (fuel->count <= 0) setItem(SLOT_FUEL, nullptr);
+			changed = true;
+		}
+	}
 
 	// refuel when empty and there is work to do
-	if (usesPower && r != nullptr && fits && litTime <= 0)
+	if (!electric && usesPower && r != nullptr && fits && litTime <= 0)
 	{
 		shared_ptr<ItemInstance> fuel = getItem(SLOT_FUEL);
 		const int ticks = powerTicks(fuel);
@@ -207,10 +228,12 @@ void ModMachineTileEntity::tick()
 		}
 	}
 
-	const bool running = r != nullptr && fits && hasExtra && (!usesPower || litTime > 0);
+	const bool running = r != nullptr && fits && hasExtra &&
+		(electric ? m_energy >= d->energyPerTick : (!usesPower || litTime > 0));
 	if (running)
 	{
-		if (usesPower) litTime--;
+		if (electric) m_energy -= d->energyPerTick;
+		else if (usesPower) litTime--;
 		else { litTime = litDuration = 1; }
 		// the furnace screen expects progress out of 200
 		tickCount += (std::max)(1, 200 / (std::max)(1, d->processTicks));
@@ -236,8 +259,9 @@ void ModMachineTileEntity::tick()
 	{
 		if (tickCount != 0) changed = true;
 		tickCount = 0;
-		if (!usesPower) litTime = 0;
+		if (!usesPower && !electric) litTime = 0;
 	}
+	if (electric) updateGauge(d);
 
 	if (running != m_active)
 	{
@@ -254,6 +278,9 @@ void ModMachineTileEntity::load(CompoundTag *base)
 	const wstring id = base->getString(L"HSMachineId");
 	m_machineId.assign(id.begin(), id.end());
 	m_def = nullptr;
+	m_energy = base->getInt(L"HSEnergy");
+	m_burn = base->getInt(L"HSBurn");
+	m_burnTotal = base->getInt(L"HSBurnTotal");
 }
 
 void ModMachineTileEntity::save(CompoundTag *base)
@@ -261,6 +288,9 @@ void ModMachineTileEntity::save(CompoundTag *base)
 	FurnaceTileEntity::save(base);
 	base->putString(L"id", L"HSMachine");
 	base->putString(L"HSMachineId", wstring(m_machineId.begin(), m_machineId.end()));
+	base->putInt(L"HSEnergy", m_energy);
+	base->putInt(L"HSBurn", m_burn);
+	base->putInt(L"HSBurnTotal", m_burnTotal);
 }
 
 wstring ModMachineTileEntity::getName()
@@ -305,13 +335,173 @@ shared_ptr<TileEntity> ModMachineTileEntity::clone()
 	return c;
 }
 
+// --------------------------------------------------------------------------------------
+// Energy
+// --------------------------------------------------------------------------------------
+static const int kFaceDx[6] = { 0, 0, 0, 0, -1, 1 };
+static const int kFaceDy[6] = { -1, 1, 0, 0, 0, 0 };
+static const int kFaceDz[6] = { 0, 0, -1, 1, 0, 0 };
+static int oppositeFace(int f) { return f ^ 1; }
+
+int ModMachineTileEntity::capacity()
+{
+	ModMachineDef *d = def();
+	if (d == nullptr) return 0;
+	if (d->energyCapacity > 0) return d->energyCapacity;
+	if (d->kind == MachineKind_Cable) return (std::max)(1, d->transfer * 2);
+	return 0;
+}
+
+int ModMachineTileEntity::receiveEnergy(int amount, int intoFace, bool fromCable)
+{
+	ModMachineDef *d = def();
+	if (d == nullptr || amount <= 0) return 0;
+	switch (d->kind)
+	{
+	case MachineKind_Processor:
+		if (d->energyPerTick <= 0) return 0;
+		break;
+	case MachineKind_Generator:
+		return 0;
+	case MachineKind_Storage:
+		if (level && intoFace == (level->getData(x, y, z) & 7)) return 0;	// the front only outputs
+		break;
+	default:
+		break;
+	}
+	const int room = capacity() - m_energy;
+	const int accepted = (std::max)(0, (std::min)(room, amount));
+	m_energy += accepted;
+	return accepted;
+}
+
+void ModMachineTileEntity::pushEnergy(int face, int amount)
+{
+	if (amount <= 0 || m_energy <= 0 || level == nullptr) return;
+	const int nx = x + kFaceDx[face], ny = y + kFaceDy[face], nz = z + kFaceDz[face];
+	shared_ptr<ModMachineTileEntity> other = dynamic_pointer_cast<ModMachineTileEntity>(level->getTileEntity(nx, ny, nz));
+	if (other == nullptr) return;
+	ModMachineDef *od = other->def();
+	ModMachineDef *d = def();
+	if (od == nullptr || d == nullptr) return;
+	int send = (std::min)(amount, m_energy);
+	if (d->kind == MachineKind_Cable && od->kind == MachineKind_Cable)
+	{
+		// cables share their charge: move half of the difference
+		const int diff = m_energy - other->m_energy;
+		if (diff <= 1) return;
+		send = (std::min)(send, diff / 2);
+	}
+	const int moved = other->receiveEnergy(send, oppositeFace(face), d->kind == MachineKind_Cable);
+	m_energy -= moved;
+	if (moved > 0) other->setChanged();
+}
+
+void ModMachineTileEntity::updateGauge(ModMachineDef *d)
+{
+	// the furnace "flame" shows the stored energy
+	const int cap = capacity();
+	litDuration = 1000;
+	litTime = cap > 0 ? static_cast<int>(static_cast<long long>(m_energy) * 1000 / cap) : 0;
+}
+
+void ModMachineTileEntity::tickEnergyBlock(ModMachineDef *d)
+{
+	const int before = m_energy;
+	bool active = false;
+
+	if (d->kind == MachineKind_Generator)
+	{
+		if (d->generatorType == 1)
+		{
+			// solar: daylight, open sky, no rain
+			if (level->isDay() && level->canSeeSky(x, y + 1, z) && !level->isRainingAt(x, y + 1, z))
+			{
+				m_energy = (std::min)(capacity(), m_energy + d->generation);
+				active = true;
+			}
+		}
+		else
+		{
+			if (m_burn <= 0 && m_energy < capacity())
+			{
+				shared_ptr<ItemInstance> fuel = getItem(SLOT_FUEL);
+				const int ticks = powerTicks(fuel);
+				if (ticks > 0)
+				{
+					m_burn = m_burnTotal = ticks;
+					fuel->count--;
+					if (fuel->count <= 0)
+					{
+						Item *remaining = fuel->getItem() ? fuel->getItem()->getCraftingRemainingItem() : nullptr;
+						setItem(SLOT_FUEL, remaining != nullptr ? std::make_shared<ItemInstance>(remaining) : nullptr);
+					}
+				}
+			}
+			if (m_burn > 0)
+			{
+				m_burn--;
+				m_energy = (std::min)(capacity(), m_energy + d->generation);
+				active = true;
+			}
+		}
+		// burn progress on the arrow
+		tickCount = m_burnTotal > 0 ? 200 - m_burn * 200 / m_burnTotal : 0;
+		const int each = (std::max)(1, d->transfer);
+		for (int f = 0; f < 6; f++) pushEnergy(f, each);
+	}
+	else if (d->kind == MachineKind_Storage)
+	{
+		// charge from power items (energy tablets, redstone...) placed in the bottom slot
+		shared_ptr<ItemInstance> fuel = getItem(SLOT_FUEL);
+		const int fe = powerTicks(fuel) * 20;
+		if (fe > 0 && m_energy + fe <= capacity())
+		{
+			m_energy += fe;
+			fuel->count--;
+			if (fuel->count <= 0) setItem(SLOT_FUEL, nullptr);
+		}
+		const int front = level->getData(x, y, z) & 7;
+		pushEnergy(front < 6 ? front : 3, d->transfer);
+		active = m_energy > 0;
+	}
+	else if (d->kind == MachineKind_Cable)
+	{
+		const int each = (std::max)(1, d->transfer / 2);
+		for (int f = 0; f < 6; f++) pushEnergy(f, each);
+	}
+
+	if (d->kind != MachineKind_Cable)
+	{
+		updateGauge(d);
+		if (active != m_active)
+		{
+			m_active = active;
+			ModMachineTile::setActive(level, x, y, z, active);
+		}
+	}
+	if (m_energy != before) setChanged();
+}
+
 // ======================================================================================
 // Tile
 // ======================================================================================
 
-ModMachineTile::ModMachineTile(int id, int defIndex, float hardness) : BaseEntityTile(id, Material::metal)
+static bool defIsCable(int index)
+{
+	auto &v = ModMachines::defs();
+	return index >= 0 && index < static_cast<int>(v.size()) && v[index].kind == MachineKind_Cable;
+}
+
+ModMachineTile::ModMachineTile(int id, int defIndex, float hardness) : BaseEntityTile(id, Material::metal, !defIsCable(defIndex))
 {
 	m_defIndex = defIndex;
+	if (defIsCable(defIndex))
+	{
+		const float a = 5.0f / 16.0f, b = 11.0f / 16.0f;
+		setShape(a, a, a, b, b, b);
+		setLightBlock(0);
+	}
 	m_random = new Random();
 	setDestroyTime(hardness);
 	setExplodeable(hardness * 3.0f);
@@ -354,12 +544,40 @@ shared_ptr<TileEntity> ModMachineTile::newTileEntity(Level *level)
 
 bool ModMachineTile::TestUse()
 {
-	return true;
+	return !isCable();
+}
+
+bool ModMachineTile::isCable() const
+{
+	return defIsCable(m_defIndex);
+}
+
+bool ModMachineTile::isSolidRender(bool isServerLevel)
+{
+	return !isCable();
+}
+
+bool ModMachineTile::isCubeShaped()
+{
+	return !isCable();
+}
+
+void ModMachineTile::updateShape(LevelSource *level, int x, int y, int z, int forceData, shared_ptr<TileEntity> forceEntity)
+{
+	if (!isCable()) { BaseEntityTile::updateShape(level, x, y, z, forceData, forceEntity); return; }
+	auto connects = [&](int dx, int dy, int dz) -> bool {
+		const int id = level->getTile(x + dx, y + dy, z + dz);
+		return id > 0 && id < Tile::TILE_NUM_COUNT && dynamic_cast<ModMachineTile *>(Tile::tiles[id]) != nullptr;
+	};
+	const float a = 5.0f / 16.0f, b = 11.0f / 16.0f;
+	setShape(connects(-1, 0, 0) ? 0.0f : a, connects(0, -1, 0) ? 0.0f : a, connects(0, 0, -1) ? 0.0f : a,
+		connects(1, 0, 0) ? 1.0f : b, connects(0, 1, 0) ? 1.0f : b, connects(0, 0, 1) ? 1.0f : b);
 }
 
 bool ModMachineTile::use(Level *level, int x, int y, int z, shared_ptr<Player> player, int clickedFace, float clickX, float clickY, float clickZ, bool soundOnly)
 {
 	if (soundOnly) return false;
+	if (isCable()) return false;
 	if (level->isClientSide) return true;
 	shared_ptr<FurnaceTileEntity> te = dynamic_pointer_cast<FurnaceTileEntity>(level->getTileEntity(x, y, z));
 	if (te != nullptr) player->openFurnace(te);

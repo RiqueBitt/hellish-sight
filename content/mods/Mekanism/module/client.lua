@@ -2,7 +2,7 @@
 -- Port of Mekanism by Aidan C. Brady and the Mekanism team (MIT License, see LICENSE).
 -- Original: https://github.com/mekanism/Mekanism
 
-local POWER = { {"minecraft:redstone", 800}, {"minecraft:redstone_block", 7200}, {"mekanism:energy_tablet", 16000}, {"minecraft:coal", 1600}, {"minecraft:charcoal", 1600}, {"mekanism:bio_fuel", 400}, {"mekanism:block_charcoal", 14400} }
+local POWER = { {"minecraft:redstone", 400}, {"minecraft:redstone_block", 3600}, {"mekanism:energy_tablet", 8000}, {"minecraft:coal", 200}, {"minecraft:charcoal", 200}, {"mekanism:bio_fuel", 100} }
 
 function main()
     -- blocks
@@ -180,6 +180,8 @@ function main()
         hardness = 3.5,
         processTicks = 200,
         power = POWER,
+        energyCapacity = 40000,
+        energyPerTick = 50,
         recipes = {
             { "mekanism:osmium_ore", "mekanism:dust_osmium", 2 },
             { "mekanism:tin_ore", "mekanism:dust_tin", 2 },
@@ -227,6 +229,8 @@ function main()
         hardness = 3.5,
         processTicks = 200,
         power = POWER,
+        energyCapacity = 40000,
+        energyPerTick = 50,
         recipes = {
             { "mekanism:ingot_osmium", "mekanism:dust_osmium", 1 },
             { "mekanism:ingot_tin", "mekanism:dust_tin", 1 },
@@ -273,6 +277,8 @@ function main()
     registerMachine("energized_smelter", "Energized Smelter", { front = "res/energized_smelter_front.png", frontActive = "res/energized_smelter_frontActive.png", side = "res/energized_smelter_side.png", top = "res/energized_smelter_top.png", bottom = "res/energized_smelter_bottom.png" }, {
         hardness = 3.5,
         power = POWER,
+        energyCapacity = 40000,
+        energyPerTick = 50,
         furnaceRecipes = true,
         processTicks = 100
     })
@@ -280,6 +286,8 @@ function main()
         hardness = 3.5,
         processTicks = 200,
         power = POWER,
+        energyCapacity = 40000,
+        energyPerTick = 50,
         recipes = {
             { "mekanism:osmium_ore", "mekanism:clump_osmium", 3, extra = "minecraft:flint" },
             { "mekanism:tin_ore", "mekanism:clump_tin", 3, extra = "minecraft:flint" },
@@ -301,6 +309,8 @@ function main()
         hardness = 3.5,
         processTicks = 200,
         power = POWER,
+        energyCapacity = 40000,
+        energyPerTick = 50,
         recipes = {
             { "mekanism:osmium_ore", "mekanism:shard_osmium", 4, extra = "mekanism:salt" },
             { "mekanism:tin_ore", "mekanism:shard_tin", 4, extra = "mekanism:salt" },
@@ -315,6 +325,8 @@ function main()
         hardness = 3.5,
         processTicks = 200,
         power = POWER,
+        energyCapacity = 40000,
+        energyPerTick = 50,
         recipes = {
             { "minecraft:iron_ingot", "mekanism:alloy_infused", 1, extra = "minecraft:redstone" },
             { "minecraft:iron_ingot", "mekanism:alloy_infused", 1, extra = "mekanism:enriched_redstone" },
@@ -337,6 +349,8 @@ function main()
         hardness = 3.5,
         processTicks = 200,
         power = POWER,
+        energyCapacity = 40000,
+        energyPerTick = 50,
         recipes = {
             { "mekanism:dust_refined_obsidian", "mekanism:ingot_refined_obsidian", 1, extra = "mekanism:ingot_osmium" },
             { "minecraft:glowstone_dust", "mekanism:ingot_refined_glowstone", 1, extra = "mekanism:ingot_osmium" },
@@ -348,6 +362,8 @@ function main()
         hardness = 3.5,
         processTicks = 200,
         power = POWER,
+        energyCapacity = 40000,
+        energyPerTick = 50,
         recipes = {
             { "mekanism:dust_osmium", "mekanism:osmium_ore", 1, extra = "minecraft:cobblestone", inCount = 8 },
             { "mekanism:dust_tin", "mekanism:tin_ore", 1, extra = "minecraft:cobblestone", inCount = 8 },
@@ -368,6 +384,8 @@ function main()
         hardness = 3.5,
         processTicks = 200,
         power = POWER,
+        energyCapacity = 40000,
+        energyPerTick = 50,
         recipes = {
             { "minecraft:oak_log", "minecraft:oak_planks", 6 },
             { "minecraft:oak_planks", "minecraft:stick", 6 },
@@ -378,6 +396,20 @@ function main()
             { "minecraft:stick", "mekanism:sawdust", 1 }
         }
     })
+
+    -- energy: generators, energy cubes and universal cables (FE)
+    registerMachine("heat_generator", "Heat Generator", { front = "res/heat_generator_front.png", frontActive = "res/heat_generator_frontActive.png", side = "res/heat_generator_side.png", top = "res/heat_generator_top.png", bottom = "res/heat_generator_bottom.png" }, { kind = "generator", generatorType = "burn", furnaceFuels = true, generation = 80, transfer = 160, energyCapacity = 160000, power = { {"minecraft:lava_bucket", 4000}, {"mekanism:block_charcoal", 14400} } })
+    registerMachine("bio_generator", "Bio-Generator", { front = "res/bio_generator_front.png", frontActive = "res/bio_generator_frontActive.png", side = "res/bio_generator_side.png", top = "res/bio_generator_top.png", bottom = "res/bio_generator_bottom.png" }, { kind = "generator", generatorType = "burn", generation = 140, transfer = 280, energyCapacity = 160000, power = { {"mekanism:bio_fuel", 200}, {"minecraft:wheat", 60}, {"minecraft:reeds", 60} } })
+    registerMachine("solar_generator", "Solar Generator", { side = "res/solar_side.png", top = "res/solar_generator_top.png", bottom = "res/solar_side.png", front = "res/solar_side.png" }, { kind = "generator", generatorType = "solar", generation = 15, transfer = 60, energyCapacity = 96000 })
+    registerMachine("advanced_solar_generator", "Advanced Solar Generator", { side = "res/solar_side.png", top = "res/advanced_solar_generator_top.png", bottom = "res/solar_side.png", front = "res/solar_side.png" }, { kind = "generator", generatorType = "solar", generation = 120, transfer = 480, energyCapacity = 400000 })
+    registerMachine("basic_energy_cube", "Basic Energy Cube", { side = "res/basic_energy_cube.png", front = "res/basic_energy_cube_front.png", frontActive = "res/basic_energy_cube_front.png", top = "res/basic_energy_cube.png", bottom = "res/basic_energy_cube.png" }, { kind = "storage", energyCapacity = 4000000, transfer = 4000, power = { {"mekanism:energy_tablet", 8000}, {"minecraft:redstone", 400}, {"minecraft:redstone_block", 3600} } })
+    registerMachine("advanced_energy_cube", "Advanced Energy Cube", { side = "res/advanced_energy_cube.png", front = "res/advanced_energy_cube_front.png", frontActive = "res/advanced_energy_cube_front.png", top = "res/advanced_energy_cube.png", bottom = "res/advanced_energy_cube.png" }, { kind = "storage", energyCapacity = 16000000, transfer = 16000, power = { {"mekanism:energy_tablet", 8000}, {"minecraft:redstone", 400}, {"minecraft:redstone_block", 3600} } })
+    registerMachine("elite_energy_cube", "Elite Energy Cube", { side = "res/elite_energy_cube.png", front = "res/elite_energy_cube_front.png", frontActive = "res/elite_energy_cube_front.png", top = "res/elite_energy_cube.png", bottom = "res/elite_energy_cube.png" }, { kind = "storage", energyCapacity = 64000000, transfer = 64000, power = { {"mekanism:energy_tablet", 8000}, {"minecraft:redstone", 400}, {"minecraft:redstone_block", 3600} } })
+    registerMachine("ultimate_energy_cube", "Ultimate Energy Cube", { side = "res/ultimate_energy_cube.png", front = "res/ultimate_energy_cube_front.png", frontActive = "res/ultimate_energy_cube_front.png", top = "res/ultimate_energy_cube.png", bottom = "res/ultimate_energy_cube.png" }, { kind = "storage", energyCapacity = 256000000, transfer = 256000, power = { {"mekanism:energy_tablet", 8000}, {"minecraft:redstone", 400}, {"minecraft:redstone_block", 3600} } })
+    registerMachine("basic_universal_cable", "Basic Universal Cable", { side = "res/basic_universal_cable.png" }, { kind = "cable", transfer = 8000, hardness = 1.0 })
+    registerMachine("advanced_universal_cable", "Advanced Universal Cable", { side = "res/advanced_universal_cable.png" }, { kind = "cable", transfer = 128000, hardness = 1.0 })
+    registerMachine("elite_universal_cable", "Elite Universal Cable", { side = "res/elite_universal_cable.png" }, { kind = "cable", transfer = 1024000, hardness = 1.0 })
+    registerMachine("ultimate_universal_cable", "Ultimate Universal Cable", { side = "res/ultimate_universal_cable.png" }, { kind = "cable", transfer = 8192000, hardness = 1.0 })
 
     -- crafting
     registerShapedRecipe("osmium_sword", {"M", "M", "S"}, { M = "mekanism:ingot_osmium", S = "minecraft:stick" }, "mekanism:osmium_sword", { count = 1, group = ERecipeGroup.Tool })
@@ -491,6 +523,18 @@ function main()
     registerShapedRecipe("osmium_compressor", {"ACA", "BMB", "ACA"}, { A = "mekanism:alloy_infused", C = "mekanism:advanced_control_circuit", B = "minecraft:bucket", M = "mekanism:steel_casing" }, "mekanism:osmium_compressor", { count = 1, group = ERecipeGroup.Mechanism })
     registerShapedRecipe("combiner", {"ACA", "SMS", "ACA"}, { A = "mekanism:alloy_reinforced", C = "mekanism:elite_control_circuit", S = "minecraft:cobblestone", M = "mekanism:steel_casing" }, "mekanism:combiner", { count = 1, group = ERecipeGroup.Mechanism })
     registerShapedRecipe("precision_sawmill", {"ICI", "PMP", "ICI"}, { I = "minecraft:iron_ingot", C = "mekanism:basic_control_circuit", P = "minecraft:oak_planks", M = "mekanism:steel_casing" }, "mekanism:precision_sawmill", { count = 1, group = ERecipeGroup.Mechanism })
+    registerShapedRecipe("heat_generator", {"III", "WOW", "CFC"}, { I = "minecraft:iron_ingot", W = "minecraft:oak_planks", O = "mekanism:ingot_osmium", C = "mekanism:ingot_copper", F = "minecraft:furnace" }, "mekanism:heat_generator", { count = 1, group = ERecipeGroup.Mechanism })
+    registerShapedRecipe("bio_generator", {"RER", "BCB", "IEI"}, { R = "minecraft:redstone", E = "mekanism:energy_tablet", B = "mekanism:bio_fuel", C = "mekanism:steel_casing", I = "minecraft:iron_ingot" }, "mekanism:bio_generator", { count = 1, group = ERecipeGroup.Mechanism })
+    registerShapedRecipe("solar_generator", {"GGG", "AIA", "OEO"}, { G = "minecraft:glass", A = "mekanism:alloy_infused", I = "minecraft:iron_ingot", O = "mekanism:ingot_osmium", E = "mekanism:energy_tablet" }, "mekanism:solar_generator", { count = 1, group = ERecipeGroup.Mechanism })
+    registerShapedRecipe("advanced_solar_generator", {"SAS", "SAS", "III"}, { S = "mekanism:solar_generator", A = "mekanism:alloy_infused", I = "minecraft:iron_ingot" }, "mekanism:advanced_solar_generator", { count = 1, group = ERecipeGroup.Mechanism })
+    registerShapedRecipe("basic_energy_cube", {"RTR", "IPI", "RTR"}, { R = "minecraft:redstone", T = "mekanism:energy_tablet", I = "minecraft:iron_ingot", P = "mekanism:steel_casing" }, "mekanism:basic_energy_cube", { count = 1, group = ERecipeGroup.Mechanism })
+    registerShapedRecipe("advanced_energy_cube", {"ATA", "OCO", "ATA"}, { A = "mekanism:alloy_infused", T = "mekanism:energy_tablet", O = "mekanism:ingot_osmium", C = "mekanism:basic_energy_cube" }, "mekanism:advanced_energy_cube", { count = 1, group = ERecipeGroup.Mechanism })
+    registerShapedRecipe("elite_energy_cube", {"ATA", "GCG", "ATA"}, { A = "mekanism:alloy_reinforced", T = "mekanism:energy_tablet", G = "minecraft:gold_ingot", C = "mekanism:advanced_energy_cube" }, "mekanism:elite_energy_cube", { count = 1, group = ERecipeGroup.Mechanism })
+    registerShapedRecipe("ultimate_energy_cube", {"ATA", "DCD", "ATA"}, { A = "mekanism:alloy_atomic", T = "mekanism:energy_tablet", D = "minecraft:diamond", C = "mekanism:elite_energy_cube" }, "mekanism:ultimate_energy_cube", { count = 1, group = ERecipeGroup.Mechanism })
+    registerShapedRecipe("basic_universal_cable", {"SRS"}, { S = "mekanism:ingot_steel", R = "minecraft:redstone" }, "mekanism:basic_universal_cable", { count = 8, group = ERecipeGroup.Mechanism })
+    registerShapedRecipe("advanced_universal_cable", {"CCC", "CAC", "CCC"}, { C = "mekanism:basic_universal_cable", A = "mekanism:alloy_infused" }, "mekanism:advanced_universal_cable", { count = 8, group = ERecipeGroup.Mechanism })
+    registerShapedRecipe("elite_universal_cable", {"CCC", "CAC", "CCC"}, { C = "mekanism:advanced_universal_cable", A = "mekanism:alloy_reinforced" }, "mekanism:elite_universal_cable", { count = 8, group = ERecipeGroup.Mechanism })
+    registerShapedRecipe("ultimate_universal_cable", {"CCC", "CAC", "CCC"}, { C = "mekanism:elite_universal_cable", A = "mekanism:alloy_atomic" }, "mekanism:ultimate_universal_cable", { count = 8, group = ERecipeGroup.Mechanism })
     registerSmeltingRecipe("smelt_osmium_ore", "mekanism:osmium_ore", "mekanism:ingot_osmium", { count = 1, xp = 0.7 })
     registerSmeltingRecipe("smelt_tin_ore", "mekanism:tin_ore", "mekanism:ingot_tin", { count = 1, xp = 0.7 })
     registerSmeltingRecipe("smelt_copper_ore", "mekanism:copper_ore", "mekanism:ingot_copper", { count = 1, xp = 0.7 })
@@ -507,5 +551,5 @@ function main()
     registerSmeltingRecipe("smelt_dust_gold", "mekanism:dust_gold", "minecraft:gold_ingot", { count = 1, xp = 0.3 })
     registerSmeltingRecipe("smelt_enriched_iron", "mekanism:enriched_iron", "minecraft:iron_ingot", { count = 1, xp = 0.1 })
 
-    log("Mekanism: 19 blocks, 133 items, 9 machines registered")
+    log("Mekanism: 19 blocks, 133 items, 9 machines, 12 energy blocks registered")
 end

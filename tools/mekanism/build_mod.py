@@ -197,7 +197,7 @@ def machine_tex(folder, mid, tint=None):
                 break
     return out
 
-POWER = '{ {"minecraft:redstone", 800}, {"minecraft:redstone_block", 7200}, {"mekanism:energy_tablet", 16000}, {"minecraft:coal", 1600}, {"minecraft:charcoal", 1600}, {"mekanism:bio_fuel", 400}, {"mekanism:block_charcoal", 14400} }'
+POWER = '{ {"minecraft:redstone", 400}, {"minecraft:redstone_block", 3600}, {"mekanism:energy_tablet", 8000}, {"minecraft:coal", 200}, {"minecraft:charcoal", 200}, {"mekanism:bio_fuel", 100} }'
 
 def recipe_list(rs):
     parts = []
@@ -302,6 +302,56 @@ machines += [
     ('precision_sawmill', 'Precision Sawmill', machine_tex('precision_sawmill', 'precision_sawmill'), saw, True),
 ]
 
+# ---- energy: generators, energy cubes, universal cables -------------------------------
+def gen_tex(mid, src_folder, hue):
+    return machine_tex(src_folder, mid, tint=hue)
+energy_blocks = []   # (id, name, textures, opts)
+heat = gen_tex('heat_generator', 'energized_smelter', 0.0)
+energy_blocks.append(('heat_generator', 'Heat Generator', heat,
+    'kind = "generator", generatorType = "burn", furnaceFuels = true, generation = 80, transfer = 160, energyCapacity = 160000, ' +
+    'power = { {"minecraft:lava_bucket", 4000}, {"mekanism:block_charcoal", 14400} }'))
+bio = gen_tex('bio_generator', 'energized_smelter', 0.30)
+energy_blocks.append(('bio_generator', 'Bio-Generator', bio,
+    'kind = "generator", generatorType = "burn", generation = 140, transfer = 280, energyCapacity = 160000, power = { {"mekanism:bio_fuel", 200}, {"minecraft:wheat", 60}, {"minecraft:reeds", 60} }'))
+# solar panels: generated tops
+from PIL import ImageDraw
+def solar_top(name, cell, frame):
+    im = Image.new('RGBA', (16, 16), frame)
+    d = ImageDraw.Draw(im)
+    for gx in range(2):
+        for gy in range(2):
+            x0, y0 = 1 + gx * 7, 1 + gy * 7
+            d.rectangle([x0, y0, x0 + 6, y0 + 6], fill=cell)
+            d.line([x0, y0 + 3, x0 + 6, y0 + 3], fill=(cell[0] + 30, cell[1] + 30, cell[2] + 40, 255))
+            d.point((x0 + 1, y0 + 1), fill=(200, 220, 255, 255))
+    return put(name, im)
+casing = frame16(os.path.join(M, 'block/steel_casing.png'))
+put('solar_side', casing)
+energy_blocks.append(('solar_generator', 'Solar Generator', {'side': 'res/solar_side.png', 'top': solar_top('solar_generator_top', (20, 40, 110, 255), (150, 150, 155, 255)), 'bottom': 'res/solar_side.png', 'front': 'res/solar_side.png'},
+    'kind = "generator", generatorType = "solar", generation = 15, transfer = 60, energyCapacity = 96000'))
+energy_blocks.append(('advanced_solar_generator', 'Advanced Solar Generator', {'side': 'res/solar_side.png', 'top': solar_top('advanced_solar_generator_top', (25, 70, 140, 255), (80, 80, 85, 255)), 'bottom': 'res/solar_side.png', 'front': 'res/solar_side.png'},
+    'kind = "generator", generatorType = "solar", generation = 120, transfer = 480, energyCapacity = 400000'))
+cube_base = frame16(os.path.join(M, 'block/models/energy_cube.png'))
+CUBE_TIERS = [('basic', 4000000, 4000), ('advanced', 16000000, 16000), ('elite', 64000000, 64000), ('ultimate', 256000000, 256000)]
+for tier, cap, tr in CUBE_TIERS:
+    corner = frame16(os.path.join(M, 'block/models/energy_cube_%s_corner.png' % tier))
+    im = cube_base.copy(); im.alpha_composite(corner)
+    core = frame16(os.path.join(M, 'block/energy_core.png'))
+    front = im.copy(); front.alpha_composite(core.resize((16, 16)))
+    p_side = put('%s_energy_cube' % tier, im)
+    p_front = put('%s_energy_cube_front' % tier, front)
+    energy_blocks.append(('%s_energy_cube' % tier, '%s Energy Cube' % tier.title(), {'side': p_side, 'front': p_front, 'frontActive': p_front, 'top': p_side, 'bottom': p_side},
+        'kind = "storage", energyCapacity = %d, transfer = %d, power = { {"mekanism:energy_tablet", 8000}, {"minecraft:redstone", 400}, {"minecraft:redstone_block", 3600} }' % (cap, tr)))
+CABLE_TIERS = [('basic', 8000), ('advanced', 128000), ('elite', 1024000), ('ultimate', 8192000)]
+for tier, tr in CABLE_TIERS:
+    src = Image.open(os.path.join(M, 'block/models/multipart/opaque/%s_universal_cable_vertical.png' % tier)).convert('RGBA')
+    if not os.path.exists(os.path.join(M, 'block/models/multipart/opaque/%s_universal_cable_vertical.png' % tier)):
+        src = Image.open(os.path.join(M, 'block/models/multipart/%s_universal_cable.png' % tier)).convert('RGBA')
+    im = src.resize((16, 16), Image.BOX)
+    p = put('%s_universal_cable' % tier, im)
+    energy_blocks.append(('%s_universal_cable' % tier, '%s Universal Cable' % tier.title(), {'side': p},
+        'kind = "cable", transfer = %d, hardness = 1.0' % tr))
+
 # ---- crafting -------------------------------------------------------------------------------
 def shaped(rid, rows, keys, out, count=1, group='Mechanism'):
     k = ', '.join('%s = "%s"' % (a, b) for a, b in keys.items())
@@ -344,6 +394,18 @@ M_RECIPES = {
 for mid, (rows, keys) in M_RECIPES.items():
     shaped(mid, rows, keys, 'mekanism:' + mid)
 
+shaped('heat_generator', ['III', 'WOW', 'CFC'], {'I': 'minecraft:iron_ingot', 'W': 'minecraft:oak_planks', 'O': 'mekanism:ingot_osmium', 'C': 'mekanism:ingot_copper', 'F': 'minecraft:furnace'}, 'mekanism:heat_generator')
+shaped('bio_generator', ['RER', 'BCB', 'IEI'], {'R': 'minecraft:redstone', 'E': 'mekanism:energy_tablet', 'B': 'mekanism:bio_fuel', 'C': 'mekanism:steel_casing', 'I': 'minecraft:iron_ingot'}, 'mekanism:bio_generator')
+shaped('solar_generator', ['GGG', 'AIA', 'OEO'], {'G': 'minecraft:glass', 'A': 'mekanism:alloy_infused', 'I': 'minecraft:iron_ingot', 'O': 'mekanism:ingot_osmium', 'E': 'mekanism:energy_tablet'}, 'mekanism:solar_generator')
+shaped('advanced_solar_generator', ['SAS', 'SAS', 'III'], {'S': 'mekanism:solar_generator', 'A': 'mekanism:alloy_infused', 'I': 'minecraft:iron_ingot'}, 'mekanism:advanced_solar_generator')
+shaped('basic_energy_cube', ['RTR', 'IPI', 'RTR'], {'R': 'minecraft:redstone', 'T': 'mekanism:energy_tablet', 'I': 'minecraft:iron_ingot', 'P': 'mekanism:steel_casing'}, 'mekanism:basic_energy_cube')
+shaped('advanced_energy_cube', ['ATA', 'OCO', 'ATA'], {'A': 'mekanism:alloy_infused', 'T': 'mekanism:energy_tablet', 'O': 'mekanism:ingot_osmium', 'C': 'mekanism:basic_energy_cube'}, 'mekanism:advanced_energy_cube')
+shaped('elite_energy_cube', ['ATA', 'GCG', 'ATA'], {'A': 'mekanism:alloy_reinforced', 'T': 'mekanism:energy_tablet', 'G': 'minecraft:gold_ingot', 'C': 'mekanism:advanced_energy_cube'}, 'mekanism:elite_energy_cube')
+shaped('ultimate_energy_cube', ['ATA', 'DCD', 'ATA'], {'A': 'mekanism:alloy_atomic', 'T': 'mekanism:energy_tablet', 'D': 'minecraft:diamond', 'C': 'mekanism:elite_energy_cube'}, 'mekanism:ultimate_energy_cube')
+shaped('basic_universal_cable', ['SRS'], {'S': 'mekanism:ingot_steel', 'R': 'minecraft:redstone'}, 'mekanism:basic_universal_cable', 8)
+for lo, hi, alloy in (('basic', 'advanced', 'alloy_infused'), ('advanced', 'elite', 'alloy_reinforced'), ('elite', 'ultimate', 'alloy_atomic')):
+    shaped('%s_universal_cable' % hi, ['CCC', 'CAC', 'CCC'], {'C': 'mekanism:%s_universal_cable' % lo, 'A': 'mekanism:' + alloy}, 'mekanism:%s_universal_cable' % hi, 8)
+
 for m in ('osmium', 'tin', 'copper', 'lead', 'uranium'):
     smelting.append(('smelt_%s_ore' % m, 'mekanism:%s_ore' % m, 'mekanism:ingot_' + m, 1, 0.7))
 for m in ('osmium', 'tin', 'copper', 'lead', 'uranium', 'bronze', 'steel'):
@@ -377,7 +439,7 @@ L.append('')
 L.append('    -- machines: input slot (top), power / infusion slot (bottom), output (right)')
 for mid, name, tx, rs, power in machines:
     t = ', '.join('%s = "%s"' % (k, v) for k, v in tx.items())
-    opts = ['hardness = 3.5', 'processTicks = 200', 'power = POWER']
+    opts = ['hardness = 3.5', 'processTicks = 200', 'power = POWER', 'energyCapacity = 40000', 'energyPerTick = 50']
     if mid == 'energized_smelter':
         opts.append('furnaceRecipes = true')
         opts.append('processTicks = 100')
@@ -386,12 +448,17 @@ for mid, name, tx, rs, power in machines:
         opts.append('recipes = ' + recipe_list(rs))
     L.append('    registerMachine("%s", "%s", { %s }, {\n        %s\n    })' % (mid, name, t, ',\n        '.join(opts)))
 L.append('')
+L.append('    -- energy: generators, energy cubes and universal cables (FE)')
+for mid, name, tx, opts in energy_blocks:
+    t = ', '.join('%s = "%s"' % (k, v) for k, v in tx.items())
+    L.append('    registerMachine("%s", "%s", { %s }, { %s })' % (mid, name, t, opts))
+L.append('')
 L.append('    -- crafting')
 L += recipes
 for sid, a, b, c, xp in smelting:
     L.append('    registerSmeltingRecipe("%s", "%s", "%s", { count = %d, xp = %.1f })' % (sid, a, b, c, xp))
 L.append('')
-L.append('    log("Mekanism: %d blocks, %d items, %d machines registered")' % (len(blocks), len(items) + len(TIERS) * 9, len(machines)))
+L.append('    log("Mekanism: %d blocks, %d items, %d machines, %d energy blocks registered")' % (len(blocks), len(items) + len(TIERS) * 9, len(machines), len(energy_blocks)))
 L.append('end')
 open(os.path.join(OUT, 'module', 'client.lua'), 'w').write('\n'.join(L) + '\n')
 
