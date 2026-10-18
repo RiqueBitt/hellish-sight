@@ -203,7 +203,7 @@ namespace WorldGenV2
 		const BlockState SNOW_BLOCK(Tile::snow_Id);
 		const BlockState ICE(Tile::ice_Id);
 		const BlockState MYCELIUM(Tile::mycel_Id);
-		const BlockState PODZOL = DIRT;		// no podzol in this version of the game
+		const BlockState PODZOL = GRASS;	// no podzol in this version of the game; bare dirt patches looked wrong, so grass
 		const BlockState PACKED_ICE = ICE;	// no packed ice either
 		const BlockState SHADOW_STONE(Tile::clayHardened_colored_Id, 9);	// cyan stained hardened clay (RTG default)
 		const int WATER_ID = Tile::calmWater_Id;
