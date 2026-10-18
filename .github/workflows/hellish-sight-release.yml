@@ -83,6 +83,40 @@ jobs:
       shell: pwsh
       run: Copy-Item Minecraft.Client/Windows64/ShaderPack_MakeUp_LICENSE.txt ./build/windows64/Minecraft.Client/Release/
 
+    # Hellish Sight: "Servidores Java" - Reunion proxy (AGPL-3.0) + a trimmed Java runtime
+    - name: Setup Java 22
+      uses: actions/setup-java@v4
+      with:
+        distribution: temurin
+        java-version: '22'
+
+    - name: Build Reunion proxy and runtime
+      shell: pwsh
+      run: |
+        $ErrorActionPreference = 'Stop'
+        $commit = '7ed335db6e00c9ad7ef8fb892a7038df5c8e4053'
+        git clone --filter=blob:none https://github.com/Briiqn/Reunion.git reunion-src
+        git -C reunion-src checkout $commit
+        Push-Location reunion-src
+        ./gradlew.bat shadowJar --no-daemon -q
+        Pop-Location
+        $jar = Get-ChildItem reunion-src/build/libs/*.jar | Where-Object { $_.Name -notlike 'reunion-api*' } | Sort-Object Length -Descending | Select-Object -First 1
+        if (-not $jar) { throw 'Reunion jar not found' }
+        $dst = './build/windows64/Minecraft.Client/Release/javaproxy'
+        New-Item -ItemType Directory -Force -Path $dst | Out-Null
+        Copy-Item $jar.FullName "$dst/reunion.jar"
+        Copy-Item reunion-src/LICENSE "$dst/REUNION_LICENSE.txt"
+        $modules = 'java.base,java.compiler,java.datatransfer,java.desktop,java.instrument,java.logging,java.management,java.management.rmi,java.naming,java.net.http,java.prefs,java.rmi,java.scripting,java.security.jgss,java.security.sasl,java.sql,java.transaction.xa,java.xml,java.xml.crypto,jdk.crypto.ec,jdk.management,jdk.net,jdk.unsupported,jdk.zipfs,jdk.httpserver,jdk.naming.dns,jdk.localedata,jdk.charsets'
+        & "$env:JAVA_HOME/bin/jlink.exe" --add-modules $modules --strip-debug --no-header-files --no-man-pages --compress zip-6 --output "$dst/jre"
+        if (-not (Test-Path "$dst/jre/bin/java.exe")) { throw 'jlink failed' }
+        @"
+        Reunion - LCE <-> Java Edition proxy, used by Hellish Sight for "Servidores Java".
+        Copyright (C) Briiqn, licensed under the GNU Affero General Public License v3.0 (REUNION_LICENSE.txt).
+        Source code of this exact build: https://github.com/Briiqn/Reunion/tree/$commit
+        The runtime in jre/ is Eclipse Temurin (OpenJDK, GPLv2 with Classpath Exception).
+        config.yml is rewritten by the game every time you connect.
+        "@ | Set-Content "$dst/README.txt"
+
     - name: Zip build
       run: 7z a -r ${{ env.ZIP_NAME }} ./build/windows64/Minecraft.Client/Release/* "-x!*.ipdb" "-x!*.iobj" "-x!*.lib" "-x!*.exp"  # Minecraft.Client.pdb is kept for crash reports
 
