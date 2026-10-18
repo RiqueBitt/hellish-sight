@@ -41,6 +41,13 @@
 #include "GameRules/ConsoleSchematicFile.h"
 #include "../User.h"
 #include "../../Minecraft.World/LevelData.h"
+#include "../../Minecraft.World/CustomPayloadPacket.h"
+#include "../../Minecraft.World/CommandBlockEntity.h"
+#include "Registry/Item/ItemRegistry.h"
+#ifdef _WINDOWS64
+#include "../Windows64/KeyboardMouseInput.h"
+#include "UI/UIStructs.h"
+#endif
 #if defined(_WINDOWS64) && defined(MINECRAFT_SERVER_BUILD)
 #include "../../Minecraft.Server/ServerLogManager.h"
 #endif
@@ -769,6 +776,109 @@ bool CMinecraftApp::LoadSignEntryMenu(int iPad,shared_ptr<SignTileEntity> sign)
 	delete initData;
 
 	return success;
+}
+
+// Hellish Sight: command block editor (keyboard for the command, then the mode dialog)
+namespace
+{
+	struct CommandBlockEditState
+	{
+		int pad = 0;
+		int x = 0, y = 0, z = 0;
+		std::wstring command;
+		bool autoActive = false;
+		bool conditional = false;
+	};
+	CommandBlockEditState g_cbEdit;
+
+	unsigned int cbString(int slot, const std::wstring &text)
+	{
+		static int ids[8] = { -1, -1, -1, -1, -1, -1, -1, -1 };
+		if (ids[slot] < 0) ids[slot] = ItemRegistry::nextItemNameId();
+		ItemRegistry::langList[ids[slot]] = text;
+		if (app.getStringTable() != nullptr) app.getStringTable()->registerString(ids[slot], text);
+		return static_cast<unsigned int>(ids[slot]);
+	}
+
+	void sendCommandBlock()
+	{
+		Minecraft *mc = Minecraft::GetInstance();
+		if (mc == nullptr || mc->localplayers[g_cbEdit.pad] == nullptr || mc->localplayers[g_cbEdit.pad]->connection == nullptr) return;
+		ByteArrayOutputStream baos;
+		DataOutputStream dos(&baos);
+		dos.writeInt(g_cbEdit.x);
+		dos.writeInt(g_cbEdit.y);
+		dos.writeInt(g_cbEdit.z);
+		dos.writeUTF(g_cbEdit.command);
+		dos.writeBoolean(g_cbEdit.autoActive);
+		dos.writeBoolean(g_cbEdit.conditional);
+		mc->localplayers[g_cbEdit.pad]->connection->send(std::make_shared<CustomPayloadPacket>(CustomPayloadPacket::SET_ADVENTURE_COMMAND_PACKET, baos.toByteArray()));
+	}
+
+	int commandBlockModeReturned(void *param, int iPad, const C4JStorage::EMessageResult result)
+	{
+		switch (result)
+		{
+		case C4JStorage::EMessage_ResultAccept:			g_cbEdit.autoActive = false; g_cbEdit.conditional = false; break;
+		case C4JStorage::EMessage_ResultDecline:		g_cbEdit.autoActive = true;  g_cbEdit.conditional = false; break;
+		case C4JStorage::EMessage_ResultThirdOption:	g_cbEdit.autoActive = false; g_cbEdit.conditional = true;  break;
+		case C4JStorage::EMessage_ResultFourthOption:	g_cbEdit.autoActive = true;  g_cbEdit.conditional = true;  break;
+		default: return 0;
+		}
+		sendCommandBlock();
+		return 0;
+	}
+
+	int commandBlockKeyboardReturned(LPVOID param, const bool accepted)
+	{
+		if (!accepted) return 0;
+#ifdef _WINDOWS64
+		uint16_t text[256];
+		ZeroMemory(text, sizeof(text));
+		Win64_GetKeyboardText(text, 256);
+		g_cbEdit.command = reinterpret_cast<wchar_t *>(text);
+#endif
+		UINT options[4];
+		options[0] = cbString(2, L"Precisa de redstone");
+		options[1] = cbString(3, L"Sempre ativo");
+		options[2] = cbString(4, L"Redstone + condicional");
+		options[3] = cbString(5, L"Sempre ativo + condicional");
+		const unsigned int title = cbString(0, L"Bloco de comando");
+		const unsigned int body = cbString(1, L"Como este bloco deve rodar?\n\nComando: " + g_cbEdit.command +
+			L"\n\nCondicional: só roda se o bloco de comando atrás dele teve sucesso.");
+		ui.RequestMessageBox(title, body, options, 4, g_cbEdit.pad, &commandBlockModeReturned, nullptr, nullptr, g_cbEdit.autoActive ? (g_cbEdit.conditional ? 3 : 1) : (g_cbEdit.conditional ? 2 : 0), false);
+		return 0;
+	}
+}
+
+bool CMinecraftApp::LoadCommandBlockMenu(int iPad, shared_ptr<CommandBlockEntity> commandBlock)
+{
+#ifdef _WINDOWS64
+	if (commandBlock == nullptr) return false;
+	g_cbEdit.pad = iPad;
+	g_cbEdit.x = commandBlock->x;
+	g_cbEdit.y = commandBlock->y;
+	g_cbEdit.z = commandBlock->z;
+	g_cbEdit.command = commandBlock->getCommand();
+	g_cbEdit.autoActive = commandBlock->autoActive;
+	g_cbEdit.conditional = commandBlock->conditional;
+
+	static std::wstring s_default;
+	s_default = g_cbEdit.command;
+	static std::wstring s_title;
+	s_title = L"Comando (saída anterior: " + (commandBlock->lastOutput.empty() ? std::wstring(L"nenhuma") : commandBlock->lastOutput) + L")";
+
+	UIKeyboardInitData kbData;
+	kbData.title = s_title.c_str();
+	kbData.defaultText = s_default.c_str();
+	kbData.maxChars = 255;
+	kbData.callback = &commandBlockKeyboardReturned;
+	kbData.lpParam = nullptr;
+	kbData.pcMode = g_KBMInput.IsKBMActive();
+	return ui.NavigateToScene(iPad, eUIScene_Keyboard, &kbData, eUILayer_Fullscreen, eUIGroup_Fullscreen);
+#else
+	return false;
+#endif
 }
 
 bool CMinecraftApp::LoadRepairingMenu(int iPad,shared_ptr<Inventory> inventory, Level *level, int x, int y, int z)

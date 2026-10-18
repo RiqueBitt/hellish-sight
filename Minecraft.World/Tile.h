@@ -343,6 +343,8 @@ public:
 	static const int stairs_birchwood_Id = 135;
 	static const int stairs_junglewood_Id = 136;
 	static const int commandBlock_Id = 137;
+	static const int repeatingCommandBlock_Id = 210;
+	static const int chainCommandBlock_Id = 211;
 	static const int beacon_Id = 138;
 	static const int cobbleWall_Id = 139;
 	static const int flowerPot_Id = 140;
@@ -564,6 +566,8 @@ public:
 	static Tile *woodStairsAcacia;
 	static Tile *woodStairsDark;
 	static Tile *commandBlock;
+	static Tile *repeatingCommandBlock;	// Hellish Sight (id 210)
+	static Tile *chainCommandBlock;		// Hellish Sight (id 211)
 	static BeaconTile *beacon;
 	static Tile *button_wood;
 	static HalfSlabTile *woodSlab;

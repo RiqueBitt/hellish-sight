@@ -917,6 +917,11 @@ TilePos *RandomLevelSource::findNearestMapFeature(Level *level, const wstring& f
 	{
 		return strongholdFeature->getNearestGeneratedFeature(level, x, y, z);
 	}
+	// Hellish Sight (/locate): the other structures
+	if (featureName == L"Village" && villageFeature != nullptr) return villageFeature->getNearestGeneratedFeature(level, x, y, z);
+	if (featureName == L"Mineshaft" && mineShaftFeature != nullptr) return mineShaftFeature->getNearestGeneratedFeature(level, x, y, z);
+	if (featureName == L"Temple" && scatteredFeature != nullptr) return scatteredFeature->getNearestGeneratedFeature(level, x, y, z);
+	if (featureName == L"Monument" && oceanMonument != nullptr) return oceanMonument->getNearestGeneratedFeature(level, x, y, z);
 	return nullptr;
 }
 

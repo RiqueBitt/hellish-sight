@@ -150,7 +150,7 @@ public:
 	bool			LoadRepairingMenu(int iPad,shared_ptr<Inventory> inventory, Level *level, int x, int y, int z);
 	bool			LoadTradingMenu(int iPad, shared_ptr<Inventory> inventory, shared_ptr<Merchant> trader, Level *level, const wstring &name);
 
-	bool			LoadCommandBlockMenu(int iPad, shared_ptr<CommandBlockEntity> commandBlock) { return false; }
+	bool			LoadCommandBlockMenu(int iPad, shared_ptr<CommandBlockEntity> commandBlock);	// Hellish Sight
 	bool			LoadHopperMenu(int iPad ,shared_ptr<Inventory> inventory, shared_ptr<HopperTileEntity> hopper);
 	bool			LoadHopperMenu(int iPad ,shared_ptr<Inventory> inventory, shared_ptr<MinecartHopper> hopper);
 	bool			LoadHorseMenu(int iPad ,shared_ptr<Inventory> inventory, shared_ptr<Container> container, shared_ptr<EntityHorse> horse);

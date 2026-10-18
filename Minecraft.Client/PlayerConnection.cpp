@@ -30,6 +30,8 @@
 #include "../Minecraft.World/Pos.h"
 #include "../Minecraft.World/Achievements.h"
 #include "Host/RubyLauncherHost.h"
+#include "HSCommands/HSCommands.h"
+#include "../Minecraft.World/CommandBlock.h"
 #include "Common/ModNetBus.h"
 #include "Common/ModPaths.h"
 #include "EntityTracker.h"
@@ -1042,377 +1044,9 @@ void PlayerConnection::handleCommand(const wstring& message)
 	if (FourKitBridge::HandlePlayerCommand(player->entityId, commandLine))
 		return;
 #endif
-	wstringstream ss(message.substr(1));
-	wstring cmd;
-	ss >> cmd;
-if (cmd == L"tp" || cmd == L"teleport")
-{
-
-	if (!app.GetGameHostOption(eGameHostOption_CheatsEnabled))
-		{
-			warn(L"Cheats are not enabled on this server.");
-			return;
-		}
-
-    if (!player->hasPermission(eGameCommand_Teleport))
-    {
-        warn(L"You do not have permission to use this command.");
-        return;
-    }
-
-    wstring arg1, arg2, arg3, arg4, arg5, arg6;
-    ss >> arg1 >> arg2 >> arg3 >> arg4 >> arg5 >> arg6;
-    shared_ptr<ServerPlayer> target;
-    shared_ptr<ServerPlayer> destination;
-    if (arg1.empty())
-    {
-        warn(L"Usage: /tp [player] <target_player>");
-        warn(L"Usage: /tp [player] <x> <y> <z> [y_rot] [x_rot]");
-        return;
-    }
-
-    auto isCoord = [](const wstring& s) -> bool {
-        if (s.empty()) return false;
-        for (size_t i = 0; i < s.size(); i++)
-            if (!iswdigit(s[i]) && s[i] != L'-' && s[i] != L'.') return false;
-        return true;
-    };
-
-    bool arg2IsCoord = isCoord(arg2);
-    if (!arg2IsCoord && !arg2.empty())
-    {
-        target = server->getPlayers()->getPlayer(arg1);
-        destination = server->getPlayers()->getPlayer(arg2);
-        if (target && destination)
-        {
-            shared_ptr<GameCommandPacket> packet = TeleportCommand::preparePacket(
-                target->getXuid(), destination->getXuid());
-            server->getCommandDispatcher()->performCommand(
-                player, eGameCommand_Teleport, packet->data);
-        }
-        else
-        {
-            warn(L"Player not found.");
-        }
-    }
-    else
-    {
-        wstring sx, sy, sz, sYRot, sXRot;
-        shared_ptr<ServerPlayer> tpTarget;
-        if (arg2IsCoord)
-        {
-            tpTarget = player;
-            sx    = arg1;
-            sy    = arg2;
-            sz    = arg3;
-            sYRot = arg4;
-            sXRot = arg5;
-        }
-        else
-        {
-            tpTarget = server->getPlayers()->getPlayer(arg1);
-            sx    = arg2;
-            sy    = arg3;
-            sz    = arg4;
-            sYRot = arg5;
-            sXRot = arg6;
-        }
-
-        if (!tpTarget)
-        {
-            warn(L"Player not found.");
-            return;
-        }
-
-        if (sx.empty() || sy.empty() || sz.empty())
-        {
-            warn(L"Usage: /tp [player] <x> <y> <z> [y_rot] [x_rot]");
-            return;
-        }
-
-        float x = stof(sx);
-        float y = stof(sy);
-        float z = stof(sz);
-        byte yRot = sYRot.empty()
-            ? static_cast<byte>(tpTarget->yRot)
-            : static_cast<byte>(stoi(sYRot) & 0xFF);
-        byte xRot = sXRot.empty()
-            ? static_cast<byte>(tpTarget->xRot)
-            : static_cast<byte>(stoi(sXRot) & 0xFF);
-
-        shared_ptr<GameCommandPacket> gamePacket = TeleportCommand::preparePacket(
-            tpTarget->getXuid(), x, y, z, yRot, xRot);
-        server->getCommandDispatcher()->performCommand(tpTarget, eGameCommand_Teleport, gamePacket->data);
-	}
-} else if (cmd == L"time")
-{
-
-	if (!app.GetGameHostOption(eGameHostOption_CheatsEnabled))
-		{
-			warn(L"Cheats are not enabled on this server.");
-			return;
-		}
-
-    if (!player->hasPermission(eGameCommand_Time))
-    {
-        warn(L"You do not have permission to use this command.");
-        return;
-    }
-
-    wstring action;
-    ss >> action;
-    if (action.empty())
-    {
-        warn(L"Usage: /time <set|add|query> ...");
-        warn(L"  /time set <day|night|noon|midnight|sunrise|sunset|0-24000>");
-        warn(L"  /time add <amount>");
-        warn(L"  /time query <daytime|gametime|day>");
-        return;
-    }
-
-    if (action == L"set")
-    {
-        wstring timeVal;
-        ss >> timeVal;
-        if (timeVal.empty())
-        {
-            warn(L"Usage: /time set <day|night|noon|midnight|sunrise|sunset|0-24000>");
-            return;
-        }
-
-        static const unordered_map<wstring, int> namedTimes = {
-            { L"day",       1000  },
-            { L"noon",      6000  },
-            { L"sunset",   12000  },
-            { L"night",    13000  },
-            { L"midnight", 18000  },
-            { L"sunrise",  23000  },
-        };
-
-        int ticks = -1;
-        auto it = namedTimes.find(timeVal);
-        if (it != namedTimes.end())
-        {
-            ticks = it->second;
-        }
-        else
-        {
-            try {
-                size_t pos;
-                ticks = stoi(timeVal, &pos);
-                if (pos != timeVal.size() || ticks < 0 || ticks > 24000)
-                {
-                    warn(L"Time value must be between 0 and 24000, or a named time.");
-                    return;
-                }
-            }
-            catch (...) {
-                warn(L"Unknown time value: " + timeVal);
-                warn(L"Usage: /time set <day|night|noon|midnight|sunrise|sunset|0-24000>");
-                return;
-            }
-        }
-
-        shared_ptr<GameCommandPacket> packet = TimeCommand::preparePacket(ticks);
-        server->getCommandDispatcher()->performCommand(player, eGameCommand_Time, packet->data);
-        info(L"Time set to " + timeVal + L" (" + to_wstring(ticks) + L" ticks).");
-    }
-    else if (action == L"add")
-    {
-        wstring amountStr;
-        ss >> amountStr;
-        if (amountStr.empty())
-        {
-            warn(L"Usage: /time add <amount>");
-            return;
-        }
-
-        try {
-            size_t pos;
-            int amount = stoi(amountStr, &pos);
-            if (pos != amountStr.size() || amount < 1)
-            {
-                warn(L"Amount must be a positive integer.");
-                return;
-            }
-
-            int currentTicks = server->getCommandSenderWorld()->getTimeOfDay(0) * 1000;
-            int newTicks = (currentTicks + amount) % 24000;
-            shared_ptr<GameCommandPacket> packet = TimeCommand::preparePacket(newTicks);
-            server->getCommandDispatcher()->performCommand(player, eGameCommand_Time, packet->data);
-            info(L"Added " + to_wstring(amount) + L" ticks. Time is now " + to_wstring(newTicks) + L".");
-        }
-        catch (...) {
-            warn(L"Invalid amount: " + amountStr);
-        }
-    }
-    else if (action == L"query")
-    {
-        wstring queryType;
-        ss >> queryType;
-        if (queryType.empty())
-        {
-            warn(L"Usage: /time query <daytime|gametime|day>");
-            return;
-        }
-
-        int currentTicks = server->getCommandSenderWorld()->getTimeOfDay(0) * 1000;
-        if (queryType == L"daytime")
-        {
-            info(L"The current daytime is " + to_wstring(currentTicks % 24000) + L" ticks.");
-        }
-        else if (queryType == L"gametime")
-        {
-            info(L"The total game time is " + to_wstring(currentTicks) + L" ticks.");
-        }
-        else if (queryType == L"day")
-        {
-            info(L"The current day is " + to_wstring(currentTicks / 24000) + L".");
-        }
-        else
-        {
-            warn(L"Unknown query type: " + queryType);
-            warn(L"Usage: /time query <daytime|gametime|day>");
-        }
-    }
-    else
-    {
-        warn(L"Unknown action: " + action);
-        warn(L"Usage: /time <set|add|query> ...");
-    }
-}
-	else if (cmd == L"kill")
-	{
-		if (!app.GetGameHostOption(eGameHostOption_CheatsEnabled))
-		{
-			warn(L"Cheats are not enabled on this server.");
-			return;
-		}
-
-		if (!player->hasPermission(eGameCommand_Kill))
-		{
-			warn(L"You do not have permission to use this command.");
-			return;
-		}
-
-		wstring targetName;
-		ss >> targetName;
-
-		if (targetName.empty())
-		{
-        
-			server->getCommandDispatcher()->performCommand(player, eGameCommand_Kill, byteArray());
-		}
-		else
-		{
-        
-			ByteArrayOutputStream baos;
-			DataOutputStream dos(&baos);
-			dos.writeUTF(targetName);
-			byteArray data = baos.toByteArray();
-			server->getCommandDispatcher()->performCommand(player, eGameCommand_Kill, data);
-		}
-	}
-	else if (cmd == L"toggledownfall")
-	{
-		if (!app.GetGameHostOption(eGameHostOption_CheatsEnabled))
-		{
-			warn(L"Cheats are not enabled on this server.");
-			return;
-		}
-
-		if (!player->hasPermission(eGameCommand_ToggleDownfall))
-		{
-			warn(L"You do not have permission to use this command.");
-			return;
-		}
-		shared_ptr<GameCommandPacket> packet = ToggleDownfallCommand::preparePacket();
-		server->getCommandDispatcher()->performCommand(player, eGameCommand_ToggleDownfall, packet->data);
-	} else if (cmd == L"gamemode") {
-
-
-		if (!app.GetGameHostOption(eGameHostOption_CheatsEnabled))
-		{
-			warn(L"Cheats are not enabled on this server.");
-			return;
-		}
-
-		if (!player->hasPermission(eGameCommand_GameMode))
-		{
-			warn(L"You do not have permission to use this command.");
-			return;
-		}
-    	wstring modeStr, targetName;
-    	ss >> modeStr >> targetName;
-    	if (modeStr.empty()) {
-        	warn(L"Usage: /gamemode <mode> [player]");
-        	return;
-    	}
-
-    	int mode = -1;
-    	if      (modeStr == L"0" || modeStr == L"s" || modeStr == L"survival")
-        	mode = 0;
-    	else if (modeStr == L"1" || modeStr == L"c" || modeStr == L"creative")
-        	mode = 1;
-    	else if (modeStr == L"2" || modeStr == L"a" || modeStr == L"adventure")
-        	mode = 2;
-    	else {
-        	warn(L"Unknown game mode: " + modeStr);
-        	return;
-    	}
-
-    	shared_ptr<ServerPlayer> target;
-    	if (targetName.empty()) {
-        	target = player;
-    	} else {
-        	target = server->getPlayers()->getPlayer(targetName);
-        	if (!target) {
-            	warn(L"Player not found: " + targetName);
-            	return;
-        	}
-    	}
-
-    	shared_ptr<GameCommandPacket> packet = GameModeCommand::preparePacket(target, mode);
-    	server->getCommandDispatcher()->performCommand(player, eGameCommand_GameMode, packet->data);
-	} else if (cmd == L"give") {
-
-		if (!app.GetGameHostOption(eGameHostOption_CheatsEnabled))
-		{
-			warn(L"Cheats are not enabled on this server.");
-			return;
-		}
-
-		if (!player->hasPermission(eGameCommand_Give))
-		{
-			warn(L"You do not have permission to use this command.");
-			return;
-		}
-    	wstring targetName, itemStr, amountStr, auxStr;
-    	ss >> targetName >> itemStr >> amountStr >> auxStr;
-    	if (targetName.empty() || itemStr.empty()) {
-        	warn(L"Usage: /give <player> <item_id>|minecraft:<item_name> [amount] [data]");
-        	return;
-    	}
-
-    	shared_ptr<ServerPlayer> target = server->getPlayers()->getPlayer(targetName);
-    	if (!target) {
-        	warn(L"Player not found: " + targetName);
-        	return;
-    	}
-		int item = 0;
-    	int amount = 1, aux = 0;
-    	try {
-        	item = itemStr.find(L"minecraft:") == 0 ? GetItemIdByName(itemStr.substr(10)) : std::stoi(itemStr);
-        	if (!amountStr.empty()) amount = std::stoi(amountStr);
-        	if (!auxStr.empty()) aux = std::stoi(auxStr);
-    	} catch (...) {
-        	warn(L"Invalid item ID/Name or amount");
-        	return;
-    	}
-
-    	shared_ptr<GameCommandPacket> packet = GiveItemCommand::preparePacket(target, item, amount, aux);
-    	server->getCommandDispatcher()->performCommand(player, eGameCommand_Give, packet->data);
-	}
+	// Hellish Sight: Java Edition style commands (HSCommands)
+	HSCommands::Source source = HSCommands::fromPlayer(player);
+	HSCommands::execute(source, message);
 }
 
 void PlayerConnection::handleAnimate(shared_ptr<AnimatePacket> packet)
@@ -2542,21 +2176,35 @@ void PlayerConnection::handleCustomPayload(shared_ptr<CustomPayloadPacket> custo
 			app.DebugPrintf("Command blocks not enabled");
 			//player->sendMessage(ChatMessageComponent.forTranslation("advMode.notEnabled"));
 		}
-		else if (player->hasPermission(eGameCommand_Effect) && player->abilities.instabuild)
+		else if (server->getPlayers()->isOp(player) && player->abilities.instabuild)
 		{
 			ByteArrayInputStream bais(customPayloadPacket->data);
 			DataInputStream input(&bais);
 			int x = input.readInt();
 			int y = input.readInt();
 			int z = input.readInt();
-			wstring command = Packet::readUtf(&input, 256);
+			wstring command = Packet::readUtf(&input, 32500);
+			// Hellish Sight: "Always Active" and "Conditional" follow the command
+			const int modeByte1 = input.read();
+			const int modeByte2 = modeByte1 >= 0 ? input.read() : -1;
+			bool hasMode = modeByte1 >= 0;
+			bool autoActive = modeByte1 > 0;
+			bool conditional = modeByte2 > 0;
 
 			shared_ptr<TileEntity> tileEntity = player->level->getTileEntity(x, y, z);
 			shared_ptr<CommandBlockEntity> cbe = dynamic_pointer_cast<CommandBlockEntity>(tileEntity);
 			if (tileEntity != nullptr && cbe != nullptr)
 			{
 				cbe->setCommand(command);
+				if (hasMode)
+				{
+					cbe->autoActive = autoActive;
+					cbe->conditional = conditional;
+				}
+				cbe->setSuccessCount(0);
+				CommandBlock::onSettingsChanged(player->level, x, y, z);
 				player->level->sendTileUpdated(x, y, z);
+				player->sendMessage(L"\u00A77Comando definido: " + command);
 				//player->sendMessage(ChatMessageComponent.forTranslation("advMode.setCommand.success", command));
 			}
 		}

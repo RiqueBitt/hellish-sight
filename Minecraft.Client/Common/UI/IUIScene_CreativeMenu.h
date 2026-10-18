@@ -20,6 +20,7 @@ public:
 		eCreativeInventoryTab_ToolsWeaponsArmor,
 		eCreativeInventoryTab_Brewing,
 		eCreativeInventoryTab_Misc,
+		eCreativeInventoryTab_Technical,	// Hellish Sight: command blocks and other unobtainable items
 		eCreativeInventoryTab_COUNT,
 	};
 
@@ -41,6 +42,7 @@ public:
 		eCreativeInventory_Misc,
 		eCreativeInventory_ArtToolsDecorations,
 		eCreativeInventory_ArtToolsMisc,
+		eCreativeInventory_Technical,		// Hellish Sight
 		eCreativeInventoryGroupsCount
 	};
 
@@ -106,6 +108,9 @@ protected:
 public:
 	static void staticCtor();
 	static void appendModItems();
+	// Hellish Sight: fills the "Técnico" tab (items that cannot be obtained in survival)
+	static void addTechnicalItems(vector< shared_ptr<ItemInstance> > *list);
+	static LPCWSTR getTabLabel(ECreativeInventoryTabs tab);
 	IUIScene_CreativeMenu();
 
 	static void loadFromLocal();

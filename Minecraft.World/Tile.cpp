@@ -187,6 +187,8 @@ Tile *Tile::woodStairsSpruce = nullptr;
 Tile *Tile::woodStairsBirch = nullptr;
 Tile *Tile::woodStairsJungle = nullptr;
 Tile *Tile::commandBlock = nullptr;
+Tile *Tile::repeatingCommandBlock = nullptr;
+Tile *Tile::chainCommandBlock = nullptr;
 BeaconTile *Tile::beacon = nullptr;
 Tile *Tile::button_wood = nullptr;
 HalfSlabTile *Tile::woodSlab = nullptr;
@@ -489,6 +491,8 @@ void Tile::staticCtor()
 	Tile::woodStairsBirch =	(new StairTile(135, Tile::wood, TreeTile::BIRCH_TRUNK))	->setBaseItemTypeAndMaterial(Item::eBaseItemType_stairs,	Item::eMaterial_birchwood)->setIconName(L"stairsWoodBirch")->setDescriptionId(IDS_TILE_STAIRS_BIRCHWOOD)	->sendTileData()->setUseDescriptionId(IDS_DESC_STAIRS);
 	Tile::woodStairsJungle =(new StairTile(136, Tile::wood, TreeTile::JUNGLE_TRUNK))->setBaseItemTypeAndMaterial(Item::eBaseItemType_stairs,	Item::eMaterial_junglewood)->setIconName(L"stairsWoodJungle")->setDescriptionId(IDS_TILE_STAIRS_JUNGLEWOOD)	->sendTileData()->setUseDescriptionId(IDS_DESC_STAIRS);
 	Tile::commandBlock = (new CommandBlock(137))									->setIndestructible()->setExplodeable(6000000)->setIconName(L"command_block")->setDescriptionId(IDS_TILE_COMMAND_BLOCK)->setUseDescriptionId(IDS_DESC_COMMAND_BLOCK);
+	Tile::repeatingCommandBlock = (new CommandBlock(CommandBlock::REPEATING_ID, CommandBlock::eType_Repeating))->setIndestructible()->setExplodeable(6000000)->setIconName(L"command_block")->setDescriptionId(IDS_TILE_COMMAND_BLOCK)->setUseDescriptionId(IDS_DESC_COMMAND_BLOCK);	// Hellish Sight
+	Tile::chainCommandBlock = (new CommandBlock(CommandBlock::CHAIN_ID, CommandBlock::eType_Chain))->setIndestructible()->setExplodeable(6000000)->setIconName(L"command_block")->setDescriptionId(IDS_TILE_COMMAND_BLOCK)->setUseDescriptionId(IDS_DESC_COMMAND_BLOCK);	// Hellish Sight
 	Tile::beacon = static_cast<BeaconTile *>((new BeaconTile(138))->setLightEmission(1.0f)->setIconName(L"beacon")->setDescriptionId(IDS_TILE_BEACON)->setUseDescriptionId(IDS_DESC_BEACON));
 	Tile::cobbleWall =		(new WallTile(139, Tile::stoneBrick))					->setBaseItemTypeAndMaterial(Item::eBaseItemType_fence,	Item::eMaterial_stone)->setIconName(L"cobbleWall")->setDescriptionId(IDS_TILE_COBBLESTONE_WALL)->setUseDescriptionId(IDS_DESC_COBBLESTONE_WALL);
 	Tile::flowerPot =		(new FlowerPotTile(140))								->setDestroyTime(0.0f)->setSoundType(SOUND_NORMAL)->setIconName(L"flower_pot")->setDescriptionId(IDS_TILE_FLOWERPOT)->setUseDescriptionId(IDS_DESC_FLOWERPOT);

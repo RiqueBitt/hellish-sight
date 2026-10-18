@@ -47,6 +47,7 @@
 #include "../Minecraft.World/net.minecraft.world.entity.h"
 #include "ProgressRenderer.h"
 #include "ServerPlayer.h"
+#include "HSCommands/HSCommands.h"
 #include "GameRenderer.h"
 #include "../Minecraft.World/ThreadName.h"
 #include "../Minecraft.World/IntCache.h"
@@ -550,8 +551,21 @@ static bool ExecuteConsoleCommand(MinecraftServer *server, const wstring &rawCom
 		return true;
 	}
 
-	server->warn(L"Unknown command: " + command);
-	return false;
+	// Hellish Sight: everything else goes to the Java style commands
+	{
+		HSCommands::Source source;
+		source.server = server;
+		source.level = server->getLevel(0);
+		source.permission = 4;
+		source.name = L"Servidor";
+		if (source.level)
+		{
+			source.x = source.level->getLevelData()->getXSpawn();
+			source.y = source.level->getLevelData()->getYSpawn();
+			source.z = source.level->getLevelData()->getZSpawn();
+		}
+		return HSCommands::execute(source, command) > 0;
+	}
 }
 
 MinecraftServer::MinecraftServer()
@@ -1711,7 +1725,7 @@ void MinecraftServer::setFlightAllowed(bool allowFlight)
 
 bool MinecraftServer::isCommandBlockEnabled()
 {
-	return false; //settings.getBoolean("enable-command-block", false);
+	return true;	// Hellish Sight: command blocks work (editing still needs an operator in creative)
 }
 
 bool MinecraftServer::isNetherEnabled()
@@ -2329,6 +2343,7 @@ void MinecraftServer::broadcastStopSavingPacket()
 
 void MinecraftServer::tick()
 {
+	HSCommands::tick(this);	// Hellish Sight: /schedule
 	// Per-substep wall-clock timing. Logs one summary line when total tick
 	// exceeds TICK_SLOW_THRESHOLD_MS.
 	const int64_t TICK_SLOW_THRESHOLD_MS = 60;

@@ -62,6 +62,7 @@ protected:
 		eSectionInventoryCreativeTab_5,
 		eSectionInventoryCreativeTab_6,
 		eSectionInventoryCreativeTab_7,
+		eSectionInventoryCreativeTab_8,		// Hellish Sight: technical items tab
 		eSectionInventoryCreativeSlider,
 		eSectionInventoryCreativeMax,
 		

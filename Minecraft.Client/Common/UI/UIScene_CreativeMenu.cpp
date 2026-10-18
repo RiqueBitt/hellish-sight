@@ -86,7 +86,7 @@ void UIScene_CreativeMenu::handleTouchInput(unsigned int iPad, S32 x, S32 y, int
 	// perform action on release
 	if(bReleased)
 	{
-		if(iId >= eCreativeInventoryTab_BuildingBlocks && iId <= eCreativeInventoryTab_Misc)
+		if(iId >= eCreativeInventoryTab_BuildingBlocks && iId <= eCreativeInventoryTab_Technical)
 		{
 			switchTab((ECreativeInventoryTabs)iId);
 			ui.PlayUISFX(eSFX_Focus);
@@ -143,6 +143,7 @@ void UIScene_CreativeMenu::handleOtherClicked(int iPad, ESceneSection eSection, 
 	case eSectionInventoryCreativeTab_5:
 	case eSectionInventoryCreativeTab_6:
 	case eSectionInventoryCreativeTab_7:
+	case eSectionInventoryCreativeTab_8:
 		{
 			ECreativeInventoryTabs tab = static_cast<ECreativeInventoryTabs>((int)eCreativeInventoryTab_BuildingBlocks + (int)eSection - (int)eSectionInventoryCreativeTab_0);
 			if(tab != m_curTab)
@@ -224,7 +225,7 @@ void UIScene_CreativeMenu::updateTabHighlightAndText(ECreativeInventoryTabs tab)
 
 	IggyResult out = IggyPlayerCallMethodRS ( getMovie() , &result, IggyPlayerRootPath( getMovie() ) , m_funcSetActiveTab , 1 , value );
 
-	m_labelInventory.setLabel(app.GetString(specs[tab]->m_descriptionId));
+	m_labelInventory.setLabel(getTabLabel(tab));
 }
 
 int UIScene_CreativeMenu::getSectionColumns(ESceneSection eSection)
@@ -307,6 +308,10 @@ void UIScene_CreativeMenu::GetPositionOfSection( ESceneSection eSection, UIVec2D
 		pPosition->x = m_TouchInput[ETouchInput_TouchPanel_7].getXPos();
 		pPosition->y = m_TouchInput[ETouchInput_TouchPanel_7].getYPos();
 		break;
+	case eSectionInventoryCreativeTab_8:
+		pPosition->x = m_TouchInput[ETouchInput_TouchPanel_8].getXPos();
+		pPosition->y = m_TouchInput[ETouchInput_TouchPanel_8].getYPos();
+		break;
 	case eSectionInventoryCreativeSlider:
 		pPosition->x = m_TouchInput[ETouchInput_TouchSlider].getXPos();
 		pPosition->y = m_TouchInput[ETouchInput_TouchSlider].getYPos();
@@ -362,6 +367,10 @@ void UIScene_CreativeMenu::GetItemScreenData( ESceneSection eSection, int iItemI
 	case eSectionInventoryCreativeTab_7:
 		sectionSize.x = m_TouchInput[ETouchInput_TouchPanel_7].getWidth();
 		sectionSize.y = m_TouchInput[ETouchInput_TouchPanel_7].getHeight();
+		break;
+	case eSectionInventoryCreativeTab_8:
+		sectionSize.x = m_TouchInput[ETouchInput_TouchPanel_8].getWidth();
+		sectionSize.y = m_TouchInput[ETouchInput_TouchPanel_8].getHeight();
 		break;
 	case eSectionInventoryCreativeSlider:
 		sectionSize.x = m_TouchInput[ETouchInput_TouchSlider].getWidth();
@@ -451,6 +460,9 @@ UIControl *UIScene_CreativeMenu::getSection(ESceneSection eSection)
 		break;
 	case eSectionInventoryCreativeTab_7:
 		control = &m_TouchInput[ETouchInput_TouchPanel_7];
+		break;
+	case eSectionInventoryCreativeTab_8:
+		control = &m_TouchInput[ETouchInput_TouchPanel_8];
 		break;
 	case eSectionInventoryCreativeSlider:
 		control = &m_TouchInput[ETouchInput_TouchSlider];

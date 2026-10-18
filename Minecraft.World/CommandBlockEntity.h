@@ -20,6 +20,18 @@ private:
 	wstring name;
 
 public:
+	// Hellish Sight: Java 1.9+ command block state
+	bool autoActive = false;		// "Always Active" (no redstone needed)
+	bool conditional = false;		// runs only if the block behind succeeded
+	bool powered = false;			// receiving redstone
+	wstring lastOutput;				// "Previous Output"
+	int64_t lastExecutionTick = -1;	// avoids running twice in one tick (chains / loops)
+
+	// Executes a command for a command block (set by the client/server code: HSCommands)
+	typedef int (*Executor)(CommandBlockEntity *block, Level *level, const wstring &command, wstring &output);
+	static Executor s_executor;
+
+public:
 	CommandBlockEntity();
 
 	void setCommand(const wstring &command);

@@ -1,6 +1,7 @@
 #include "Host/RubyLauncherHost.h"
 #include "Loader.h"
 #include "Registry/IDs.h"
+#include "net.minecraft.world.level.tile.h"
 #include "Registry/Item/ItemRegistry.h"
 #include "Registry/Recipe/RecipeRegistry.h"
 #include "Registry/Block/BlockRegistry.h"
@@ -158,6 +159,19 @@ void RubyLoader::onClientBoot()
 	g_loader->collectMods();
 	g_loader->refreshClientScripts();
 	g_loader->executeClientScripts("main");
+
+	// Hellish Sight: names of the repeating / chain command blocks
+	{
+		struct N { int tile; const wchar_t *name; };
+		static const N names[] = { { 210, L"Bloco de Comando de Repetição" }, { 211, L"Bloco de Comando em Cadeia" } };
+		for (const N &n : names)
+		{
+			if (Tile::tiles[n.tile] == nullptr) continue;
+			const int id = ItemRegistry::nextItemNameId();
+			ItemRegistry::langList[id] = n.name;
+			Tile::tiles[n.tile]->setDescriptionId(id);
+		}
+	}
 
 	onStringTableReloaded();
 

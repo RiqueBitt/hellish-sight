@@ -5,6 +5,8 @@
 #include "../Minecraft.Client/MinecraftServer.h"
 #include "CommandBlockEntity.h"
 
+CommandBlockEntity::Executor CommandBlockEntity::s_executor = nullptr;
+
 CommandBlockEntity::CommandBlockEntity()
 {
 	successCount = 0;
@@ -25,24 +27,15 @@ wstring CommandBlockEntity::getCommand()
 
 int CommandBlockEntity::performCommand(Level *level)
 {
-#if 0
-	if (level->isClientSide)
+	// Hellish Sight: commands run through HSCommands (Minecraft.Client/HSCommands)
+	if (level == nullptr || level->isClientSide || s_executor == nullptr || command.empty())
 	{
 		return 0;
 	}
-
-	MinecraftServer *instance = MinecraftServer::getInstance();
-	if (instance != nullptr && instance->isCommandBlockEnabled())
-	{
-		CommandDispatcher *commandDispatcher = instance->getCommandDispatcher();
-		return commandDispatcher->performCommand(dynamic_pointer_cast<CommandSender>(shared_from_this()), command, byteArray() );
-	}
-	return 0;
-#else
-	// 4J-JEV: Cannot decide what to do with the command field.
-	assert(false);
-	return 0;
-#endif
+	wstring output;
+	const int result = s_executor(this, level, command, output);
+	lastOutput = output;
+	return result;
 }
 
 wstring CommandBlockEntity::getName()
@@ -70,6 +63,10 @@ void CommandBlockEntity::save(CompoundTag *tag)
 	tag->putString(L"Command", command);
 	tag->putInt(L"SuccessCount", successCount);
 	tag->putString(L"CustomName", name);
+	tag->putBoolean(L"auto", autoActive);
+	tag->putBoolean(L"conditional", conditional);
+	tag->putBoolean(L"powered", powered);
+	tag->putString(L"LastOutput", lastOutput);
 }
 
 void CommandBlockEntity::load(CompoundTag *tag)
@@ -78,6 +75,10 @@ void CommandBlockEntity::load(CompoundTag *tag)
 	command = tag->getString(L"Command");
 	successCount = tag->getInt(L"SuccessCount");
 	if (tag->contains(L"CustomName")) name = tag->getString(L"CustomName");
+	autoActive = tag->getBoolean(L"auto");
+	conditional = tag->getBoolean(L"conditional");
+	powered = tag->getBoolean(L"powered");
+	lastOutput = tag->getString(L"LastOutput");
 }
 
 Pos *CommandBlockEntity::getCommandSenderWorldPosition()
@@ -116,6 +117,10 @@ shared_ptr<TileEntity> CommandBlockEntity::clone()
 	result->successCount = successCount;
 	result->command = command;
 	result->name = name;
+	result->autoActive = autoActive;
+	result->conditional = conditional;
+	result->powered = powered;
+	result->lastOutput = lastOutput;
 
 	return result;
 }

@@ -24,6 +24,7 @@ protected:
 		ETouchInput_TouchPanel_5,
 		ETouchInput_TouchPanel_6,
 		ETouchInput_TouchPanel_7,
+		ETouchInput_TouchPanel_8,	// Hellish Sight: technical tab (created by the SWF's AS3)
 		ETouchInput_TouchSlider,
 		
 		ETouchInput_Count,
@@ -47,6 +48,7 @@ protected:
 			UI_MAP_ELEMENT( m_TouchInput[ETouchInput_TouchPanel_5], "TouchPanel_5" )
 			UI_MAP_ELEMENT( m_TouchInput[ETouchInput_TouchPanel_6], "TouchPanel_6" )
 			UI_MAP_ELEMENT( m_TouchInput[ETouchInput_TouchPanel_7], "TouchPanel_7" )
+			UI_MAP_ELEMENT( m_TouchInput[ETouchInput_TouchPanel_8], "TouchPanel_8" )
 			UI_MAP_ELEMENT( m_TouchInput[ETouchInput_TouchSlider], "TouchPanel_Slider" )
 
 			UI_MAP_ELEMENT( m_slotListContainer, "containerList")

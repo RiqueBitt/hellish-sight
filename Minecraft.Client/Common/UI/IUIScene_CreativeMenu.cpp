@@ -531,6 +531,10 @@ void IUIScene_CreativeMenu::staticCtor()
 			ITEM_AUX(Item::spawnEgg_Id,  63); // Enderdragon
 		}
 
+	// Hellish Sight: technical / unobtainable items
+	DEF(eCreativeInventory_Technical)
+		addTechnicalItems(list);
+
 	// Food
 	DEF(eCreativeInventory_Food)
 		ITEM(Item::apple_Id)
@@ -905,6 +909,10 @@ void IUIScene_CreativeMenu::staticCtor()
 		ECreative_Inventory_Groups miscGroup[] = { eCreativeInventory_Misc };
 		specs[eCreativeInventoryTab_Misc] = new TabSpec(L"Misc", IDS_GROUPNAME_MISCELLANEOUS, 1, miscGroup);
 #endif
+
+		// Hellish Sight: 9th tab (drawn by the patched CreativeMenu SWFs, label from getTabLabel)
+		ECreative_Inventory_Groups technicalGroup[] = { eCreativeInventory_Technical };
+		specs[eCreativeInventoryTab_Technical] = new TabSpec(L"Technical", -1, 1, technicalGroup);
 	}
 }
 
@@ -939,6 +947,69 @@ void IUIScene_CreativeMenu::appendModItems()
 
 		categoryGroups[group].push_back( shared_ptr<ItemInstance>(new ItemInstance(entry.id, 1, entry.aux)) );
 	}
+}
+
+// Hellish Sight: items that cannot be obtained in survival. Entries whose tile/item does
+// not exist in this build are skipped, so new tiles (e.g. repeating / chain command
+// blocks, Java ids 210 / 211) show up here as soon as they are registered.
+void IUIScene_CreativeMenu::addTechnicalItems(vector< shared_ptr<ItemInstance> > *list)
+{
+	struct TechnicalEntry { int id; int aux; };
+	static const TechnicalEntry entries[] =
+	{
+		// Command blocks
+		{ Tile::commandBlock_Id, 0 },
+		{ 210, 0 },								// repeating command block (when registered)
+		{ 211, 0 },								// chain command block (when registered)
+		// Technical blocks
+		{ Tile::barrier_Id, 0 },
+		{ Tile::mobSpawner_Id, 0 },
+		{ Tile::unbreakable_Id, 0 },			// bedrock
+		{ Tile::endPortalFrameTile_Id, 0 },
+		{ Tile::dragonEgg_Id, 0 },
+		{ Tile::farmland_Id, 0 },
+		{ Tile::furnace_lit_Id, 0 },
+		{ Tile::redstoneLight_lit_Id, 0 },
+		{ Tile::redStoneOre_lit_Id, 0 },
+		{ Tile::hugeMushroom_brown_Id, 14 },	// cap on every side
+		{ Tile::hugeMushroom_brown_Id, 15 },	// stem
+		{ Tile::hugeMushroom_red_Id, 14 },
+		{ Tile::hugeMushroom_red_Id, 15 },
+		// Infested (silverfish) blocks
+		{ Tile::monsterStoneEgg_Id, StoneMonsterTile::HOST_ROCK },
+		{ Tile::monsterStoneEgg_Id, StoneMonsterTile::HOST_COBBLE },
+		{ Tile::monsterStoneEgg_Id, StoneMonsterTile::HOST_STONEBRICK },
+		// Double slabs
+		{ Tile::stoneSlab_Id, StoneSlabTile::STONE_SLAB },
+		{ Tile::stoneSlab_Id, StoneSlabTile::SAND_SLAB },
+		{ Tile::stoneSlab_Id, StoneSlabTile::WOOD_SLAB },
+		{ Tile::stoneSlab_Id, StoneSlabTile::COBBLESTONE_SLAB },
+		{ Tile::stoneSlab_Id, StoneSlabTile::BRICK_SLAB },
+		{ Tile::stoneSlab_Id, StoneSlabTile::SMOOTHBRICK_SLAB },
+		{ Tile::stoneSlab_Id, StoneSlabTile::NETHERBRICK_SLAB },
+		{ Tile::stoneSlab_Id, StoneSlabTile::QUARTZ_SLAB },
+		{ Tile::woodSlab_Id, 0 },
+		{ Tile::woodSlab_Id, 1 },
+		{ Tile::woodSlab_Id, 2 },
+		{ Tile::woodSlab_Id, 3 },
+		{ Tile::woodSlab_Id, 4 },
+		{ Tile::woodSlab_Id, 5 },
+		{ Tile::double_stone_slab2_Id, 0 },
+	};
+
+	for (const TechnicalEntry &e : entries)
+	{
+		if (e.id <= 0 || e.id >= Item::ITEM_NUM_COUNT || Item::items[e.id] == nullptr) continue;
+		if (e.id < 256 && Tile::tiles[e.id] == nullptr) continue;
+		list->push_back( shared_ptr<ItemInstance>(new ItemInstance(e.id, 1, e.aux)) );
+	}
+}
+
+LPCWSTR IUIScene_CreativeMenu::getTabLabel(ECreativeInventoryTabs tab)
+{
+	if (tab == eCreativeInventoryTab_Technical) return L"T\u00E9cnico";
+	if (specs == nullptr || specs[tab] == nullptr || specs[tab]->m_descriptionId < 0) return L"";
+	return app.GetString(specs[tab]->m_descriptionId);
 }
 
 IUIScene_CreativeMenu::IUIScene_CreativeMenu()
@@ -1240,6 +1311,7 @@ IUIScene_AbstractContainerMenu::ESceneSection IUIScene_CreativeMenu::GetSectionA
 	case eSectionInventoryCreativeTab_5:
 	case eSectionInventoryCreativeTab_6:
 	case eSectionInventoryCreativeTab_7:
+	case eSectionInventoryCreativeTab_8:
 	case eSectionInventoryCreativeSlider:
 		/* do nothing */
 		break;
