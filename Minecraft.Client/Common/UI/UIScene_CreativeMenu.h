@@ -86,6 +86,7 @@ public:
 private:
 	// IUIScene_CreativeMenu
 	void updateTabHighlightAndText(ECreativeInventoryTabs tab);
+	void HS_ExtendBoundsForTechTab();	// Hellish Sight
 	void updateScrollCurrentPage(int currentPage, int pageCount);
 	bool m_bFirstCall;
 };

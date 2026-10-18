@@ -25,6 +25,7 @@ UIScene_CreativeMenu::UIScene_CreativeMenu(int iPad, void *_initData, UILayer *p
 	itemPickerMenu = new ItemPickerMenu(creativeContainer, initData->player->inventory);
 
 	Initialize( initData->iPad, itemPickerMenu, false, -1, eSectionInventoryCreativeUsing, eSectionInventoryCreativeMax, initData->bNavigateBack);
+	HS_ExtendBoundsForTechTab();
 
 	m_labelInventory.setLabel( L"" );
 	m_bFirstCall=true;
@@ -159,9 +160,25 @@ void UIScene_CreativeMenu::handleOtherClicked(int iPad, ESceneSection eSection, 
 	}
 }
 
+// Hellish Sight: the technical tab hangs below (or beside) the panel; let the pointer
+// reach it and treat it as part of the panel, otherwise it can never be clicked.
+void UIScene_CreativeMenu::HS_ExtendBoundsForTechTab()
+{
+	UIControl &t = m_TouchInput[ETouchInput_TouchPanel_8];
+	t.UpdateControl();
+	if (t.getWidth() <= 0 || t.getHeight() <= 0) return;
+	const float x1 = static_cast<float>(t.getXPos() + t.getWidth());
+	const float y1 = static_cast<float>(t.getYPos() + t.getHeight());
+	if (x1 > m_fPanelMaxX) m_fPanelMaxX = x1;
+	if (y1 > m_fPanelMaxY) m_fPanelMaxY = y1;
+	if (m_fPointerMaxX < m_fPanelMaxX + 4.0f) m_fPointerMaxX = m_fPanelMaxX + 4.0f;
+	if (m_fPointerMaxY < m_fPanelMaxY + 4.0f) m_fPointerMaxY = m_fPanelMaxY + 4.0f;
+}
+
 void UIScene_CreativeMenu::handleReload()
 {
 	Initialize( m_iPad, m_menu, false, -1, eSectionInventoryCreativeUsing, eSectionInventoryCreativeMax, m_bNavigateBack );
+	HS_ExtendBoundsForTechTab();
 
 	for(unsigned int i = 0; i < TabSpec::MAX_SIZE; ++i)
 	{
