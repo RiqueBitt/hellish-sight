@@ -1,4 +1,6 @@
 #pragma once
+#include "HSHighIds.h"
+class CompoundTag;
 using namespace std;
 
 class DataLayer;
@@ -48,7 +50,13 @@ public:
 private:
 	CompressedTileStorage *lowerBlocks; // 0 - 127
 	CompressedTileStorage *upperBlocks; // 128 - 255
+	HSHighIds *m_hsHigh = nullptr;		// Hellish Sight: high byte of tile ids >= 256 (mod tiles)
 public:
+	HSHighIds *hsHigh() { return m_hsHigh; }
+	int hsFullTile(int low, int x, int y, int z) const { return (m_hsHigh && m_hsHigh->any()) ? (low | (m_hsHigh->get(x, y, z) << 8)) : low; }
+	void hsReplaceHigh(HSHighIds *fresh);	// takes ownership
+	void hsSaveHigh(CompoundTag *tag);
+	void hsLoadHigh(CompoundTag *tag);
 	bool isRenderChunkEmpty(int y);
 	void setBlockData(byteArray data);	// Set block data to that passed in in the input array of size 32768
 	void getBlockData(byteArray data);	// Sets data in passed in array of size 32768, from the block data in this chunk

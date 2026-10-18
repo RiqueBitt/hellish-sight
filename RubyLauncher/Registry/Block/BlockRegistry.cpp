@@ -44,7 +44,7 @@ namespace
 	}
 
 	const int TILE_ID_MIN = 269;	// Dark Nustone Stairs; this has to be changed whenever i add new blocks to the base
-	const int TILE_ID_MAX = 511;
+	const int TILE_ID_MAX = 510;	// Hellish Sight: 511 would share its low byte (255) with the renderer's "hidden tile" marker
 
 	int tileIdMax = TILE_ID_MIN - 1;
 

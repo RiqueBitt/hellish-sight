@@ -1401,6 +1401,29 @@ void ClientConnection::handleBlockRegionUpdate(shared_ptr<BlockRegionUpdatePacke
 		dimensionLevel->setBlocksAndData(packet->x, packet->y, packet->z, packet->xs, packet->ys, packet->zs, packet->buffer, packet->bIsFullChunk);
 		PIXEndNamedEvent();
 
+		// Hellish Sight: high bytes of mod tile ids in this region
+		if (packet->xs <= 16 && packet->zs <= 16)
+		{
+			LevelChunk *lc = dimensionLevel->getChunkAt(packet->x, packet->z);
+			HSHighIds *high = lc != nullptr ? lc->hsHigh() : nullptr;
+			if (high != nullptr && (high->any() || !packet->hsHigh.empty()))
+			{
+				const int bx = packet->x & 15, bz = packet->z & 15;
+				if (high->any())
+				{
+					for (int dx = 0; dx < packet->xs; dx++)
+						for (int dz = 0; dz < packet->zs; dz++)
+							for (int yy = packet->y; yy < y1; yy++)
+								if (high->get(bx + dx, yy, bz + dz) != 0) high->set(bx + dx, yy, bz + dz, 0);
+				}
+				for (size_t i = 0; i + 1 < packet->hsHigh.size(); i += 2)
+				{
+					const int pos = packet->hsHigh[i];
+					high->set(bx + ((pos >> 12) & 15), pos & 255, bz + ((pos >> 8) & 15), packet->hsHigh[i + 1]);
+				}
+			}
+		}
+
 //		OutputDebugString("END BRU\n");
 
 		PIXBeginNamedEvent(0,"removeUnusedTileEntitiesInRegion");

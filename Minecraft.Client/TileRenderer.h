@@ -58,6 +58,9 @@ class TileRenderer
 	bool isTranslucentAt( LevelSource *level, int x, int y, int z);
 	unsigned int *cache;
 	unsigned char *tileIds;
+public:
+	class HSHighIds *hsHigh = nullptr;	// Hellish Sight: high bytes of mod tile ids for the cached chunk
+private:
 	static const unsigned int cache_getLightColor_valid			= 0x80000000;
 	static const unsigned int cache_isTranslucentAt_valid		= 0x40000000;
 	static const unsigned int cache_isSolidBlockingTile_valid	= 0x20000000;

@@ -1,6 +1,7 @@
 #include "stdafx.h"
 
 #include "TileRenderer.h"
+#include "../Minecraft.World/HSHighIds.h"
 #include "GameRenderer.h"
 #include "Minecraft.h"
 #include "Textures.h"
@@ -132,6 +133,7 @@ int TileRenderer::getLightColor( Tile *tt, LevelSource *level, int x, int y, int
 				if( ucTileId != 255 )
 				{
 					tileId = static_cast<int>(ucTileId);
+					if (hsHigh != nullptr) tileId |= hsHigh->get(xx, y, zz) << 8;	// Hellish Sight
 				}
 			}
 			int ret = tt->getLightColor(level, x, y, z, tileId);

@@ -62,6 +62,25 @@ BlockRegionUpdatePacket::BlockRegionUpdatePacket(int x, int y, int z, int xs, in
 		MemSect(0);
 	}
 
+	// Hellish Sight: high bytes of mod tile ids (the block buffer only carries 8 bits)
+	if (xs <= 16 && zs <= 16)
+	{
+		LevelChunk *lc = level->getChunkAt(x, z);
+		if (lc != nullptr && lc->hsHigh() != nullptr && lc->hsHigh()->any())
+		{
+			std::vector<int> all;
+			lc->hsHigh()->collect(all, y, y + this->ys);
+			for (size_t i = 0; i + 1 < all.size(); i += 2)
+			{
+				const int lx = (all[i] >> 12) & 15, lz = (all[i] >> 8) & 15, ly = all[i] & 255;
+				const int dx = lx - (x & 15), dz = lz - (z & 15);
+				if (dx < 0 || dx >= xs || dz < 0 || dz >= zs) continue;
+				hsHigh.push_back((dx << 12) | (dz << 8) | ly);
+				hsHigh.push_back(all[i + 1]);
+			}
+		}
+	}
+
 	if(rawBuffer.length == 0)
 	{
 		size = 0;
@@ -150,6 +169,22 @@ void BlockRegionUpdatePacket::read(DataInputStream *dis) //throws IOException
 		}
 		assert(buffer.length == outputSize);
 	}
+
+	// Hellish Sight: extended tile ids (not part of the legacy / Java wire format)
+	hsHigh.clear();
+	if (!Packet::s_legacyWire)
+	{
+		int count = dis->readInt();
+		if (count < 0 || count > 65536) count = 0;
+		hsHigh.reserve(count * 2);
+		for (int i = 0; i < count; i++)
+		{
+			const int pos = dis->readShort() & 0xffff;
+			const int high = dis->readByte() & 0xff;
+			hsHigh.push_back(pos);
+			hsHigh.push_back(high);
+		}
+	}
 }
 
 void BlockRegionUpdatePacket::write(DataOutputStream *dos) // throws IOException
@@ -170,6 +205,17 @@ void BlockRegionUpdatePacket::write(DataOutputStream *dos) // throws IOException
 	sizeAndLevel |= ( levelIdx << 30 );
 	dos->writeInt(sizeAndLevel);
 	dos->write(buffer, 0, size);
+
+	if (!Packet::s_legacyWire)
+	{
+		const int count = static_cast<int>(hsHigh.size() / 2);
+		dos->writeInt(count);
+		for (int i = 0; i < count; i++)
+		{
+			dos->writeShort(static_cast<short>(hsHigh[i * 2]));
+			dos->writeByte(static_cast<byte>(hsHigh[i * 2 + 1]));
+		}
+	}
 }
 
 void BlockRegionUpdatePacket::handle(PacketListener *listener)
@@ -179,6 +225,6 @@ void BlockRegionUpdatePacket::handle(PacketListener *listener)
 
 int BlockRegionUpdatePacket::getEstimatedSize() 
 {
-	return 17 + size;
+	return 17 + size + 4 + static_cast<int>(hsHigh.size() / 2) * 3;
 }
 

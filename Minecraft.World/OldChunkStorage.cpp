@@ -299,6 +299,8 @@ void OldChunkStorage::save(LevelChunk *lc, Level *level, DataOutputStream *dos)
 	delete ticksInChunk;
 	PIXEndNamedEvent();
 
+	lc->hsSaveHigh(tag);	// Hellish Sight: mod tile ids >= 256
+
 	NbtIo::write(tag,dos);
 	delete tag;
 	PIXEndNamedEvent();
@@ -324,6 +326,7 @@ void OldChunkStorage::save(LevelChunk *lc, Level *level, CompoundTag *tag)
 	//static byteArray blockData = byteArray(32768);
 	lc->getBlockData(tls->blockData);
 	tag->putByteArray(L"Blocks", tls->blockData);
+	lc->hsSaveHigh(tag);	// Hellish Sight
 	PIXEndNamedEvent();
 
 	PIXBeginNamedEvent(0,"Getting data data");
@@ -470,6 +473,9 @@ LevelChunk *OldChunkStorage::load(Level *level, DataInputStream *dis)
 
 	CompoundTag *tag = NbtIo::read(dis);
 
+	levelChunk->hsLoadHigh(tag);	// Hellish Sight: mod tile ids >= 256
+	if (tag != nullptr && tag->contains(L"HSHighIds")) delete [] tag->getByteArray(L"HSHighIds").data;
+
 	loadEntities(levelChunk, level, tag);
 
 	if (tag->contains(L"TileTicks"))
@@ -506,6 +512,8 @@ LevelChunk *OldChunkStorage::load(Level *level, CompoundTag *tag)
 	// we need to free up the data in the tag once we are done
 	levelChunk->setBlockData(tag->getByteArray(L"Blocks"));
 	delete [] tag->getByteArray(L"Blocks").data;
+	levelChunk->hsLoadHigh(tag);	// Hellish Sight
+	if (tag->contains(L"HSHighIds")) delete [] tag->getByteArray(L"HSHighIds").data;
 	//	levelChunk->blocks = tag->getByteArray(L"Blocks");
 
 	// 4J - the original code uses the data in the tag directly, but this is now just used as a source when creating the compressed data, so

@@ -12,6 +12,7 @@
 #include "SparseLightStorage.h"
 #include "BlockReplacements.h"
 #include "LevelChunk.h"
+#include "com.mojang.nbt.h"
 #include "BasicTypeContainers.h"
 #include "../Minecraft.Client/MinecraftServer.h"
 #include "../Minecraft.Client/ServerLevel.h"
@@ -50,8 +51,43 @@ void LevelChunk::staticCtor()
 	InitializeCriticalSection(&m_csTileEntities);
 }
 
+void LevelChunk::hsReplaceHigh(HSHighIds *fresh)
+{
+	HSHighIds *old = m_hsHigh;
+	m_hsHigh = fresh;
+	HSHighIds::release(old);
+}
+
+// Hellish Sight: extended ids in the chunk's NBT ("HSHighIds": 3 bytes per position)
+void LevelChunk::hsSaveHigh(CompoundTag *tag)
+{
+	std::vector<int> entries;
+	m_hsHigh->collect(entries);
+	if (entries.empty()) return;
+	byteArray arr(static_cast<unsigned int>(entries.size() / 2 * 3));
+	for (size_t i = 0, o = 0; i + 1 < entries.size(); i += 2, o += 3)
+	{
+		arr[o] = static_cast<byte>((entries[i] >> 8) & 0xff);
+		arr[o + 1] = static_cast<byte>(entries[i] & 0xff);
+		arr[o + 2] = static_cast<byte>(entries[i + 1] & 0xff);
+	}
+	tag->put(L"HSHighIds", new ByteArrayTag(L"HSHighIds", arr, true));
+}
+
+void LevelChunk::hsLoadHigh(CompoundTag *tag)
+{
+	if (tag == nullptr || !tag->contains(L"HSHighIds")) return;
+	byteArray arr = tag->getByteArray(L"HSHighIds");
+	for (unsigned int o = 0; o + 2 < arr.length; o += 3)
+	{
+		const int pos = ((arr[o] & 0xff) << 8) | (arr[o + 1] & 0xff);
+		m_hsHigh->set((pos >> 12) & 15, pos & 255, (pos >> 8) & 15, arr[o + 2] & 0xff);
+	}
+}
+
 void LevelChunk::init(Level *level, int x, int z)
 {
+	m_hsHigh = new HSHighIds();	// Hellish Sight
 	biomes = byteArray(16 * 16);
 	for(int i = 0; i < 16 * 16; i++ )
 	{
@@ -222,6 +258,8 @@ LevelChunk::LevelChunk(Level *level, int x, int z, LevelChunk *lc)
 	memcpy(biomes.data,lc->biomes.data,biomes.length);
 
 #ifdef SHARING_ENABLED
+	lc->m_hsHigh->retain();
+	hsReplaceHigh(lc->m_hsHigh);	// Hellish Sight: share the extended ids too
 	lowerBlocks = lc->lowerBlocks;
 	lowerData = lc->lowerData;
 	lowerSkyLight = new SparseLightStorage( lc->lowerSkyLight );
@@ -313,6 +351,7 @@ void LevelChunk::stopSharingTilesAndData()
 
 	// Changed to used compressed storage - these CTORs make deep copies of the storage passed as a parameter
 	lowerBlocks = new CompressedTileStorage( lowerBlocks );
+	hsReplaceHigh(m_hsHigh->clone());	// Hellish Sight
 
 	// Changed to use new sparse data storage - this CTOR makes a deep copy of the storage passed as a parameter
 	lowerData = new SparseDataStorage(lowerData);
@@ -437,6 +476,8 @@ void LevelChunk::startSharingTilesAndData(int forceMs)
 	GameRenderer::AddForDelete(lowerBlocks);
 	lowerBlocks = lc->lowerBlocks;
 	GameRenderer::FinishedReassigning();
+	lc->m_hsHigh->retain();
+	hsReplaceHigh(lc->m_hsHigh);	// Hellish Sight
 
 	GameRenderer::AddForDelete(lowerData);
 	lowerData = lc->lowerData;
@@ -461,6 +502,7 @@ void LevelChunk::startSharingTilesAndData(int forceMs)
 LevelChunk::~LevelChunk()
 {
 	setShareSource(nullptr);	// Hellish Sight: release any host-sharing reference
+	hsReplaceHigh(nullptr);
 
 #ifdef SHARING_ENABLED
 	if( !sharingTilesAndData )
@@ -557,7 +599,7 @@ void LevelChunk::recalcHeightmapOnly()
 			}
 #else
 			CompressedTileStorage *blocks = (y-1) >= Level::COMPRESSED_CHUNK_SECTION_HEIGHT?upperBlocks : lowerBlocks;
-			while (y > 0 && Tile::lightBlock[blocks->get(x,(y - 1) % Level::COMPRESSED_CHUNK_SECTION_HEIGHT,z) & 0xff] == 0)		// 4J - was blocks->get() was blocks[p + y - 1]
+			while (y > 0 && Tile::lightBlock[hsFullTile(blocks->get(x,(y - 1) % Level::COMPRESSED_CHUNK_SECTION_HEIGHT,z), x, y - 1, z)] == 0)		// 4J - was blocks->get() was blocks[p + y - 1]
 			{
 				y--;
 				blocks = (y-1) >= Level::COMPRESSED_CHUNK_SECTION_HEIGHT?upperBlocks : lowerBlocks;
@@ -614,7 +656,7 @@ void LevelChunk::recalcHeightmap()
 			}
 #else
 			CompressedTileStorage *blocks = (y-1) >= Level::COMPRESSED_CHUNK_SECTION_HEIGHT?upperBlocks : lowerBlocks;
-			while (y > 0 && Tile::lightBlock[blocks->get(x,(y-1) % Level::COMPRESSED_CHUNK_SECTION_HEIGHT,z) & 0xff] == 0)			// 4J - was blocks->get() was blocks[p + y - 1]
+			while (y > 0 && Tile::lightBlock[hsFullTile(blocks->get(x,(y-1) % Level::COMPRESSED_CHUNK_SECTION_HEIGHT,z), x, y - 1, z)] == 0)			// 4J - was blocks->get() was blocks[p + y - 1]
 			{
 				y--;
 				blocks = (y-1) >= Level::COMPRESSED_CHUNK_SECTION_HEIGHT?upperBlocks : lowerBlocks;
@@ -662,7 +704,7 @@ void LevelChunk::recalcHeightmap()
 				SparseLightStorage *skyLight = yy >= Level::COMPRESSED_CHUNK_SECTION_HEIGHT? upperSkyLight : lowerSkyLight;
 				do
 				{
-					br -= Tile::lightBlock[blocks->get(x,(yy % Level::COMPRESSED_CHUNK_SECTION_HEIGHT),z) & 0xff];					// 4J - blocks->get() was blocks[p + yy]
+					br -= Tile::lightBlock[hsFullTile(blocks->get(x,(yy % Level::COMPRESSED_CHUNK_SECTION_HEIGHT),z), x, yy, z)];					// 4J - blocks->get() was blocks[p + yy]
 					if (br > 0)
 					{
 						skyLight->set(x, (yy % Level::COMPRESSED_CHUNK_SECTION_HEIGHT), z, br);
@@ -705,7 +747,7 @@ void LevelChunk::lightLava()
 			for (int y = 0; y < Level::COMPRESSED_CHUNK_SECTION_HEIGHT; y++)
 			{
 				CompressedTileStorage *blocks = lowerBlocks;
-				int emit = Tile::lightEmission[blocks->get(x,y,z)];	// 4J - blocks->get() was blocks[p + y]
+				int emit = Tile::lightEmission[hsFullTile(blocks->get(x,y,z), x, y, z)];	// 4J - blocks->get() was blocks[p + y]
 				if( emit > 0 )
 				{
 					//					printf("(%d,%d,%d)",this->x * 16 + x, y, this->z * 16 + z);
@@ -835,7 +877,7 @@ void LevelChunk::recalcHeight(int x, int yStart, int z)
 	//    int p = x << level->depthBitsPlusFour | z << level->depthBits;		// 4J - removed
 
 	CompressedTileStorage *blocks = (y-1) >= Level::COMPRESSED_CHUNK_SECTION_HEIGHT?upperBlocks : lowerBlocks;
-	while (y > 0 && Tile::lightBlock[blocks->get(x,(y-1) % Level::COMPRESSED_CHUNK_SECTION_HEIGHT,z) & 0xff] == 0)		// 4J - blocks->get() was blocks[p + y - 1]
+	while (y > 0 && Tile::lightBlock[hsFullTile(blocks->get(x,(y-1) % Level::COMPRESSED_CHUNK_SECTION_HEIGHT,z), x, y - 1, z)] == 0)		// 4J - blocks->get() was blocks[p + y - 1]
 	{
 		y--;
 		blocks = (y-1) >= Level::COMPRESSED_CHUNK_SECTION_HEIGHT?upperBlocks : lowerBlocks;
@@ -947,12 +989,13 @@ int LevelChunk::getTileLightBlock(int x, int y, int z)
 int LevelChunk::getTile(int x, int y, int z)
 {
 	CompressedTileStorage *blocks = y >= Level::COMPRESSED_CHUNK_SECTION_HEIGHT ? upperBlocks : lowerBlocks;
-	return blocks->get(x,y % Level::COMPRESSED_CHUNK_SECTION_HEIGHT,z);
+	return hsFullTile(blocks->get(x,y % Level::COMPRESSED_CHUNK_SECTION_HEIGHT,z), x, y, z);
 }
 
 bool LevelChunk::setTileAndData(int x, int y, int z, int _tile, int _data)
 {
 	byte tile = static_cast<byte>(_tile);
+	const int tileFull = (_tile >= 0 && _tile < Tile::TILE_NUM_COUNT) ? _tile : 0;	// Hellish Sight: ids >= 256 keep their high byte in m_hsHigh
 
 	// Optimisation brought forward from 1.8.2, change from int to unsigned char & this special value changed from -999 to 255
 	int slot = z << 4 | x;
@@ -966,7 +1009,7 @@ bool LevelChunk::setTileAndData(int x, int y, int z, int _tile, int _data)
 
 	CompressedTileStorage *blocks = y >= Level::COMPRESSED_CHUNK_SECTION_HEIGHT ? upperBlocks : lowerBlocks;
 	SparseDataStorage *data = y >= Level::COMPRESSED_CHUNK_SECTION_HEIGHT ? upperData : lowerData;
-	int old = blocks->get(x,y % Level::COMPRESSED_CHUNK_SECTION_HEIGHT,z);
+	int old = hsFullTile(blocks->get(x,y % Level::COMPRESSED_CHUNK_SECTION_HEIGHT,z), x, y, z);
 	int oldData = data->get(x, y % Level::COMPRESSED_CHUNK_SECTION_HEIGHT, z);
 	if (old == _tile && oldData == _data)
 	{
@@ -981,14 +1024,15 @@ bool LevelChunk::setTileAndData(int x, int y, int z, int _tile, int _data)
 	}
 	int xOffs = this->x * 16 + x;
 	int zOffs = this->z * 16 + z;
-	if (old != 0 && !level->isClientSide)
+	if (old != 0 && !level->isClientSide && Tile::tiles[old] != nullptr)
 	{
 		Tile::tiles[old]->onRemoving(level, xOffs, y, zOffs, oldData);
 	}
 	PIXBeginNamedEvent(0,"Chunk setting tile");
 	blocks->set(x,y % Level::COMPRESSED_CHUNK_SECTION_HEIGHT,z,tile);
+	m_hsHigh->set(x, y, z, tileFull >> 8);
 	PIXEndNamedEvent();
-	if (old != 0)
+	if (old != 0 && Tile::tiles[old] != nullptr)
 	{
 		if (!level->isClientSide)
 		{
@@ -1004,7 +1048,7 @@ bool LevelChunk::setTileAndData(int x, int y, int z, int _tile, int _data)
 	PIXEndNamedEvent();
 
 	// 4J added - flag if something emissive is being added. This is used during level creation to determine what chunks need extra lighting processing
-	if( Tile::lightEmission[tile & 0xff] > 0 )
+	if( Tile::lightEmission[tileFull] > 0 )
 	{
 		emissiveAdded = true;
 	}
@@ -1012,11 +1056,11 @@ bool LevelChunk::setTileAndData(int x, int y, int z, int _tile, int _data)
 	PIXBeginNamedEvent(0,"Updating lighting");
 	// 4J - There isn't any point in recalculating heights or updating sky lighting if this tile has
 	// the same light-blocking capabilities as the one it is replacing
-	if( Tile::lightBlock[tile & 0xff] != Tile::lightBlock[old & 0xff] )
+	if( Tile::lightBlock[tileFull] != Tile::lightBlock[old] )
 	{
 		if (!level->dimension->hasCeiling)
 		{
-			if (Tile::lightBlock[tile & 0xff] != 0)
+			if (Tile::lightBlock[tileFull] != 0)
 			{
 				if (y >= oldHeight)
 				{
@@ -1043,7 +1087,7 @@ bool LevelChunk::setTileAndData(int x, int y, int z, int _tile, int _data)
 	}
 	PIXEndNamedEvent();
 	data->set(x, y % Level::COMPRESSED_CHUNK_SECTION_HEIGHT, z, _data);
-	if (_tile != 0)
+	if (_tile != 0 && Tile::tiles[tileFull] != nullptr)
 	{
 		if (!level->isClientSide)
 		{
@@ -1060,6 +1104,7 @@ bool LevelChunk::setTileAndData(int x, int y, int z, int _tile, int _data)
 				if(!Tile::tiles[_tile]->mayPlace(level, xOffs, y, zOffs ))
 				{
 					blocks->set(x,y % Level::COMPRESSED_CHUNK_SECTION_HEIGHT,z,0);
+					m_hsHigh->set(x, y, z, 0);
 					//					blocks[x << level->depthBitsPlusFour | z << level->depthBits | y] = 0;
 				}
 			}

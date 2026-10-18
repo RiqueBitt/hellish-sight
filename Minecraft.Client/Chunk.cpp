@@ -234,11 +234,15 @@ void Chunk::rebuild()
 	static unsigned char tileIds[16 * 16 * Level::maxBuildHeight];
 #endif
 	byteArray tileArray = byteArray(tileIds, 16 * 16 * Level::maxBuildHeight);
-	level->getChunkAt(x,z)->getBlockData(tileArray);		// 4J - TODO - now our data has been re-arranged, we could just extra the vertical slice of this chunk rather than the whole thing
+	LevelChunk *hsChunk = level->getChunkAt(x,z);
+	hsChunk->getBlockData(tileArray);
+	HSHighIds *hsHigh = hsChunk->hsHigh();	// Hellish Sight: high bytes of mod tile ids
+	if (hsHigh != nullptr && !hsHigh->any()) hsHigh = nullptr;		// 4J - TODO - now our data has been re-arranged, we could just extra the vertical slice of this chunk rather than the whole thing
 
 	LevelSource *region = new Region(level, x0 - r, y0 - r, z0 - r, x1 + r, y1 + r, z1 + r, r);
 	static_cast<Region *>(region)->m_hsSolidMissing = true;	// Hellish Sight
 	TileRenderer *tileRenderer = new TileRenderer(region, this->x, this->y, this->z, tileIds);
+	tileRenderer->hsHigh = hsHigh;
 
 	// AP - added a caching system for Chunk::rebuild to take advantage of
 	// Basically we're storing of copy of the tileIDs array inside the region so that calls to Region::getTile can grab data
@@ -404,7 +408,10 @@ void Chunk::rebuild()
 							t->offset(static_cast<float>(-this->x), static_cast<float>(-this->y), static_cast<float>(-this->z));
 						}
 
-						Tile *tile = Tile::tiles[tileId];
+						int hsTileId = tileId;
+						if (hsHigh != nullptr) hsTileId |= hsHigh->get(x & 15, y, z & 15) << 8;
+						Tile *tile = Tile::tiles[hsTileId];
+						if (tile == nullptr) continue;	// unknown id (e.g. a mod that is no longer installed)
 						if (currentLayer == 0 && tile->isEntityTile())
 						{
 							shared_ptr<TileEntity> et = region->getTileEntity(x, y, z);

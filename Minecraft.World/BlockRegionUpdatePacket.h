@@ -11,6 +11,7 @@ public:
     int x, y, z;
     int xs, ys, zs;
     byteArray buffer;
+	std::vector<int> hsHigh;	// Hellish Sight: (dx << 12 | dz << 8 | y, high byte) pairs of tile ids >= 256
 	int levelIdx;
 	bool bIsFullChunk; // 4J Added
 

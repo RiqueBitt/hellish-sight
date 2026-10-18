@@ -328,6 +328,9 @@ bool PlayerChunkMap::PlayerChunk::broadcastChanges(bool allowRegionUpdate)
             int y = ((changedTiles[i]) & 255);
             int z = pos.z * 16 + ((changedTiles[i] >> 8) & 15);
 
+			// Hellish Sight: the multi-tile packet only carries 8-bit ids; resend mod tiles one by one
+			if (level->getTile(x, y, z) > 255) broadcast(std::make_shared<TileUpdatePacket>(x, y, z, level));
+
             if (level->isEntityTile(x, y, z))
 			{
 //                    System.out.println("Sending!");
