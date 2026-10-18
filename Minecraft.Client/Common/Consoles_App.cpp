@@ -507,6 +507,9 @@ bool CMinecraftApp::LoadInventoryMenu(int iPad,shared_ptr<LocalPlayer> player,bo
 {
 	bool success = true;
 
+	// Hellish Sight: spectators have no inventory (Java 1.8)
+	if (player != nullptr && player->isSpectator()) return false;
+
 	InventoryScreenInput* initData = new InventoryScreenInput();
 	initData->player = player;
 	initData->bNavigateBack=bNavigateBack;

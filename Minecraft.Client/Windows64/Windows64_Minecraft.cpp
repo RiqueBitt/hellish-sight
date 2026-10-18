@@ -2,6 +2,7 @@
 //
 
 #include "stdafx.h"
+#include "../Common/HSSettings.h"
 
 #include <dxgi1_4.h>  // IDXGISwapChain3 for SetColorSpace1
 
@@ -1679,6 +1680,66 @@ namespace
 	}
 }
 
+
+// ---------------------------------------------------------------------------
+// Hellish Sight: frame pacer for the FPS limit option.
+// Waits on a high-resolution waitable timer for most of the remaining frame
+// time and spins for the last fraction of a millisecond, so the cap is precise
+// (e.g. 144 FPS stays at ~144, not 125) without burning a full core.
+// ---------------------------------------------------------------------------
+#ifndef CREATE_WAITABLE_TIMER_HIGH_RESOLUTION
+#define CREATE_WAITABLE_TIMER_HIGH_RESOLUTION 0x00000002
+#endif
+static void HS_LimitFrameRate()
+{
+	static LARGE_INTEGER s_freq = {};
+	static LONGLONG s_next = 0;
+	static HANDLE s_timer = nullptr;
+	static bool s_timerTried = false;
+
+	const int limit = HSSettings::getFpsLimit();
+	if (limit <= 0)
+	{
+		s_next = 0;
+		return;
+	}
+	if (s_freq.QuadPart == 0) QueryPerformanceFrequency(&s_freq);
+	if (!s_timerTried)
+	{
+		s_timerTried = true;
+		s_timer = CreateWaitableTimerExW(nullptr, nullptr, CREATE_WAITABLE_TIMER_HIGH_RESOLUTION, TIMER_ALL_ACCESS);
+		if (s_timer == nullptr) s_timer = CreateWaitableTimerW(nullptr, TRUE, nullptr);
+	}
+
+	const LONGLONG interval = s_freq.QuadPart / limit;
+	LARGE_INTEGER now;
+	QueryPerformanceCounter(&now);
+
+	// First frame, or we fell far behind (loading, alt-tab): restart the schedule
+	if (s_next == 0 || now.QuadPart - s_next > interval * 4) s_next = now.QuadPart;
+	s_next += interval;
+
+	LONGLONG remaining = s_next - now.QuadPart;
+	if (remaining <= 0) return;
+
+	const LONGLONG spinTicks = s_freq.QuadPart / 1000;	// spin the last ~1 ms
+	if (remaining > spinTicks && s_timer != nullptr)
+	{
+		LARGE_INTEGER due;
+		due.QuadPart = -static_cast<LONGLONG>((remaining - spinTicks) * 10000000.0 / s_freq.QuadPart);	// relative, 100 ns units
+		if (SetWaitableTimer(s_timer, &due, 0, nullptr, nullptr, FALSE))
+		{
+			WaitForSingleObject(s_timer, 1000);
+		}
+	}
+	for (;;)
+	{
+		QueryPerformanceCounter(&now);
+		if (now.QuadPart >= s_next) break;
+		YieldProcessor();
+	}
+}
+
 int APIENTRY _tWinMain(_In_ HINSTANCE hInstance,
 					   _In_opt_ HINSTANCE hPrevInstance,
 					   _In_ LPTSTR    lpCmdLine,
@@ -2201,6 +2262,9 @@ int APIENTRY _tWinMain(_In_ HINSTANCE hInstance,
 		{
 			RenderManager.Present();
 		}
+
+		// Hellish Sight: user FPS limit (Settings > Graphics), 0 = unlimited
+		HS_LimitFrameRate();
 
 		ui.CheckMenuDisplayed();
 

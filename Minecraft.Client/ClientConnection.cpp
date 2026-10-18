@@ -3810,6 +3810,7 @@ void ClientConnection::handlePlayerAbilities(shared_ptr<PlayerAbilitiesPacket> p
 	player->abilities.instabuild = playerAbilitiesPacket->canInstabuild();
 	player->abilities.invulnerable = playerAbilitiesPacket->isInvulnerable();
 	player->abilities.mayfly = playerAbilitiesPacket->canFly();
+	player->abilities.spectator = playerAbilitiesPacket->isSpectator();	// Hellish Sight
 	player->abilities.setFlyingSpeed(playerAbilitiesPacket->getFlyingSpeed());
 	player->abilities.setWalkingSpeed(playerAbilitiesPacket->getWalkingSpeed());
 }

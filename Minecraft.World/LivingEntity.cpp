@@ -1938,6 +1938,7 @@ void LivingEntity::newServerAiStep()
 
 void LivingEntity::pushEntities()
 {
+	if (instanceof(eTYPE_PLAYER) && !isPushable()) return;	// Hellish Sight: spectators do not shove other entities
 
 	vector<shared_ptr<Entity> > *entities = level->getEntities(shared_from_this(), this->bb->grow(0.2f, 0, 0.2f));
 	if (entities != nullptr && !entities->empty())

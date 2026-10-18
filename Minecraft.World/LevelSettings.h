@@ -72,8 +72,11 @@ public:
 	// Hellish Sight: RTG-style terrain generator (stored in level.dat)
 	void setWorldGenV2(bool enabled) { m_worldGenV2 = enabled; }
 	bool isWorldGenV2() const { return m_worldGenV2; }
+	int getWorldGenRev() const { return m_worldGenRev; }
+	void setWorldGenRev(int rev) { m_worldGenRev = rev; }
 private:
 	bool m_worldGenV2 = false;
+	int m_worldGenRev = 2;	// new worlds use the newest terrain revision (keep in sync with WORLDGEN_V2_CURRENT_REVISION)
 public:
 	static GameType *validateGameType(int gameType);
 	wstring getLevelTypeOptions();

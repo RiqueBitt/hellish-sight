@@ -137,6 +137,7 @@ LevelData::LevelData(CompoundTag *tag)
 	m_xzSize = tag->getInt(L"XZSize");
 	m_hellScale = tag->getInt(L"HellScale");
 	m_worldGenV2 = tag->getBoolean(L"HSWorldGenV2");	// Hellish Sight (false when absent)
+	m_worldGenRev = tag->contains(L"HSWorldGenRev") ? tag->getInt(L"HSWorldGenRev") : 1;	// old worlds keep revision 1
 
 #ifdef _LARGE_WORLDS
 	m_classicEdgeMoat = tag->getInt(L"ClassicMoat");
@@ -254,6 +255,7 @@ LevelData::LevelData(LevelSettings *levelSettings, const wstring& levelName)
 	m_xzSize = levelSettings->getXZSize();
 	m_hellScale = levelSettings->getHellScale();
 	m_worldGenV2 = levelSettings->isWorldGenV2();	// Hellish Sight
+	m_worldGenRev = levelSettings->getWorldGenRev();
 
 	m_xzSize = min(m_xzSize,LEVEL_ABSOLUTE_MAX_WIDTH);
 	m_xzSize = max(m_xzSize,LEVEL_MIN_WIDTH);
@@ -319,6 +321,7 @@ LevelData::LevelData(LevelData *copy)
 	m_xzSize = copy->m_xzSize;
 	m_hellScale = copy->m_hellScale;
 	m_worldGenV2 = copy->m_worldGenV2;	// Hellish Sight
+	m_worldGenRev = copy->m_worldGenRev;
 #ifdef _LARGE_WORLDS
 	m_classicEdgeMoat = copy->m_classicEdgeMoat;
 	m_smallEdgeMoat = copy->m_smallEdgeMoat;
@@ -390,6 +393,7 @@ void LevelData::setTagData(CompoundTag *tag)
 
 	tag->putInt(L"HellScale", m_hellScale);
 	tag->putBoolean(L"HSWorldGenV2", m_worldGenV2);	// Hellish Sight
+	tag->putInt(L"HSWorldGenRev", m_worldGenRev);
 }
 
 int64_t LevelData::getSeed()

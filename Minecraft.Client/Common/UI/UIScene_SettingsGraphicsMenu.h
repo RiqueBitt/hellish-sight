@@ -19,11 +19,12 @@ private:
 		eControl_FOV,
 		eControl_InterfaceOpacity,
 		eControl_Shaders,		// Hellish Sight
-		eControl_SimulationDistance	// Hellish Sight
+		eControl_SimulationDistance,	// Hellish Sight
+		eControl_FpsLimit		// Hellish Sight
 	};
 
 	UIControl_CheckBox m_checkboxClouds, m_checkboxBedrockFog, m_checkboxCustomSkinAnim, m_checkboxVSync, m_checkboxExclusiveFullscreen, m_checkboxShaders; // Checkboxes
-	UIControl_Slider m_sliderRenderDistance, m_sliderGamma, m_sliderFOV, m_sliderInterfaceOpacity, m_sliderSimulationDistance; // Sliders
+	UIControl_Slider m_sliderRenderDistance, m_sliderGamma, m_sliderFOV, m_sliderInterfaceOpacity, m_sliderSimulationDistance, m_sliderFpsLimit; // Sliders
 	UI_BEGIN_MAP_ELEMENTS_AND_NAMES(UIScene)
 		UI_MAP_ELEMENT( m_checkboxClouds, "Clouds")
 		UI_MAP_ELEMENT( m_checkboxBedrockFog, "BedrockFog")
@@ -36,6 +37,7 @@ private:
 		UI_MAP_ELEMENT( m_sliderInterfaceOpacity, "InterfaceOpacity")
 		UI_MAP_ELEMENT( m_checkboxShaders, "Shaders")
 		UI_MAP_ELEMENT( m_sliderSimulationDistance, "SimulationDistance")
+		UI_MAP_ELEMENT( m_sliderFpsLimit, "FpsLimit")
 	UI_END_MAP_ELEMENTS_AND_NAMES()
 
 	bool m_bNotInGame;

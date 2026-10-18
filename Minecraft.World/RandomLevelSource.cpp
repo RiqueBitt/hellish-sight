@@ -73,7 +73,7 @@ RandomLevelSource::RandomLevelSource(Level *level, int64_t seed, bool generateSt
 
 	// Hellish Sight: WorldGen V2 (Realistic Terrain Generation port) replaces the terrain
 	// shape and surfaces only; caves, structures, decoration and mobs stay the same.
-	m_worldGenV2 = level->getLevelData()->isWorldGenV2() ? new WorldGenV2::RtgGenerator(seed) : nullptr;
+	m_worldGenV2 = level->getLevelData()->isWorldGenV2() ? new WorldGenV2::RtgGenerator(seed, level->getLevelData()->getWorldGenRev()) : nullptr;
 }
 
 RandomLevelSource::~RandomLevelSource()

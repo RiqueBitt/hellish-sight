@@ -9,6 +9,7 @@ PlayerAbilitiesPacket::PlayerAbilitiesPacket()
 	_isFlying = false;
 	_canFly = false;
 	instabuild = false;
+	spectator = false;
 	flyingSpeed = 0.0f;
 	walkingSpeed = 0.0f;
 }
@@ -19,6 +20,7 @@ PlayerAbilitiesPacket::PlayerAbilitiesPacket(Abilities *abilities)
 	setFlying(abilities->flying);
 	setCanFly(abilities->mayfly);
 	setInstabuild(abilities->instabuild);
+	setSpectator(abilities->spectator);
 	setFlyingSpeed(abilities->getFlyingSpeed());
 	setWalkingSpeed(abilities->getWalkingSpeed());
 }
@@ -31,6 +33,7 @@ void PlayerAbilitiesPacket::read(DataInputStream *dis)
 	setFlying((bitfield & FLAG_FLYING) > 0);
 	setCanFly((bitfield & FLAG_CAN_FLY) > 0);
 	setInstabuild((bitfield & FLAG_INSTABUILD) > 0);
+	setSpectator((bitfield & FLAG_SPECTATOR) > 0);
 	setFlyingSpeed(dis->readFloat());
 	setWalkingSpeed(dis->readFloat());
 }
@@ -43,6 +46,7 @@ void PlayerAbilitiesPacket::write(DataOutputStream *dos)
 	if (isFlying()) bitfield |= FLAG_FLYING;
 	if (canFly()) bitfield |= FLAG_CAN_FLY;
 	if (canInstabuild()) bitfield |= FLAG_INSTABUILD;
+	if (isSpectator()) bitfield |= FLAG_SPECTATOR;
 
 	dos->writeByte(bitfield);
 	dos->writeFloat(flyingSpeed);

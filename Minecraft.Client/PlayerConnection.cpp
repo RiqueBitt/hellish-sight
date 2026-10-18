@@ -429,6 +429,10 @@ void PlayerConnection::handleMovePlayer(shared_ptr<MovePlayerPacket> packet)
 			player->causeFoodExhaustion(FoodConstants::EXHAUSTION_JUMP);
 		}
 
+		// Hellish Sight: spectators move through blocks, so skip collision/fly validation
+		const bool hsSpectator = player->isSpectator();
+		if (hsSpectator) player->noPhysics = true;
+
 		player->move(xDist, yDist, zDist);
 
 		// 4J Stu - It is possible that we are no longer synched (eg By moving into an End Portal), so we should stop any further movement based on this packet
@@ -454,7 +458,7 @@ void PlayerConnection::handleMovePlayer(shared_ptr<MovePlayerPacket> packet)
 		zDist = zt - player->z;
 		dist = xDist * xDist + yDist * yDist + zDist * zDist;
 		bool fail = false;
-		if (dist > 0.25 * 0.25 && !player->isSleeping() && !player->gameMode->isCreative() && !player->isAllowedToFly())
+		if (dist > 0.25 * 0.25 && !player->isSleeping() && !player->gameMode->isCreative() && !player->isAllowedToFly() && !hsSpectator)
 		{
 			fail = true;
 			//            logger.warning(player->name + " moved wrongly!");
@@ -475,14 +479,14 @@ void PlayerConnection::handleMovePlayer(shared_ptr<MovePlayerPacket> packet)
 			return;
 		}
 		bool newOk = level->getCubes(player, playerBB->copy()->shrink(r, r, r))->empty();
-		if (oldOk && (fail || !newOk) && !player->isSleeping())
+		if (!hsSpectator && oldOk && (fail || !newOk) && !player->isSleeping())
 		{
 			teleport(xLastOk, yLastOk, zLastOk, yRotT, xRotT);
 			return;
 		}
 		AABB *testBox = playerBB->copy()->grow(r, r, r)->expand(0, -0.55, 0);
 		// && server.level.getCubes(player, testBox).size() == 0
-		if (!server->isFlightAllowed() && !player->gameMode->isCreative() && !level->containsAnyBlocks(testBox) && !player->isAllowedToFly() )
+		if (!server->isFlightAllowed() && !player->gameMode->isCreative() && !hsSpectator && !level->containsAnyBlocks(testBox) && !player->isAllowedToFly() )
 		{
 			if (oyDist >= (-0.5f / 16.0f))
 			{
@@ -1588,12 +1592,6 @@ void PlayerConnection::handleClientCommand(shared_ptr<ClientCommandPacket> packe
 			FourKitBridge::UpdatePlayerEntityId(oldEntityId, player->entityId);
 #endif
 		}
-		else if (player->level->getLevelData()->isHardcore())
-		{
-			// Hardcore mode — server rejects respawn. Ban and disconnect are already
-			// handled in ServerPlayer::die() via banPlayerForHardcoreDeath().
-			return;
-		}
 		else
 		{
 			if (player->getHealth() > 0) return;
@@ -2020,7 +2018,7 @@ bool PlayerConnection::isServerPacketListener()
 
 void PlayerConnection::handlePlayerAbilities(shared_ptr<PlayerAbilitiesPacket> playerAbilitiesPacket)
 {
-	player->abilities.flying = playerAbilitiesPacket->isFlying() && player->abilities.mayfly;
+	player->abilities.flying = (playerAbilitiesPacket->isFlying() && player->abilities.mayfly) || player->isSpectator();
 }
 
 //void handleChatAutoComplete(ChatAutoCompletePacket packet) {

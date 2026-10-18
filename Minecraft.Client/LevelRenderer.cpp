@@ -609,6 +609,8 @@ void LevelRenderer::renderEntities(Vec3 *cam, Culler *culler, float a)
 			shared_ptr<LocalPlayer> localplayer = mc->cameraTargetPlayer->instanceof(eTYPE_LOCALPLAYER) ? dynamic_pointer_cast<LocalPlayer>(mc->cameraTargetPlayer) : nullptr;
 
 			if (localplayer && entity == mc->cameraTargetPlayer && !localplayer->ThirdPersonView() && !mc->cameraTargetPlayer->isSleeping()) continue;
+			// Hellish Sight: hide the entity we are spectating through (camera sits in its head)
+			if (localplayer && !localplayer->ThirdPersonView() && localplayer->getSpectateTarget() == entity) continue;
 
 			if (!level[playerIndex]->hasChunkAt(Mth::floor(entity->x), 0, Mth::floor(entity->z)))
 			{

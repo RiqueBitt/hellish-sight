@@ -177,7 +177,7 @@ void IUIScene_HUD::updateFrameTick()
 	SetOpacity(fVal);
 
 	bool bDisplayGui=app.GetGameStarted() && !ui.GetMenuDisplayed(iPad) && !(app.GetXuiAction(iPad)==eAppAction_AutosaveSaveGameCapturedThumbnail) && app.GetGameSettings(iPad,eGameSetting_DisplayHUD)!=0;
-	if(bDisplayGui && pMinecraft->localplayers[iPad] != nullptr)
+	if(bDisplayGui && pMinecraft->localplayers[iPad] != nullptr && !pMinecraft->localplayers[iPad]->isSpectator())	// Hellish Sight: spectators have no hotbar/health
 	{
 		SetVisible(true);			
 	}

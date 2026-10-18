@@ -61,6 +61,13 @@ int UIScene_SettingsGraphicsMenu::DistanceToLevel(int dist)
     return 3;
 }
 
+// Hellish Sight: label for the FPS limit slider (0 = unlimited)
+static void FormatFpsLabel(WCHAR *out, int fps)
+{
+	if (fps <= 0) swprintf(out, 256, L"Limite de FPS: Ilimitado");
+	else swprintf(out, 256, L"Limite de FPS: %d", fps);
+}
+
 UIScene_SettingsGraphicsMenu::UIScene_SettingsGraphicsMenu(int iPad, void *initData, UILayer *parentLayer) : UIScene(iPad, parentLayer)
 {
 	// Setup all the Iggy references we need for this scene
@@ -93,6 +100,11 @@ UIScene_SettingsGraphicsMenu::UIScene_SettingsGraphicsMenu(int iPad, void *initD
 		const int simChunks = Level::s_simulationChunks;
 		swprintf(TempString, 256, L"Dist\u00E2ncia de simula\u00E7\u00E3o: %d chunks", simChunks);
 		m_sliderSimulationDistance.init(TempString,eControl_SimulationDistance,2,32,simChunks);
+
+		// Hellish Sight: FPS limit 1..300, last slider step (301) = unlimited
+		const int fps = HSSettings::getFpsLimit();
+		FormatFpsLabel(TempString, fps);
+		m_sliderFpsLimit.init(TempString,eControl_FpsLimit,1,HSSettings::kFpsUnlimitedSlider,fps <= 0 ? HSSettings::kFpsUnlimitedSlider : fps);
 	}
 	
 	swprintf( TempString, 256, L"%ls: %d%%", app.GetString( IDS_SLIDER_GAMMA ),app.GetGameSettings(m_iPad,eGameSetting_Gamma));	
@@ -135,11 +147,13 @@ UIScene_SettingsGraphicsMenu::UIScene_SettingsGraphicsMenu(int iPad, void *initD
 
 		IggyValueSetStringUTF8RS(m_sliderRenderDistance.getIggyValuePath(), navUp, nullptr, "Shaders", -1);
 
-		// Hellish Sight: RenderDistance -> SimulationDistance -> Gamma
+		// Hellish Sight: RenderDistance -> SimulationDistance -> FpsLimit -> Gamma
 		IggyValueSetStringUTF8RS(m_sliderRenderDistance.getIggyValuePath(), navDown, nullptr, "SimulationDistance", -1);
 		IggyValueSetStringUTF8RS(m_sliderSimulationDistance.getIggyValuePath(), navUp, nullptr, "RenderDistance", -1);
-		IggyValueSetStringUTF8RS(m_sliderSimulationDistance.getIggyValuePath(), navDown, nullptr, "Gamma", -1);
-		IggyValueSetStringUTF8RS(m_sliderGamma.getIggyValuePath(), navUp, nullptr, "SimulationDistance", -1);
+		IggyValueSetStringUTF8RS(m_sliderSimulationDistance.getIggyValuePath(), navDown, nullptr, "FpsLimit", -1);
+		IggyValueSetStringUTF8RS(m_sliderFpsLimit.getIggyValuePath(), navUp, nullptr, "SimulationDistance", -1);
+		IggyValueSetStringUTF8RS(m_sliderFpsLimit.getIggyValuePath(), navDown, nullptr, "Gamma", -1);
+		IggyValueSetStringUTF8RS(m_sliderGamma.getIggyValuePath(), navUp, nullptr, "FpsLimit", -1);
 	}
 #endif
 
@@ -278,6 +292,16 @@ void UIScene_SettingsGraphicsMenu::handleSliderMove(F64 sliderId, F64 currentVal
 			HSSettings::setInt("simulationDistance", sim);
 			swprintf(TempString,256,L"Dist\u00E2ncia de simula\u00E7\u00E3o: %d chunks",sim);
 			m_sliderSimulationDistance.setLabel(TempString);
+		}
+		break;
+
+	case eControl_FpsLimit:
+		{
+			m_sliderFpsLimit.handleSliderMove(value);
+			const int fps = (value >= HSSettings::kFpsUnlimitedSlider) ? 0 : (value < 1 ? 1 : value);
+			HSSettings::setFpsLimit(fps);
+			FormatFpsLabel(TempString, fps);
+			m_sliderFpsLimit.setLabel(TempString);
 		}
 		break;
 

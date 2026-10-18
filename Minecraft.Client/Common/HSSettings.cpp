@@ -7,6 +7,7 @@
 #include <cstring>
 #include <map>
 #include <mutex>
+#include <atomic>
 
 namespace HSSettings
 {
@@ -16,6 +17,7 @@ namespace HSSettings
 		std::mutex g_lock;
 		std::map<std::string, std::string> g_values;
 		bool g_loaded = false;
+		std::atomic<int> g_fpsLimit(-1);	// -1 = not read yet
 
 		void load()
 		{
@@ -62,8 +64,30 @@ namespace HSSettings
 		save();
 	}
 
+	int getFpsLimit()
+	{
+		int v = g_fpsLimit.load(std::memory_order_relaxed);
+		if (v < 0)
+		{
+			v = getInt("fpsLimit", 0);
+			if (v < 0) v = 0;
+			if (v > kFpsMax) v = kFpsMax;
+			g_fpsLimit.store(v, std::memory_order_relaxed);
+		}
+		return v;
+	}
+
+	void setFpsLimit(int fps)
+	{
+		if (fps < 0) fps = 0;
+		if (fps > kFpsMax) fps = kFpsMax;
+		g_fpsLimit.store(fps, std::memory_order_relaxed);
+		setInt("fpsLimit", fps);
+	}
+
 	void applyAtStartup()
 	{
+		getFpsLimit();
 		int sim = getInt("simulationDistance", 10);
 		if (sim < 2) sim = 2;
 		if (sim > 32) sim = 32;

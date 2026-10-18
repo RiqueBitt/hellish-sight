@@ -29,8 +29,17 @@ UIScene_DeathMenu::UIScene_DeathMenu(int iPad, void *initData, UILayer *parentLa
 
 	if (isHardcore)
 	{
-		m_buttonRespawn.init(app.GetString(IDS_HARDCORE_DEATH_MESSAGE), eControl_Respawn);
-		m_buttonRespawn.setVisible(false);
+		// Hellish Sight: Java 1.8 hardcore death screen - "Spectate world" / "Delete world"
+		m_labelTitle.setLabel(L"Fim de jogo!");
+		m_buttonRespawn.init(L"Espectar o mundo", eControl_Respawn);
+		if (g_NetworkManager.IsHost())
+		{
+			m_buttonExitGame.init(L"Excluir mundo", eControl_ExitGame);
+		}
+		else
+		{
+			m_buttonExitGame.init(L"Sair do servidor", eControl_ExitGame);
+		}
 	}
 	else
 	{
@@ -106,12 +115,7 @@ void UIScene_DeathMenu::handlePress(F64 controlId, F64 childId)
 	{
 	case eControl_Respawn:
 		{
-			// 4J Added: Safeguard - don't respawn in hardcore mode
-			Minecraft *pMC = Minecraft::GetInstance();
-			if (pMC != nullptr && pMC->level != nullptr && pMC->level->getLevelData()->isHardcore())
-			{
-				break;
-			}
+			// Hellish Sight: in hardcore the server respawns the player as a spectator
 			m_bIgnoreInput = true;
 			app.SetAction(m_iPad,eAppAction_Respawn);
 		}

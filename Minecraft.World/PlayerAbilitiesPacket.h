@@ -11,11 +11,13 @@ private:
 	static const int FLAG_FLYING = 1 << 1;
 	static const int FLAG_CAN_FLY = 1 << 2;
 	static const int FLAG_INSTABUILD = 1 << 3;
+	static const int FLAG_SPECTATOR = 1 << 4;	// Hellish Sight
 
 	bool invulnerable;
 	bool _isFlying;
 	bool _canFly;
 	bool instabuild;
+	bool spectator;
 	float flyingSpeed;
 	float walkingSpeed;
 
@@ -36,6 +38,8 @@ public:
 	void setCanFly(bool canFly);
 	bool canInstabuild();
 	void setInstabuild(bool instabuild);
+	bool isSpectator() { return spectator; }
+	void setSpectator(bool v) { spectator = v; }
 	float getFlyingSpeed();
 	void setFlyingSpeed(float flySpeed);
 	float getWalkingSpeed();

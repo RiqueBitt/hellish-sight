@@ -561,6 +561,28 @@ void LocalPlayer::aiStep()
 		updateRichPresence();
 		m_bIsIdle = false;
 	}
+
+	// Hellish Sight: spectator camera - follow the spectated entity's eyes; sneak to leave
+	shared_ptr<Entity> hsTarget = m_hsSpectateTarget.lock();
+	if (hsTarget != nullptr)
+	{
+		const bool stop = !isSpectator() || hsTarget->removed || hsTarget->level != level || input == nullptr || input->sneaking
+			|| (hsTarget->instanceof(eTYPE_LIVINGENTITY) && dynamic_pointer_cast<LivingEntity>(hsTarget)->getHealth() <= 0);
+		if (stop)
+		{
+			m_hsSpectateTarget.reset();
+		}
+		else
+		{
+			const double eyeY = hsTarget->y + hsTarget->getHeadHeight();
+			setPos(hsTarget->x, eyeY - getHeadHeight(), hsTarget->z);
+			xd = yd = zd = 0;
+			float yaw = hsTarget->yRot;
+			if (hsTarget->instanceof(eTYPE_LIVINGENTITY)) yaw = dynamic_pointer_cast<LivingEntity>(hsTarget)->yHeadRot;
+			yRot = yaw;
+			xRot = hsTarget->xRot;
+		}
+	}
 }
 
 void LocalPlayer::changeDimension(int i)

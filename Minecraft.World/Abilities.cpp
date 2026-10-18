@@ -9,6 +9,7 @@ Abilities::Abilities()
 	mayfly = false;
 	instabuild = false;
 	mayBuild = true;
+	spectator = false;
 	flyingSpeed = 0.05f;
 	walkingSpeed = 0.1f;
 
@@ -26,6 +27,7 @@ void Abilities::addSaveData(CompoundTag *parentTag)
 	tag->putBoolean(L"mayfly", mayfly);
 	tag->putBoolean(L"instabuild", instabuild);
 	tag->putBoolean(L"mayBuild", mayBuild);
+	tag->putBoolean(L"spectator", spectator);
 	tag->putFloat(L"flySpeed", flyingSpeed);
 	tag->putFloat(L"walkSpeed", walkingSpeed);
 
@@ -49,6 +51,7 @@ void Abilities::loadSaveData(CompoundTag *parentTag)
 			flyingSpeed = tag->getFloat(L"flySpeed");
 			walkingSpeed = tag->getFloat(L"walkSpeed");
 		}
+		spectator = tag->contains(L"spectator") && tag->getBoolean(L"spectator");
 		if (tag->contains(L"mayBuild"))
 		{
 			mayBuild = tag->getBoolean(L"mayBuild");

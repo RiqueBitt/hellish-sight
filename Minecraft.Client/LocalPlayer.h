@@ -139,6 +139,13 @@ public:
 	// 4J - have changed 3rd person view to be 0 if not enabled, 1 for mode like original, 2 reversed mode
 	virtual void SetThirdPersonView(int val)	{m_iThirdPersonView=val;}
 
+	// Hellish Sight: spectator mode camera target
+	void setSpectateTarget(shared_ptr<Entity> e) { m_hsSpectateTarget = e; }
+	shared_ptr<Entity> getSpectateTarget() { return m_hsSpectateTarget.lock(); }
+private:
+	weak_ptr<Entity> m_hsSpectateTarget;
+public:
+
 	void ResetInactiveTicks()	{ m_uiInactiveTicks=0;}
 	unsigned int GetInactiveTicks()	{ return m_uiInactiveTicks;}
 	void IncrementInactiveTicks()	{ if(m_uiInactiveTicks<255) m_uiInactiveTicks++;}

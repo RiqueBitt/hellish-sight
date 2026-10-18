@@ -161,6 +161,7 @@ public:
 	static int getFlagIndexForChunk(const ChunkPos& pos, int dimension);		// 4J - added
 	int getPlayerViewDistanceModifier(); // 4J Added, returns a number which is subtracted from the default view distance
 	bool isSpectator();
+	bool m_hsSpectatorInvisible = false;
 
 public:
 	// 4J Stu - Added hooks for the game rules

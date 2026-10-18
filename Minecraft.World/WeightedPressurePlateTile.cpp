@@ -16,7 +16,16 @@ WeightedPressurePlateTile::WeightedPressurePlateTile(int id, const wstring &tex,
 
 int WeightedPressurePlateTile::getSignalStrength(Level *level, int x, int y, int z)
 {
-	int weightOfEntities = level->getEntitiesOfClass(typeid(Entity), getSensitiveAABB(x, y, z))->size();
+	int weightOfEntities = 0;
+	vector<shared_ptr<Entity> > *entities = level->getEntitiesOfClass(typeid(Entity), getSensitiveAABB(x, y, z));
+	if (entities != nullptr)
+	{
+		for (auto &e : *entities)
+		{
+			if (e && !e->isIgnoringTileTriggers()) weightOfEntities++;	// Hellish Sight: spectators weigh nothing
+		}
+		delete entities;
+	}
 	int count = min(weightOfEntities, maxWeight);
 
 	if (count <= 0)

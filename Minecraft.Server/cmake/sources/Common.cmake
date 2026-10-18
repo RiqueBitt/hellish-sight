@@ -562,6 +562,7 @@ set(_MINECRAFT_SERVER_COMMON_ROOT
   "${_MS_SRC}/../Minecraft.World/WorldGenV2/RtgTerrain.cpp"
   "${_MS_SRC}/../Minecraft.World/WorldGenV2/RtgBiomes.cpp"
   "${_MS_SRC}/../Minecraft.World/WorldGenV2/RtgGenerator.cpp"
+  "${_MS_SRC}/../Minecraft.World/WorldGenV2/RtgEnhance.cpp"
   "${_MS_SRC}/../Minecraft.World/ConsoleSaveFileOriginal.h"
   "${_MS_SRC}/../Minecraft.World/CactusTile.cpp"
   "${_MS_SRC}/../Minecraft.World/CocoaTile.cpp"

@@ -10,6 +10,7 @@ public:
 	bool mayfly;
 	bool instabuild;
 	bool mayBuild;
+	bool spectator;	// Hellish Sight: spectator mode (noclip, no interaction)
 
 private:
 	float flyingSpeed;

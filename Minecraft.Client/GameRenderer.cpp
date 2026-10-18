@@ -847,7 +847,7 @@ void GameRenderer::renderItemInHand(float a, int eye)
 	{
 		// 4J-PB - changing this to be per player
 		//if (!mc->options->thirdPersonView && !mc->cameraTargetPlayer->isSleeping())
-		if (!localplayer->ThirdPersonView() && !mc->cameraTargetPlayer->isSleeping())
+		if (!localplayer->ThirdPersonView() && !mc->cameraTargetPlayer->isSleeping() && !localplayer->isSpectator())
 		{
 			if (!mc->options->hideGui && !mc->gameMode->isCutScene())
 			{
@@ -1765,9 +1765,10 @@ void GameRenderer::renderLevel(float a, int64_t until)
 
 		if ( (zoom == 1) && cameraEntity->instanceof(eTYPE_PLAYER) ) //&& !mc->options.hideGui)
 		{
-			if (mc->hitResult != nullptr && !cameraEntity->isUnderLiquid(Material::water))
+			shared_ptr<Player> hsCamPlayer = dynamic_pointer_cast<Player>(cameraEntity);
+			if (mc->hitResult != nullptr && !cameraEntity->isUnderLiquid(Material::water) && !(hsCamPlayer && hsCamPlayer->isSpectator()))
 			{
-				shared_ptr<Player> player = dynamic_pointer_cast<Player>(cameraEntity);
+				shared_ptr<Player> player = hsCamPlayer;
 				glDisable(GL_ALPHA_TEST);
 				levelRenderer->renderHitOutline(player, mc->hitResult, 0, a);
 				glEnable(GL_ALPHA_TEST);

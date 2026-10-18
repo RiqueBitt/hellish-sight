@@ -540,7 +540,10 @@ public:
 	bool hasInvisiblePrivilege();
 	bool hasInvulnerablePrivilege();
 	bool isModerator();
-	bool isSpectator();
+	virtual bool isSpectator();
+	virtual bool isPushable();
+	virtual bool isPickable();
+	virtual bool isIgnoringTileTriggers();
 
 	static void enableAllPlayerPrivileges(unsigned int &uigamePrivileges, bool enable);
 	void enableAllPlayerPrivileges(bool enable);

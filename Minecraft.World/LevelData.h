@@ -51,6 +51,7 @@ private:
 #endif
 	int m_hellScale; // 4J Added
 	bool m_worldGenV2 = false; // Hellish Sight: RTG-style terrain
+	int m_worldGenRev = 1;	// Hellish Sight: WorldGen V2 terrain revision
 
 	// 4J added
 	int xStronghold;
@@ -157,4 +158,5 @@ public:
 #endif
 	virtual int getHellScale(); // 4J Addded
 	virtual bool isWorldGenV2() { return m_worldGenV2; }	// Hellish Sight
+	virtual int getWorldGenRev() { return m_worldGenRev; }	// Hellish Sight
 };

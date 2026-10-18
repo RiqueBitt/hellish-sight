@@ -67,6 +67,7 @@ bool MultiPlayerGameMode::canHurtPlayer()
 
 bool MultiPlayerGameMode::destroyBlock(int x, int y, int z, int face)
 {
+	if (localPlayerMode->isSpectator()) return false;	// Hellish Sight
 	if (localPlayerMode->isAdventureRestricted()) {
         if (!minecraft->player->mayDestroyBlockAt(x, y, z)) {
             return false;
@@ -115,6 +116,7 @@ bool MultiPlayerGameMode::destroyBlock(int x, int y, int z, int face)
 void MultiPlayerGameMode::startDestroyBlock(int x, int y, int z, int face)
 {	
 	if(!minecraft->player->isAllowedToMine()) return;
+	if (localPlayerMode->isSpectator()) return;	// Hellish Sight
 
 	if (localPlayerMode->isAdventureRestricted())
 	{
@@ -180,6 +182,7 @@ void MultiPlayerGameMode::stopDestroyBlock()
 
 void MultiPlayerGameMode::continueDestroyBlock(int x, int y, int z, int face)
 {
+	if (localPlayerMode->isSpectator()) return;	// Hellish Sight
 	if(!minecraft->player->isAllowedToMine()) return;
     ensureHasSentCarriedItem();
 //        connection.send(new PlayerActionPacket(PlayerActionPacket.CONTINUE_DESTROY_BLOCK, x, y, z, face));
@@ -283,6 +286,7 @@ void MultiPlayerGameMode::ensureHasSentCarriedItem()
 bool MultiPlayerGameMode::useItemOn(shared_ptr<Player> player, Level *level, shared_ptr<ItemInstance> item, int x, int y, int z, int face, Vec3 *hit, bool bTestUseOnly, bool *pbUsedItem)
 {
 	if( pbUsedItem ) *pbUsedItem = false;	// Did we actually use the held item?
+	if (localPlayerMode->isSpectator()) return false;	// Hellish Sight: spectators cannot use or place
 
 	// 4J-PB - Adding a test only version to allow tooltips to be displayed
 	if(!bTestUseOnly)
@@ -386,6 +390,7 @@ bool MultiPlayerGameMode::useItemOn(shared_ptr<Player> player, Level *level, sha
 
 bool MultiPlayerGameMode::useItem(shared_ptr<Player> player, Level *level, shared_ptr<ItemInstance> item, bool bTestUseOnly)
 {
+	if (localPlayerMode->isSpectator()) return false;	// Hellish Sight
 	if(!player->isAllowedToUse(item)) return false;
 
 	// 4J-PB - Adding a test only version to allow tooltips to be displayed
@@ -433,6 +438,13 @@ shared_ptr<MultiplayerLocalPlayer> MultiPlayerGameMode::createPlayer(Level *leve
 
 void MultiPlayerGameMode::attack(shared_ptr<Player> player, shared_ptr<Entity> entity)
 {
+	// Hellish Sight: in spectator mode, "attacking" an entity starts spectating it (Java 1.8)
+	if (localPlayerMode->isSpectator())
+	{
+		shared_ptr<LocalPlayer> lp = dynamic_pointer_cast<LocalPlayer>(player);
+		if (lp != nullptr && entity != nullptr && entity->instanceof(eTYPE_LIVINGENTITY)) lp->setSpectateTarget(entity);
+		return;
+	}
     ensureHasSentCarriedItem();
     connection->send(std::make_shared<InteractPacket>(player->entityId, entity->entityId, InteractPacket::ATTACK));
     player->attack(entity);
@@ -440,6 +452,7 @@ void MultiPlayerGameMode::attack(shared_ptr<Player> player, shared_ptr<Entity> e
 
 bool MultiPlayerGameMode::interact(shared_ptr<Player> player, shared_ptr<Entity> entity)
 {
+	if (localPlayerMode->isSpectator()) return false;	// Hellish Sight
     ensureHasSentCarriedItem();
     connection->send(std::make_shared<InteractPacket>(player->entityId, entity->entityId, InteractPacket::INTERACT));
     return player->interact(entity);

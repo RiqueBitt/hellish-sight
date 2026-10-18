@@ -37,6 +37,7 @@ set(_MINECRAFT_WORLD_COMMON_CONSOLEHELPERS_CONSOLESAVEFILEIO
   "${CMAKE_CURRENT_SOURCE_DIR}/WorldGenV2/RtgTerrain.cpp"
   "${CMAKE_CURRENT_SOURCE_DIR}/WorldGenV2/RtgBiomes.cpp"
   "${CMAKE_CURRENT_SOURCE_DIR}/WorldGenV2/RtgGenerator.cpp"
+  "${CMAKE_CURRENT_SOURCE_DIR}/WorldGenV2/RtgEnhance.cpp"
   "${CMAKE_CURRENT_SOURCE_DIR}/ConsoleSaveFileOriginal.h"
   "${CMAKE_CURRENT_SOURCE_DIR}/ConsoleSaveFileOutputStream.cpp"
   "${CMAKE_CURRENT_SOURCE_DIR}/ConsoleSaveFileOutputStream.h"

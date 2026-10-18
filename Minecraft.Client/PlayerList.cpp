@@ -272,14 +272,23 @@ bool PlayerList::placeNewPlayer(Connection *connection, shared_ptr<ServerPlayer>
 
 	Pos *spawnPos = level->getSharedSpawnPos();
 
+	// Hellish Sight: remember spectator state saved in the player's NBT (hardcore deaths stay spectators)
+	const bool hsWasSpectator = player->abilities.spectator;
+
 	updatePlayerGameMode(player, nullptr, level);
+
+	if (hsWasSpectator)
+	{
+		player->gameMode->setGameModeForPlayer(GameType::SPECTATOR);
+	}
 
 	// Update the privileges with the correct game mode
 	GameType *gameType = Player::getPlayerGamePrivilege(player->getAllPlayerGamePrivileges(),Player::ePlayerGamePrivilege_CreativeMode) ? GameType::CREATIVE : GameType::SURVIVAL;
 	gameType = LevelSettings::validateGameType(gameType->getId());
 	if (player->gameMode->getGameModeForPlayer() != gameType)
 	{
-		player->setPlayerGamePrivilege(Player::ePlayerGamePrivilege_CreativeMode,player->gameMode->getGameModeForPlayer()->getId() );
+		GameType *hsMode = player->gameMode->getGameModeForPlayer();
+		player->setPlayerGamePrivilege(Player::ePlayerGamePrivilege_CreativeMode, hsMode == GameType::CREATIVE ? 1 : (hsMode == GameType::SPECTATOR ? 0 : hsMode->getId()) );
 	}
 
 	//shared_ptr<PlayerConnection> playerConnection = shared_ptr<PlayerConnection>(new PlayerConnection(server, connection, player));
@@ -337,7 +346,7 @@ bool PlayerList::placeNewPlayer(Connection *connection, shared_ptr<ServerPlayer>
 	sendLevelInfo(player, level);
 
 	// 4J-PB - removed, since it needs to be localised in the language the client is in
-	//server->players->broadcastAll( shared_ptr<ChatPacket>( new ChatPacket(L"�e" + playerEntity->name + L" joined the game.") ) );
+	//server->players->broadcastAll( shared_ptr<ChatPacket>( new ChatPacket(L"\uFFFDe" + playerEntity->name + L" joined the game.") ) );
 #if !(defined(_WINDOWS64) && defined(MINECRAFT_SERVER_BUILD))
 	broadcastAll(std::make_shared<ChatPacket>(player->name, ChatPacket::e_ChatPlayerJoinedGame));
 #endif
@@ -887,11 +896,11 @@ shared_ptr<ServerPlayer> PlayerList::respawn(shared_ptr<ServerPlayer> serverPlay
 	// necessary)
 	updatePlayerGameMode(player, serverPlayer, level);
 
-	// 4J Added: Hardcore mode — force Adventure mode on respawn
-	if (server->getLevel(0)->getLevelData()->isHardcore())
+	// Hellish Sight: Java 1.8 hardcore rules - respawning after a hardcore death puts you in spectator mode
+	if (server->getLevel(0)->getLevelData()->isHardcore() && !serverPlayer->wonGame)
 	{
-		player->gameMode->setGameModeForPlayer(GameType::ADVENTURE);
-		player->connection->send(std::make_shared<GameEventPacket>(GameEventPacket::CHANGE_GAME_MODE, GameType::ADVENTURE->getId()));
+		player->gameMode->setGameModeForPlayer(GameType::SPECTATOR);
+		player->connection->send(std::make_shared<GameEventPacket>(GameEventPacket::CHANGE_GAME_MODE, GameType::SPECTATOR->getId()));
 	}
 
 	if(serverPlayer->wonGame && targetDimension == oldDimension && serverPlayer->getHealth() > 0)

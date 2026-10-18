@@ -32,6 +32,7 @@
 #include "../Minecraft.World/net.minecraft.locale.h"
 
 #include "../Minecraft.World/Pos.h"
+#include "../Minecraft.World/MobEffect.h"
 #include "../Minecraft.World/Random.h"
 
 #include "../Minecraft.World/LevelChunk.h"
@@ -389,6 +390,21 @@ float ServerPlayer::getHeadHeight()
 void ServerPlayer::tick()
 {
 	gameMode->tick();
+
+	// Hellish Sight: spectators are hidden from other players (restored when leaving spectator)
+	{
+		const bool spec = isSpectator();
+		if (spec && !isInvisible())
+		{
+			setInvisible(true);
+			m_hsSpectatorInvisible = true;
+		}
+		else if (!spec && m_hsSpectatorInvisible)
+		{
+			m_hsSpectatorInvisible = false;
+			setInvisible(hasEffect(MobEffect::invisibility->id));
+		}
+	}
 
 	if (invulnerableTime > 0) invulnerableTime--;
 	containerMenu->broadcastChanges();
@@ -793,19 +809,8 @@ void ServerPlayer::die(DamageSource *source)
 	if (!outDeathMsg.empty())
 		server->getPlayers()->broadcastAll(std::make_shared<ChatPacket>(outDeathMsg));
 
-	// LCE-Revelations: Hardcore mode enforcement. Donor's FourKit-aware die()
-	// rewrite dropped this branch; we restore it AFTER FirePlayerDeath so
-	// plugins still see the death event before the player is banned and
-	// switched to Adventure mode.
-	if (level->getLevelData()->isHardcore())
-	{
-		setGameMode(GameType::ADVENTURE);
-		// Ban this player's XUID and queue disconnect.
-		// The force-save is triggered inside banPlayerForHardcoreDeath after
-		// the disconnect is queued, so the client doesn't get stuck on a save
-		// screen.
-		server->getPlayers()->banPlayerForHardcoreDeath(this);
-	}
+	// Hellish Sight: Java 1.8 hardcore rules - no ban/kick on death; the respawn
+	// request turns the player into a spectator (see PlayerList::respawn).
 
 	if (keepInventory == 0 && !level->getGameRules()->getBoolean(GameRules::RULE_KEEPINVENTORY))
 	{
@@ -814,16 +819,7 @@ void ServerPlayer::die(DamageSource *source)
 #else
 	server->getPlayers()->broadcastAll(getCombatTracker()->getDeathMessagePacket());
 
-	// 4J Added: Hardcore mode — switch to Adventure mode on death (can look but not break/place blocks)
-	if (level->getLevelData()->isHardcore())
-	{
-		setGameMode(GameType::ADVENTURE);
-
-		// Ban this player's XUID and queue disconnect.
-		// The force-save is triggered inside banPlayerForHardcoreDeath after the
-		// disconnect is queued, so the client doesn't get stuck on a save screen.
-		server->getPlayers()->banPlayerForHardcoreDeath(this);
-	}
+	// Hellish Sight: Java 1.8 hardcore rules - spectator on respawn instead of ban.
 
 	if (!level->getGameRules()->getBoolean(GameRules::RULE_KEEPINVENTORY))
 	{
@@ -851,6 +847,7 @@ void ServerPlayer::die(DamageSource *source)
 
 bool ServerPlayer::hurt(DamageSource *dmgSource, float dmg)
 {
+	if (isSpectator()) return false;	// Hellish Sight
 	if (isInvulnerable() && dmgSource != DamageSource::outOfWorld) return false;
 	if (gameMode == nullptr || gameMode->isCreative()) {
 		if (dmgSource != DamageSource::outOfWorld) return false;

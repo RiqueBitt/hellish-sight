@@ -36,11 +36,20 @@ wstring GameType::getName()
 
 void GameType::updatePlayerAbilities(Abilities *abilities)
 {
+	abilities->spectator = (this == SPECTATOR);
 	if (this == CREATIVE)
 	{
 		abilities->mayfly = true;
 		abilities->instabuild = true;
 		abilities->invulnerable = true;
+	}
+	else if (this == SPECTATOR)
+	{
+		// Hellish Sight: Java 1.8 spectator - always flying, untouchable, cannot build
+		abilities->mayfly = true;
+		abilities->instabuild = false;
+		abilities->invulnerable = true;
+		abilities->flying = true;
 	}
 	else
 	{
@@ -49,7 +58,7 @@ void GameType::updatePlayerAbilities(Abilities *abilities)
 		abilities->invulnerable = false;
 		abilities->flying = false;
 	}
-	abilities->mayBuild = !isAdventureRestricted();
+	abilities->mayBuild = !isAdventureRestricted() && this != SPECTATOR;
 }
 
 bool GameType::isAdventureRestricted()
@@ -77,6 +86,7 @@ GameType *GameType::byId(int id)
 	else if(id == SURVIVAL->id) return SURVIVAL;
 	else if(id == CREATIVE->id) return CREATIVE;
 	else if(id == ADVENTURE->id) return ADVENTURE;
+	else if(id == SPECTATOR->id) return SPECTATOR;
 
 	return SURVIVAL;
 }
@@ -87,6 +97,7 @@ GameType *GameType::byName(const wstring &name)
 	else if(name.compare(SURVIVAL->name) == 0) return SURVIVAL;
 	else if(name.compare(CREATIVE->name) == 0) return CREATIVE;
 	else if(name.compare(ADVENTURE->name) == 0) return ADVENTURE;
+	else if(name.compare(SPECTATOR->name) == 0) return SPECTATOR;
 
 	return SURVIVAL;
 }
@@ -122,6 +133,7 @@ LevelSettings::LevelSettings(LevelData *levelData)
 {
 	_init(levelData->getSeed(), levelData->getGameType(), levelData->isGenerateMapFeatures(), levelData->isHardcore(), levelData->useNewSeaLevel(), levelData->getGenerator(), levelData->getXZSize(), levelData->getHellScale() );
 	m_worldGenV2 = levelData->isWorldGenV2();	// Hellish Sight
+	m_worldGenRev = levelData->getWorldGenRev();
 }
 
 LevelSettings *LevelSettings::enableStartingBonusItems()

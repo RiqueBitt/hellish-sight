@@ -191,9 +191,10 @@ namespace WorldGenV2
 		}
 	}
 
-	RtgGenerator::RtgGenerator(int64_t seed) : m_world(seed)
+	RtgGenerator::RtgGenerator(int64_t seed, int revision) : m_world(seed), m_revision(revision)
 	{
 		Biomes::init();
+		if (m_revision >= 2) m_enhancer.reset(new RtgEnhancer(seed));
 
 		// setWeightings()
 		for (int x = 0; x < 16; x++)
@@ -369,6 +370,9 @@ namespace WorldGenV2
 			}
 		}
 
+		// ---- revision 2: mountains, valleys, rolling lowlands ----------------------
+		if (m_enhancer) m_enhancer->shapeHeights(worldX, worldZ, noise, riverLand);
+
 		// ---- biome repair (beaches, rivers, lakes) --------------------------------
 		int genLayer[256];
 		for (int x = 0; x < 16; x++)
@@ -381,7 +385,13 @@ namespace WorldGenV2
 		// ---- terrain fill ------------------------------------------------------------
 		std::unique_ptr<ChunkPrimer> primerHolder(new ChunkPrimer());
 		ChunkPrimer &primer = *primerHolder;
-		for (int x = 0; x < 16; x++)
+		float slope[256];
+		if (m_enhancer)
+		{
+			RtgEnhancer::computeSlopes(noise, slope);
+			m_enhancer->fillTerrain(worldX, worldZ, noise, slope, w.seaLevel, primer);
+		}
+		else for (int x = 0; x < 16; x++)
 		{
 			for (int z = 0; z < 16; z++)
 			{
@@ -440,6 +450,13 @@ namespace WorldGenV2
 					primer.setBlock(x, 0, z, BlockState(Tile::unbreakable_Id));
 				}
 			}
+		}
+
+		// ---- revision 2: slope/peak detail and noise caves ---------------------------------
+		if (m_enhancer)
+		{
+			m_enhancer->paintDetail(worldX, worldZ, slope, primer);
+			m_enhancer->carveCaves(worldX, worldZ, noise, w.seaLevel, primer);
 		}
 
 		// ---- output ------------------------------------------------------------------------

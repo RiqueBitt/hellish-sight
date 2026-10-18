@@ -315,6 +315,14 @@ void Player::updateFrameTick()
 
 void Player::tick()
 {
+	// Hellish Sight: spectators fly through blocks (Java: noClip = isSpectator())
+	noPhysics = isSpectator();
+	if (noPhysics)
+	{
+		onGround = false;
+		abilities.flying = true;
+	}
+
 	if(level->isClientSide)
 	{
 		// 4J Stu - Server player calls this differently so that it only happens once per simulation tick
@@ -1008,6 +1016,7 @@ void Player::serverAiStep()
 
 void Player::aiStep()
 {
+	if (isSpectator()) abilities.flying = true;	// Hellish Sight: spectators can never stop flying
 	if (jumpTriggerTime > 0) jumpTriggerTime--;
 	if (m_elytraFallProtectTicks > 0) m_elytraFallProtectTicks--;
 
@@ -1114,6 +1123,7 @@ void Player::aiStep()
 
 void Player::touch(shared_ptr<Entity> entity)
 {
+	if (isSpectator()) return;	// Hellish Sight: spectators do not pick up items/xp
 	entity->playerTouch( dynamic_pointer_cast<Player>( shared_from_this() ) );
 }
 
@@ -1193,7 +1203,7 @@ void Player::awardKillScore(shared_ptr<Entity> victim, int awardPoints)
 
 bool Player::isShootable()
 {
-	return true;
+	return !isSpectator();
 }
 
 bool Player::isCreativeModeAllowed()
@@ -1431,6 +1441,7 @@ void Player::setDefaultHeadHeight()
 
 bool Player::hurt(DamageSource *source, float dmg)
 {
+	if (isSpectator()) return false;	// Hellish Sight: spectators take no damage (not even the void)
 	if (isInvulnerable()) return false;
 	
 	if ( hasInvulnerablePrivilege() || (abilities.invulnerable && !source->isBypassInvul()) )	return false;
@@ -1808,6 +1819,7 @@ void Player::remove()
 
 bool Player::isInWall()
 {
+	if (isSpectator()) return false;
 	return !m_isSleeping && LivingEntity::isInWall();
 }
 
@@ -3417,5 +3429,21 @@ void Player::SetPlayerNameValidState(bool bState)
 
 bool Player::isSpectator()
 {
-    return false;
+	// Hellish Sight: synced through the abilities packet, so it is valid on client and server
+	return abilities.spectator;
+}
+
+bool Player::isPushable()
+{
+	return !isSpectator() && LivingEntity::isPushable();
+}
+
+bool Player::isPickable()
+{
+	return !isSpectator() && LivingEntity::isPickable();
+}
+
+bool Player::isIgnoringTileTriggers()
+{
+	return isSpectator() || LivingEntity::isIgnoringTileTriggers();
 }

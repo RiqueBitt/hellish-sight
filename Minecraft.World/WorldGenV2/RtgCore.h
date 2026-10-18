@@ -203,10 +203,38 @@ namespace WorldGenV2
 		uint8_t data;
 	};
 
+	// ---------------------------------------------------------------------------------
+	// Revision 2 terrain enhancements (RtgEnhance.cpp)
+	// ---------------------------------------------------------------------------------
+	class RtgEnhancer
+	{
+	public:
+		explicit RtgEnhancer(int64_t seed);
+
+		// alpine ridges/gullies on high ground, rolling hills and broad valleys in lowlands
+		void shapeHeights(int worldX, int worldZ, float *height, const float *riverLand) const;
+		static void computeSlopes(const float *height, float *slope);
+		// stone/water fill with a 3D cliff/overhang band on steep mountain faces
+		void fillTerrain(int worldX, int worldZ, const float *height, const float *slope, int seaLevel, ChunkPrimer &primer) const;
+		// exposed rock on steep slopes, snow on high peaks
+		void paintDetail(int worldX, int worldZ, const float *slope, ChunkPrimer &primer) const;
+		// spaghetti tunnels + deep caverns
+		void carveCaves(int worldX, int worldZ, const float *height, int seaLevel, ChunkPrimer &primer) const;
+
+	private:
+		static const int NOISES = 10;
+		float ridged(float x, float z) const;
+		bool solidAt(int x, int y, int z, float height, float cliff, const void *lattice) const;
+		std::unique_ptr<OpenSimplexNoise> m_noise[NOISES];
+	};
+
+	// Current terrain revision for new WorldGen V2 worlds. Revision 1 = original RTG port.
+	const int WORLDGEN_V2_CURRENT_REVISION = 2;
+
 	class RtgGenerator
 	{
 	public:
-		explicit RtgGenerator(int64_t seed);
+		explicit RtgGenerator(int64_t seed, int revision = 1);
 
 		// Fills `blocks` (65536 bytes: two 128-high sections, layout x<<11 | z<<7 | (y & 127),
 		// lower section first) with terrain and surfaces for chunk (cx, cz).
@@ -223,6 +251,8 @@ namespace WorldGenV2
 			const float *riverStrength, RealisticBiome **biomes);
 
 		RtgWorld m_world;
+		int m_revision = 1;
+		std::unique_ptr<RtgEnhancer> m_enhancer;
 		float m_weightings[SAMPLE_ARRAY_SIZE * SAMPLE_ARRAY_SIZE][256];
 		std::vector<int> m_searchPattern;
 	};
