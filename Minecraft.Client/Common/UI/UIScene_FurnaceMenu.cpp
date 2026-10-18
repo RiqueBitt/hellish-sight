@@ -4,7 +4,7 @@
 #include "../../../Minecraft.World/net.minecraft.world.inventory.h"
 #include "../../Minecraft.h"
 #include "UIScene_FurnaceMenu.h"
-#include "Client/ModMachine.h"
+#include "Client/ModMachineScreen.h"
 
 UIScene_FurnaceMenu::UIScene_FurnaceMenu(int iPad, void *_initData, UILayer *parentLayer) : UIScene_AbstractContainerMenu(iPad, parentLayer)
 {
