@@ -151,7 +151,7 @@ namespace HSMainMenu
 			M.rightX = s.sw - margin - M.rightW;
 		}
 
-		int infoCardHeight() { return M.pad * 2 + 14 + 3 * 12 + 30; }
+		int infoCardHeight() { return M.pad * 2 + 14 + 3 * 12 + 26; }
 
 		void layout()
 		{
@@ -509,7 +509,6 @@ namespace HSMainMenu
 
 		// darken the panorama, stronger at the bottom and on the left where the menu is
 		P().gradient(0, 0, s.sw, s.sh, 0x40000000, 0x98000000);
-		P().gradient(0, 0, M.leftX + M.leftW + 60, s.sh, 0x30000000, 0x30000000);
 		drawEmbers();
 
 		std::wstring hint;
