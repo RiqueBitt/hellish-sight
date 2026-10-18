@@ -10,6 +10,7 @@ class VillageFeature;
 class MineShaftFeature;
 class PerlinNoise;
 class RandomScatteredLargeFeature;
+namespace WorldGenV2 { class RtgGenerator; }
 
 class RandomLevelSource : public ChunkSource
 {
@@ -43,6 +44,8 @@ public:
 private:
 	Level *level;
 	const bool generateStructures;
+	WorldGenV2::RtgGenerator *m_worldGenV2;	// Hellish Sight: RTG-style terrain when the world has WorldGen V2 on
+	LevelChunk *getChunkWorldGenV2(int xOffs, int zOffs);
 
 	floatArray pows;
 

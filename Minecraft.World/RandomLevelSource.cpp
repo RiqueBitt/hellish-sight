@@ -9,6 +9,7 @@
 #include "net.minecraft.world.level.storage.h"
 #include "net.minecraft.world.entity.h"
 #include "RandomLevelSource.h"
+#include "WorldGenV2/RtgCore.h"
 
 #ifdef __PS3__
 #include "..\Minecraft.Client\PS3\SPU_Tasks\PerlinNoise\PerlinNoiseJob.h"
@@ -63,10 +64,15 @@ RandomLevelSource::RandomLevelSource(Level *level, int64_t seed, bool generateSt
 	}
 
 	forestNoise = new PerlinNoise(random, 8);
+
+	// Hellish Sight: WorldGen V2 (Realistic Terrain Generation port) replaces the terrain
+	// shape and surfaces only; caves, structures, decoration and mobs stay the same.
+	m_worldGenV2 = level->getLevelData()->isWorldGenV2() ? new WorldGenV2::RtgGenerator(seed) : nullptr;
 }
 
 RandomLevelSource::~RandomLevelSource()
 {
+	delete m_worldGenV2;
 	delete caveFeature;
 	delete strongholdFeature;
 	delete villageFeature;
@@ -463,9 +469,53 @@ LevelChunk *RandomLevelSource::create(int x, int z)
 	return getChunk(x,z);
 }
 
+LevelChunk *RandomLevelSource::getChunkWorldGenV2(int xOffs, int zOffs)
+{
+	// Full 256-high column (two 128-high sections): RTG mountains go well above y 128.
+	const int sectionSize = Level::genDepth * 16 * 16;
+	const int blocksSize = Level::maxBuildHeight * 16 * 16;
+	byte *tileData = static_cast<byte *>(XPhysicalAlloc(blocksSize, MAXULONG_PTR, 4096, PAGE_READWRITE));
+	XMemSet128(tileData, 0, blocksSize);
+
+	uint8_t chunkBiomes[256];
+	std::vector<WorldGenV2::DataPatch> patches;
+	m_worldGenV2->generate(xOffs, zOffs, level->getBiomeSource(), random, reinterpret_cast<uint8_t *>(tileData), chunkBiomes, patches);
+
+	// Caves, ravines and structures work on the lower section, as in normal generation.
+	byteArray lower = byteArray(tileData, sectionSize);
+	caveFeature->apply(this, level, xOffs, zOffs, lower);
+	canyonFeature->apply(this, level, xOffs, zOffs, lower);
+	if (generateStructures)
+	{
+		mineShaftFeature->apply(this, level, xOffs, zOffs, lower);
+		villageFeature->apply(this, level, xOffs, zOffs, lower);
+		strongholdFeature->apply(this, level, xOffs, zOffs, lower);
+		scatteredFeature->apply(this, level, xOffs, zOffs, lower);
+	}
+
+	LevelChunk *levelChunk = new LevelChunk(level, byteArray(tileData, blocksSize), xOffs, zOffs);
+	XPhysicalFree(tileData);
+
+	// Block data (stained clay colour, snow layer heights)
+	for (const WorldGenV2::DataPatch &patch : patches)
+	{
+		bool changed = false;
+		levelChunk->setData(patch.x, patch.y, patch.z, patch.data, 0xF, &changed);
+	}
+
+	// The repaired RTG biomes (beaches, rivers, lakes) are what decoration and mobs see.
+	byteArray biomes(16 * 16);
+	for (int i = 0; i < 256; i++) biomes[i] = static_cast<byte>(chunkBiomes[i]);
+	levelChunk->setBiomes(biomes);
+
+	return levelChunk;
+}
+
 LevelChunk *RandomLevelSource::getChunk(int xOffs, int zOffs)
 {
 	random->setSeed(xOffs * 341873128712l + zOffs * 132897987541l);
+
+	if (m_worldGenV2 != nullptr) return getChunkWorldGenV2(xOffs, zOffs);
 
 	// 4J - now allocating this with a physical alloc & bypassing general memory management so that it will get cleanly freed
 	int blocksSize = Level::genDepth * 16 * 16;
