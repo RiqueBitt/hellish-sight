@@ -209,7 +209,7 @@ void LivingEntity::baseTick()
 
 	if (isAlive() && isUnderLiquid(Material::water))
 	{
-		if(!isWaterMob() && !hasEffect(MobEffect::waterBreathing->id) && !isInvulnerable)
+		if(!isWaterMob() && !hasEffect(MobEffect::waterBreathing->id) && !isInvulnerable && !hsCanBreatheUnderwater())
 		{
 			setAirSupply(decreaseAirSupply(getAirSupply()));
 			if (getAirSupply() == -20)

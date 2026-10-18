@@ -391,6 +391,17 @@ void ServerPlayer::tick()
 {
 	gameMode->tick();
 
+	// Hellish Sight: jetpack fuel (the item's durability) drains while rising in the air
+	if (!abilities.flying && !onGround && y > yo + 0.02 && hsJetpackUsable())
+	{
+		if ((tickCount % 4) == 0)
+		{
+			shared_ptr<ItemInstance> chest = inventory->getArmor(2);
+			if (chest != nullptr && chest->isDamageableItem()) chest->setAuxValue(chest->getDamageValue() + 1);
+		}
+		fallDistance = 0;
+	}
+
 	// Hellish Sight: spectators are hidden from other players (restored when leaving spectator)
 	{
 		const bool spec = isSpectator();

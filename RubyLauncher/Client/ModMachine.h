@@ -1,25 +1,42 @@
 #pragma once
 
-// Hellish Sight - Ruby mod "machines": processing blocks with an inventory and the
-// furnace screen (input / power / output). Registered from Lua with registerMachine.
+// Hellish Sight - Ruby mod "machines": blocks with an inventory, energy (FE), chemical /
+// fluid tanks, upgrades, side configuration and optional multiblock structures.
+// Registered from Lua with registerMachine. The screen is the furnace screen
+// (input / power-or-extra / output, progress arrow, flame = energy gauge).
 //
-//  * Recipes: input item -> output item (count), optionally consuming an "extra"
-//    item from the power slot (infusers, injection chambers). Recipes that name an
-//    extra need no power.
-//  * Power: items from the machine's fuel list (or every furnace fuel when
-//    furnaceFuels = true) burn for N ticks; a recipe only runs while powered.
-//  * One operation takes processTicks (default 200, like a furnace).
-//  * The block faces the player, shows its "active" front while working and keeps its
-//    contents in the world save (tile entity id "HSMachine").
+// Kinds:
+//  * processor   recipes: items and/or chemicals in -> items and/or chemicals out
+//  * generator   burns items or a chemical (fuelChem), or solar; can exhaust a chemical
+//  * storage     energy cube (front outputs), charges rechargeable items in its bottom slot
+//  * cable       moves FE between neighbours
+//  * tank        chemical / fluid tank (front outputs), refills items (jetpacks...)
+//  * pipe        moves chemicals / fluids between neighbours
+//  * transporter moves items between inventories (logistical transporter)
+//  * pump        pumps fluid source blocks below into its tank
+//  * miner       digital miner: mines ores (or everything) in a radius below it
+//  * teleporter  teleports a sneaking player standing on it to the next teleporter
+//                with the same frequency
+//
+// Tools (registerMachineTool): configurator (face modes / eject / frequency / miner
+// filter), speed / energy / muffling upgrades. Sneak + right click with an empty hand
+// prints the machine status in chat.
 
 #include "Tile.h"
 #include "BaseEntityTile.h"
 #include "FurnaceTileEntity.h"
 
+#include <map>
 #include <string>
 #include <vector>
 
 class Random;
+
+struct ModChemAmount
+{
+	std::string name;		// "mekanism:hydrogen", "minecraft:water"
+	int amount = 0;			// mB
+};
 
 struct ModMachineRecipe
 {
@@ -29,6 +46,11 @@ struct ModMachineRecipe
 	int inId = 0, inAux = -1;
 	int outId = 0, outAux = 0;
 	int extraId = 0, extraAux = -1;
+	ModChemAmount chemIn[2], chemOut[2];
+	std::string secondary;	// optional second item output (chance)
+	int secondaryId = 0, secondaryAux = 0;
+	float secondaryChance = 0.0f;
+	int secondaryCount = 1;
 };
 
 struct ModMachineFuel
@@ -36,6 +58,29 @@ struct ModMachineFuel
 	std::string item;
 	int ticks = 200;
 	int id = 0, aux = -1;
+};
+
+struct ModMultiblockInner
+{
+	int capacity = 0;		// FE (or mB for tanks) added per block
+	int transfer = 0;		// FE/t added per block
+	float speed = 0.0f;		// speed multiplier added per block
+};
+
+struct ModMultiblockDef
+{
+	bool enabled = false;
+	std::vector<std::string> frame;		// casing / glass / valves (the controller always counts)
+	std::map<std::string, ModMultiblockInner> inner;	// allowed interior blocks
+	bool interiorAir = true;			// air allowed inside
+	int minSize = 3, maxSize = 18;
+	int capacityPerVolume = 0;			// FE per interior block
+	int tankPerVolume = 0;				// mB per interior block
+	float speedPerVolume = 0.0f;
+	float speedPerHeight = 0.0f;
+	// resolved
+	std::vector<int> frameIds;
+	std::map<int, ModMultiblockInner> innerIds;
 };
 
 struct ModMachineDef
@@ -52,16 +97,40 @@ struct ModMachineDef
 	std::wstring iconFront, iconFrontActive, iconSide, iconTop, iconBottom;
 	bool resolved = false;
 
-	// Hellish Sight energy (FE). kind: 0 processor, 1 generator, 2 storage (energy cube), 3 cable
 	int kind = 0;
-	int energyCapacity = 0;		// FE buffer; processors with energyPerTick > 0 run on it
-	int energyPerTick = 0;		// processor usage while working
+	int energyCapacity = 0;		// FE buffer
+	int energyPerTick = 0;		// processor usage while working (pump / miner / teleporter: per operation / per tick)
 	int generation = 0;			// generator FE/t
-	int generatorType = 0;		// 0 burn (fuel slot), 1 solar (daylight + open sky)
-	int transfer = 0;			// max FE/t pushed out (generators, cubes, cables)
+	int generatorType = 0;		// 0 burn (fuel slot or fuelChem), 1 solar (daylight + open sky)
+	int transfer = 0;			// max FE/t (or mB/t for pipes, items per move for transporters)
+
+	int tankCapacity = 10000;	// mB per tank
+	int parallel = 1;			// factories: operations per cycle
+	ModChemAmount fuelChem;		// generators: chemical burnt per tick
+	ModChemAmount exhaustChem;	// generators: chemical produced per tick
+	int radius = 8;				// miner
+	bool upgrades = true;
+	ModMultiblockDef multiblock;
 };
 
-enum ModMachineKind { MachineKind_Processor = 0, MachineKind_Generator, MachineKind_Storage, MachineKind_Cable };
+enum ModMachineKind
+{
+	MachineKind_Processor = 0, MachineKind_Generator, MachineKind_Storage, MachineKind_Cable,
+	MachineKind_Tank, MachineKind_Pipe, MachineKind_Transporter, MachineKind_Pump,
+	MachineKind_Miner, MachineKind_Teleporter,
+};
+
+enum ModMachineToolRole
+{
+	MachineTool_None = 0, MachineTool_Configurator, MachineTool_UpgradeSpeed, MachineTool_UpgradeEnergy,
+	MachineTool_UpgradeMuffling,
+};
+
+struct ModItemRefill
+{
+	std::string resource;	// "energy" or a chemical name
+	int perPoint = 100;		// FE / mB per durability point
+};
 
 namespace ModMachines
 {
@@ -71,12 +140,27 @@ namespace ModMachines
 	void resolve(ModMachineDef &def);		// item names -> ids (after every mod registered)
 	bool isAnyMachinePowerItem(int id, int aux);
 	void registerTileEntityType();			// once, at boot
+
+	// chemicals / fluids
+	void registerChemical(const std::string &fullId, const std::wstring &name, int color, bool gas);
+	std::wstring chemicalName(const std::string &fullId);
+
+	// tools and rechargeable items (by item name "modId:id")
+	void registerTool(const std::string &itemName, int role);
+	int toolRole(int itemId);
+	void registerRefill(const std::string &itemName, const std::string &resource, int perPoint);
+	const ModItemRefill *refillFor(int itemId);
 }
 
 class ModMachineTileEntity : public FurnaceTileEntity
 {
 public:
 	static TileEntity *create() { return new ModMachineTileEntity(); }
+
+	enum { TANK_IN0 = 0, TANK_IN1, TANK_OUT0, TANK_OUT1, TANK_COUNT };
+	enum { FACE_DEFAULT = 0, FACE_INPUT, FACE_OUTPUT, FACE_DISABLED, FACE_MODE_COUNT };
+	enum { UPG_SPEED = 0, UPG_ENERGY, UPG_MUFFLING, UPG_COUNT };
+	static const int MAX_UPGRADES = 8;
 
 	ModMachineTileEntity() {}
 	explicit ModMachineTileEntity(const std::string &machineId) : m_machineId(machineId) {}
@@ -97,14 +181,69 @@ public:
 	int capacity();
 	int receiveEnergy(int amount, int intoFace, bool fromCable);	// returns accepted FE
 
+	// chemicals / fluids
+	int receiveChem(const std::string &chem, int amount, int intoFace);	// returns accepted mB
+	int tankCapacity();
+
+	// items (transporters, ejection)
+	int acceptItem(shared_ptr<ItemInstance> item, int intoFace);	// returns count accepted
+
+	// player interaction (server side). Returns true when handled.
+	bool interact(shared_ptr<Player> player, int face);
+	void dropExtras(Level *level);	// upgrades + buffered items when broken
+
 private:
-	void pushEnergy(int face, int amount);
+	void tickProcessor(ModMachineDef *d);
 	void tickEnergyBlock(ModMachineDef *d);
+	void tickTank(ModMachineDef *d);
+	void tickPipe(ModMachineDef *d);
+	void tickTransporter(ModMachineDef *d);
+	void tickPump(ModMachineDef *d);
+	void tickMiner(ModMachineDef *d);
+	void tickTeleporter(ModMachineDef *d);
+	void scanStructure(ModMachineDef *d);
+
+	void pushEnergy(int face, int amount);
+	int pushChem(int tank, int face, int amount);
+	void pushOutputs(ModMachineDef *d);
+	void ejectItems(ModMachineDef *d);
+	bool storeOutput(shared_ptr<ItemInstance> item);
+	void chargeItemInSlot(ModMachineDef *d);
+	void drainItemInSlot(ModMachineDef *d);
 	void updateGauge(ModMachineDef *d);
+	void setActiveState(bool active);
+	void sendStatus(shared_ptr<Player> player);
+
+	bool recipeReady(const ModMachineRecipe &r, bool checkOutputs);
+	void runRecipe(const ModMachineRecipe &r);
+	const ModMachineRecipe *findRecipe(ModMachineRecipe &furnaceOut);
+	int powerTicks(shared_ptr<ItemInstance> item);
+	int faceMode(int face) const { return (face >= 0 && face < 6) ? m_faceMode[face] : FACE_DEFAULT; }
+	int frontFace();
+	float speedMultiplier(ModMachineDef *d);
+	int energyUse(ModMachineDef *d);
+	int inputTankFor(ModMachineDef *d, const std::string &chem);
+
 	int m_energy = 0;
 	int m_burn = 0, m_burnTotal = 0;
-	const ModMachineRecipe *findRecipe(shared_ptr<ItemInstance> input, const ModMachineRecipe &tmp, ModMachineRecipe &furnaceOut);
-	int powerTicks(shared_ptr<ItemInstance> item);
+	long long m_progress = 0;			// work done on the current operation (x1000)
+	ModChemAmount m_tanks[TANK_COUNT];
+	unsigned char m_faceMode[6] = { 0, 0, 0, 0, 0, 0 };
+	bool m_eject = true;
+	int m_upgrades[UPG_COUNT] = { 0, 0, 0 };
+	int m_frequency = 0;				// teleporter
+	bool m_minerAll = false;			// miner: every block instead of ores only
+	int m_minerCursor = 0;
+	int m_lastFace = -1;				// transporter: where the buffered item came from
+	std::vector<shared_ptr<ItemInstance> > m_buffer;	// transporter / miner / secondary outputs
+	int m_tickCounter = 0;
+	int m_teleportCooldown = 0;
+
+	// multiblock
+	int m_formed = -1;					// -1 unknown, 0 invalid, 1 formed
+	int m_mbVolume = 0, m_mbHeight = 0;
+	int m_mbCapacity = 0, m_mbTransfer = 0, m_mbTank = 0;
+	float m_mbSpeed = 1.0f;
 
 	std::string m_machineId;
 	ModMachineDef *m_def = nullptr;
@@ -127,7 +266,7 @@ public:
 	virtual void updateShape(LevelSource *level, int x, int y, int z, int forceData = -1, shared_ptr<TileEntity> forceEntity = shared_ptr<TileEntity>());
 	virtual bool isSolidRender(bool isServerLevel = false);
 	virtual bool isCubeShaped();
-	bool isCable() const;
+	bool isCable() const;		// thin connector shape (cables, pipes, transporters)
 
 	static void setActive(Level *level, int x, int y, int z, bool active);
 

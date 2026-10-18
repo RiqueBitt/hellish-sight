@@ -315,12 +315,68 @@ int BlockRegistry::registerMachine(const std::wstring& path, const std::string& 
 	def.furnaceFuels = table.get_or("furnaceFuels", false);
 	def.needsPower = table.get_or("needsPower", true);
 	const std::string kind = table.get_or<std::string>("kind", "processor");
-	def.kind = kind == "generator" ? MachineKind_Generator : kind == "storage" ? MachineKind_Storage : kind == "cable" ? MachineKind_Cable : MachineKind_Processor;
+	def.kind = kind == "generator" ? MachineKind_Generator : kind == "storage" ? MachineKind_Storage : kind == "cable" ? MachineKind_Cable
+		: kind == "tank" ? MachineKind_Tank : kind == "pipe" ? MachineKind_Pipe : kind == "transporter" ? MachineKind_Transporter
+		: kind == "pump" ? MachineKind_Pump : kind == "miner" ? MachineKind_Miner : kind == "teleporter" ? MachineKind_Teleporter
+		: MachineKind_Processor;
 	def.energyCapacity = table.get_or("energyCapacity", 0);
 	def.energyPerTick = table.get_or("energyPerTick", 0);
 	def.generation = table.get_or("generation", 0);
 	def.generatorType = table.get_or<std::string>("generatorType", "burn") == "solar" ? 1 : 0;
 	def.transfer = table.get_or("transfer", 0);
+	def.tankCapacity = table.get_or("tankCapacity", 10000);
+	def.parallel = (std::max)(1, table.get_or("parallel", 1));
+	def.radius = table.get_or("radius", 8);
+	def.upgrades = table.get_or("upgrades", true);
+
+	// names without a namespace belong to this mod
+	auto qualify = [&](const std::string &n) -> std::string {
+		if (n.empty() || n.find(':') != std::string::npos) return n;
+		return modId + ":" + n;
+	};
+	auto chemAmount = [&](sol::object o) -> ModChemAmount {
+		ModChemAmount c;
+		if (o.valid() && o.is<sol::table>())
+		{
+			sol::table t = o.as<sol::table>();
+			c.name = qualify(t.get_or<std::string>(1, ""));
+			c.amount = t.get_or(2, 1);
+		}
+		return c;
+	};
+	def.fuelChem = chemAmount(table["fuelChem"]);
+	def.exhaustChem = chemAmount(table["exhaustChem"]);
+
+	sol::optional<sol::table> mbt = table["multiblock"];
+	if (mbt)
+	{
+		sol::table m = mbt.value();
+		ModMultiblockDef &mb = def.multiblock;
+		mb.enabled = true;
+		mb.interiorAir = m.get_or("interiorAir", true);
+		mb.minSize = m.get_or("min", 3);
+		mb.maxSize = m.get_or("max", 18);
+		mb.capacityPerVolume = m.get_or("capacityPerVolume", 0);
+		mb.tankPerVolume = m.get_or("tankPerVolume", 0);
+		mb.speedPerVolume = m.get_or("speedPerVolume", 0.0f);
+		mb.speedPerHeight = m.get_or("speedPerHeight", 0.0f);
+		sol::optional<sol::table> frame = m["frame"];
+		if (frame) for (auto &kv : frame.value()) if (kv.second.is<std::string>()) mb.frame.push_back(qualify(kv.second.as<std::string>()));
+		sol::optional<sol::table> inner = m["inner"];
+		if (inner)
+		{
+			for (auto &kv : inner.value())
+			{
+				if (!kv.first.is<std::string>() || !kv.second.is<sol::table>()) continue;
+				sol::table it = kv.second.as<sol::table>();
+				ModMultiblockInner in;
+				in.capacity = it.get_or("capacity", 0);
+				in.transfer = it.get_or("transfer", 0);
+				in.speed = it.get_or("speed", 0.0f);
+				mb.inner[qualify(kv.first.as<std::string>())] = in;
+			}
+		}
+	}
 
 	sol::optional<sol::table> recipes = table["recipes"];
 	if (recipes)
@@ -335,7 +391,20 @@ int BlockRegistry::registerMachine(const std::wstring& path, const std::string& 
 			recipe.count = r.get_or(3, 1);
 			recipe.extra = r.get_or<std::string>("extra", "");
 			recipe.inCount = r.get_or("inCount", 1);
-			if (!recipe.in.empty() && !recipe.out.empty()) def.recipes.push_back(recipe);
+			recipe.chemIn[0] = chemAmount(r["chemIn"]);
+			recipe.chemIn[1] = chemAmount(r["chemIn2"]);
+			recipe.chemOut[0] = chemAmount(r["chemOut"]);
+			recipe.chemOut[1] = chemAmount(r["chemOut2"]);
+			sol::optional<sol::table> sec = r["secondary"];
+			if (sec)
+			{
+				recipe.secondary = sec.value().get_or<std::string>(1, "");
+				recipe.secondaryChance = sec.value().get_or("chance", sec.value().get_or(2, 1.0f));
+				recipe.secondaryCount = sec.value().get_or("count", 1);
+			}
+			const bool hasIn = !recipe.in.empty() || !recipe.chemIn[0].name.empty() || !recipe.chemIn[1].name.empty();
+			const bool hasOut = !recipe.out.empty() || !recipe.chemOut[0].name.empty() || !recipe.chemOut[1].name.empty();
+			if (hasIn && hasOut) def.recipes.push_back(recipe);
 		}
 	}
 	sol::optional<sol::table> fuels = table["power"];

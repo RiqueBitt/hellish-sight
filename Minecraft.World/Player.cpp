@@ -8,6 +8,7 @@
 
 #include "stdafx.h"
 #include "JavaMath.h"
+#include "HSItemRoles.h"
 #include "net.minecraft.h"
 #include "net.minecraft.world.h"
 #include "net.minecraft.stats.h"
@@ -2433,6 +2434,11 @@ void Player::checkFallDamage(double ya, bool onGround)
 void Player::causeFallDamage(float distance)
 {
 	if (abilities.mayfly) return;
+	{
+		// Hellish Sight: free runners / MekaSuit boots
+		shared_ptr<ItemInstance> boots = inventory->getArmor(0);
+		if (boots != nullptr && (hsItemRoles(boots->id) & HSRole_FreeRunners)) return;
+	}
 
 	if (distance >= 2)
 	{
@@ -3446,4 +3452,17 @@ bool Player::isPickable()
 bool Player::isIgnoringTileTriggers()
 {
 	return isSpectator() || LivingEntity::isIgnoringTileTriggers();
+}
+// Hellish Sight: mod wearables
+bool Player::hsCanBreatheUnderwater()
+{
+	shared_ptr<ItemInstance> helmet = inventory->getArmor(3);
+	return helmet != nullptr && (hsItemRoles(helmet->id) & HSRole_GasMask) && (!helmet->isDamageableItem() || helmet->getDamageValue() < helmet->getMaxDamage());
+}
+
+bool Player::hsJetpackUsable()
+{
+	shared_ptr<ItemInstance> chest = inventory->getArmor(2);
+	if (chest == nullptr || !(hsItemRoles(chest->id) & HSRole_Jetpack)) return false;
+	return !chest->isDamageableItem() || chest->getDamageValue() < chest->getMaxDamage() - 1;
 }

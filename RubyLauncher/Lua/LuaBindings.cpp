@@ -34,6 +34,9 @@
 #include "Registry/Item/ItemFactory.h"
 #include "Registry/Block/BlockRegistry.h"
 #include "Registry/Block/SaplingRegistry.h"
+#include "Client/ModMachine.h"
+#include "HSItemRoles.h"
+#include "Registry/IDs.h"
 #include "Registry/Recipe/RecipeRegistry.h"
 #include "Registry/WorldGen/OreFeatureRegistry.h"
 #include "Registry/WorldGen/TreeFeatureRegistry.h"
@@ -980,6 +983,50 @@ void LuaBindings::bindClientFunctions(sol::state& lua) {
         int tile = BlockRegistry::registerMachine(path, id, name, modId, textures, def);
         if (tile == -1) RubyUtils::LuaException(state, "registerMachine: out of block ids");
         return tile;
+    });
+
+    // Hellish Sight: chemicals / fluids, machine tools, wearable roles and rechargeable items
+    auto qualifyName = [](sol::environment &env, const std::string &n) -> std::string {
+        if (n.find(':') != std::string::npos) return n;
+        std::string modId = env["modId"];
+        return modId + ":" + n;
+    };
+    lua.set_function("registerChemical", [qualifyName](sol::this_environment env, const std::string &id, sol::optional<sol::table> info) {
+        sol::environment &modEnv = env;
+        std::string name = id;
+        int color = 0xFFFFFF;
+        bool gas = true;
+        if (info)
+        {
+            name = info.value().get_or<std::string>("name", id);
+            color = info.value().get_or("color", 0xFFFFFF);
+            gas = info.value().get_or("gas", true);
+        }
+        ModMachines::registerChemical(qualifyName(modEnv, id), RubyPaths::toWide(name), color, gas);
+    });
+    lua.set_function("registerMachineTool", [qualifyName](sol::this_environment env, const std::string &item, const std::string &role) {
+        sol::environment &modEnv = env;
+        int r = MachineTool_None;
+        if (role == "configurator") r = MachineTool_Configurator;
+        else if (role == "upgrade_speed" || role == "speed") r = MachineTool_UpgradeSpeed;
+        else if (role == "upgrade_energy" || role == "energy") r = MachineTool_UpgradeEnergy;
+        else if (role == "upgrade_muffling" || role == "muffling") r = MachineTool_UpgradeMuffling;
+        if (r != MachineTool_None) ModMachines::registerTool(qualifyName(modEnv, item), r);
+    });
+    lua.set_function("registerItemRole", [qualifyName](sol::this_environment env, const std::string &item, const std::string &role) {
+        sol::environment &modEnv = env;
+        const int id = IDMapping::get()->getID(qualifyName(modEnv, item)).id;
+        unsigned int bits = 0;
+        if (role == "free_runners") bits = HSRole_FreeRunners;
+        else if (role == "jetpack") bits = HSRole_Jetpack;
+        else if (role == "gas_mask") bits = HSRole_GasMask;
+        else if (role == "night_vision") bits = HSRole_NightVision;
+        if (id > 0 && bits != 0) hsSetItemRole(id, bits);
+    });
+    lua.set_function("registerItemRefill", [qualifyName](sol::this_environment env, const std::string &item, const std::string &resource, sol::optional<int> perPoint) {
+        sol::environment &modEnv = env;
+        const std::string res = resource == "energy" ? resource : qualifyName(modEnv, resource);
+        ModMachines::registerRefill(qualifyName(modEnv, item), res, perPoint.value_or(100));
     });
 
     lua.set_function("registerSapling", [](sol::this_environment env, const std::string &saplingId, const std::string &name, const std::string &texturePath, sol::optional<sol::object> options, sol::this_state state) -> int {

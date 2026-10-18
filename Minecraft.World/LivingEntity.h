@@ -134,6 +134,7 @@ protected:
 
 public:
 	virtual bool isWaterMob();
+	virtual bool hsCanBreatheUnderwater() { return false; }	// Hellish Sight: gas mask
 	virtual void baseTick();
 	virtual bool isBaby();
 

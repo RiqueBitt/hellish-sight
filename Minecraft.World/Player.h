@@ -369,6 +369,8 @@ private:
 protected:
 	virtual void checkFallDamage(double ya, bool onGround) override;
 	virtual void causeFallDamage(float distance);
+	virtual bool hsCanBreatheUnderwater();	// Hellish Sight: gas mask helmet
+	bool hsJetpackUsable();				// Hellish Sight: wearing a jetpack with fuel left
 
 public:
 	virtual void killed(shared_ptr<LivingEntity> mob);

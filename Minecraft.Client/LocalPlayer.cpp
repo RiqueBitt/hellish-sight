@@ -457,6 +457,13 @@ void LocalPlayer::aiStep()
 		jumpRidingScale = 0;
 	}
 
+	// Hellish Sight: jetpack - hold jump to rise (fuel is drained on the server)
+	if (!abilities.flying && input->jumping && hsJetpackUsable() && !isInWater())
+	{
+		yd = (std::min)(yd + 0.16, 0.42);
+		fallDistance = 0;
+	}
+
 	Player::aiStep();
 
 	// 4J-PB - If we're in Creative Mode, allow flying on ground

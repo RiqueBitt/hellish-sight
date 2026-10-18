@@ -486,7 +486,7 @@ void PlayerConnection::handleMovePlayer(shared_ptr<MovePlayerPacket> packet)
 		}
 		AABB *testBox = playerBB->copy()->grow(r, r, r)->expand(0, -0.55, 0);
 		// && server.level.getCubes(player, testBox).size() == 0
-		if (!server->isFlightAllowed() && !player->gameMode->isCreative() && !hsSpectator && !level->containsAnyBlocks(testBox) && !player->isAllowedToFly() )
+		if (!server->isFlightAllowed() && !player->gameMode->isCreative() && !hsSpectator && !player->hsJetpackUsable() && !level->containsAnyBlocks(testBox) && !player->isAllowedToFly() )
 		{
 			if (oyDist >= (-0.5f / 16.0f))
 			{
