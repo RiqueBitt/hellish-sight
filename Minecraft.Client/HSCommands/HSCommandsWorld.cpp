@@ -23,6 +23,7 @@
 #include "../../Minecraft.World/LargeFeature.h"
 #include "../../Minecraft.World/TilePos.h"
 #include "../../Minecraft.World/Mth.h"
+#include "../../Minecraft.World/LevelData.h"
 #include "../../Minecraft.World/TreeFeature.h"
 #include "../../Minecraft.World/BirchFeature.h"
 #include "../../Minecraft.World/SpruceFeature.h"
@@ -65,9 +66,9 @@ namespace HSCommands
 		Box makeBox(int ax, int ay, int az, int bx, int by, int bz)
 		{
 			Box b;
-			b.x0 = std::min(ax, bx); b.x1 = std::max(ax, bx);
-			b.y0 = std::max(0, std::min(ay, by)); b.y1 = std::min(Level::maxBuildHeight - 1, std::max(ay, by));
-			b.z0 = std::min(az, bz); b.z1 = std::max(az, bz);
+			b.x0 = (std::min)(ax, bx); b.x1 = (std::max)(ax, bx);
+			b.y0 = (std::max)(0, (std::min)(ay, by)); b.y1 = (std::min)(Level::maxBuildHeight - 1, (std::max)(ay, by));
+			b.z0 = (std::min)(az, bz); b.z1 = (std::max)(az, bz);
 			return b;
 		}
 
@@ -263,7 +264,7 @@ namespace HSCommands
 			if (!parseInt(d, n) || n < 0) return fail(src, L"Duração inválida.");
 			seconds = mul == 0 ? n / 20 : n * mul;
 		}
-		const int ticks = std::max(1, seconds * 20);
+		const int ticks = (std::max)(1, seconds * 20);
 		ServerLevel *ov = src.server->getLevel(0);
 		if (!ov) return 0;
 		LevelData *ld = ov->getLevelData();
@@ -293,7 +294,7 @@ namespace HSCommands
 	{
 		static const wchar_t *names[4] = { L"Pacífico", L"Fácil", L"Normal", L"Difícil" };
 		const int cur = app.GetGameHostOption(eGameHostOption_Difficulty);
-		if (a.size() < 1) { feedback(src, std::wstring(L"Dificuldade: ") + names[std::min(3, std::max(0, cur))]); return cur; }
+		if (a.size() < 1) { feedback(src, std::wstring(L"Dificuldade: ") + names[(std::min)(3, (std::max)(0, cur))]); return cur; }
 		const std::wstring v = toLower(a[0]);
 		int d = -1;
 		if (v == L"peaceful" || v == L"p" || v == L"0" || v == L"pacifico" || v == L"pacífico") d = 0;
@@ -398,9 +399,9 @@ namespace HSCommands
 			const int cx = Mth::floor(src.x), cz = Mth::floor(src.z);
 			for (int r = 0; r <= 6400; r += 32)
 			{
-				for (int step = 0; step < std::max(1, r / 4); step++)
+				for (int step = 0; step < (std::max)(1, r / 4); step++)
 				{
-					const double ang = 6.2831853 * step / std::max(1, r / 4);
+					const double ang = 6.2831853 * step / (std::max)(1, r / 4);
 					const int x = cx + static_cast<int>(cos(ang) * r), z = cz + static_cast<int>(sin(ang) * r);
 					Biome *b = bs->getBiome(x, z);
 					if (!b) continue;
@@ -409,7 +410,7 @@ namespace HSCommands
 					if (bn == what || bn.find(what) != std::wstring::npos)
 					{
 						feedback(src, L"O bioma " + b->m_name + L" mais próximo está em " + std::to_wstring(x) + L", ~, " + std::to_wstring(z) + L" (" + std::to_wstring(r) + L" blocos)");
-						return std::max(1, r);
+						return (std::max)(1, r);
 					}
 				}
 			}
@@ -427,7 +428,7 @@ namespace HSCommands
 		const double dist = sqrt((p->x - src.x) * (p->x - src.x) + (p->z - src.z) * (p->z - src.z));
 		feedback(src, L"A estrutura " + what + L" mais próxima está em " + std::to_wstring(p->x) + L", ~, " + std::to_wstring(p->z) + L" (" + std::to_wstring(static_cast<int>(dist)) + L" blocos)");
 		delete p;
-		return std::max(1, static_cast<int>(dist));
+		return (std::max)(1, static_cast<int>(dist));
 	}
 
 	// ---------------------------------------------------------------------------------
@@ -453,7 +454,7 @@ namespace HSCommands
 		if (a.has(6)) { parseDouble(a[4], dx); parseDouble(a[5], dy); parseDouble(a[6], dz); }
 		if (a.has(7)) parseDouble(a[7], speed);
 		if (a.has(8)) parseInt(a[8], count);
-		count = std::max(0, std::min(count, 10000));
+		count = (std::max)(0, (std::min)(count, 10000));
 		std::shared_ptr<Packet> pkt = std::make_shared<LevelParticlesPacket>(name, static_cast<float>(x), static_cast<float>(y), static_cast<float>(z),
 			static_cast<float>(dx), static_cast<float>(dy), static_cast<float>(dz), static_cast<float>(speed), count);
 		const int dim = src.level && src.level->dimension ? src.level->dimension->id : 0;
@@ -495,7 +496,7 @@ namespace HSCommands
 		double vol = 1, pitch = 1;
 		if (a.has(6)) parseDouble(a[6], vol);
 		if (a.has(7)) parseDouble(a[7], pitch);
-		src.level->playSound(x, y, z, sound, static_cast<float>(vol), static_cast<float>(pitch), static_cast<float>(16.0 * std::max(1.0, vol)));
+		src.level->playSound(x, y, z, sound, static_cast<float>(vol), static_cast<float>(pitch), static_cast<float>(16.0 * (std::max)(1.0, vol)));
 		feedback(src, L"Som tocado: " + std::wstring(ConsoleSoundEngine::wchSoundNames[sound]));
 		return 1;
 	}

@@ -29,6 +29,8 @@
 #include "../../Minecraft.World/LevelSettings.h"
 #include "../../Minecraft.World/Pos.h"
 #include "../../Minecraft.World/Mth.h"
+#include "../../Minecraft.World/LevelData.h"
+#include "../../Minecraft.World/AbstractContainerMenu.h"
 #include "../../Minecraft.World/SharedConstants.h"
 
 #include <algorithm>
@@ -204,10 +206,10 @@ namespace HSCommands
 		for (auto &p : players)
 		{
 			int left = count;
-			const int maxStack = std::max(1, Item::items[id]->getMaxStackSize());
+			const int maxStack = (std::max)(1, Item::items[id]->getMaxStackSize());
 			while (left > 0)
 			{
-				const int n = std::min(left, maxStack);
+				const int n = (std::min)(left, maxStack);
 				left -= n;
 				std::shared_ptr<ItemInstance> stack = std::make_shared<ItemInstance>(id, n, aux);
 				if (!p->inventory->add(stack) || stack->count > 0)
@@ -378,7 +380,7 @@ namespace HSCommands
 
 		MobEffect *me = MobEffect::effects[effect];
 		int duration = infinite ? 0x7FFFFFFF : seconds * SharedConstants::TICKS_PER_SECOND;
-		if (me->isInstantenous()) duration = infinite ? 1 : std::max(1, seconds);
+		if (me->isInstantenous()) duration = infinite ? 1 : (std::max)(1, seconds);
 		int n = 0;
 		for (auto &e : who)
 		{
@@ -482,8 +484,8 @@ namespace HSCommands
 				}
 				else
 				{
-					const int need = std::max(1, p->getXpNeededForNextLevel());
-					p->experienceProgress = std::min(0.999f, std::max(0.0f, static_cast<float>(amount) / need));
+					const int need = (std::max)(1, p->getXpNeededForNextLevel());
+					p->experienceProgress = (std::min)(0.999f, (std::max)(0.0f, static_cast<float>(amount) / need));
 				}
 			}
 			// force the XP bar to resync

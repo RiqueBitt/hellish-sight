@@ -16,6 +16,7 @@
 #include "../../Minecraft.World/EntityIO.h"
 #include "../../Minecraft.World/ChatPacket.h"
 #include "../../Minecraft.World/Mth.h"
+#include "../../Minecraft.World/LevelData.h"
 
 #include <algorithm>
 #include <climits>
@@ -248,7 +249,7 @@ namespace HSCommands
 				for (auto &h : hs) n += static_cast<int>(o.second.scores.erase(h));
 			}
 			feedback(src, L"Pontuações apagadas");
-			return std::max(1, n);
+			return (std::max)(1, n);
 		}
 		if (op == L"enable") { feedback(src, L"Trigger liberado"); return 1; }
 		if (!a.has(3)) return usage(src, info);
@@ -297,8 +298,8 @@ namespace HSCommands
 					else if (oper == L"*=") t *= sv;
 					else if (oper == L"/=") { if (sv != 0) t = static_cast<int>(floor(static_cast<double>(t) / sv)); }
 					else if (oper == L"%=") { if (sv != 0) { t %= sv; if (t < 0) t += std::abs(sv); } }
-					else if (oper == L"<") t = std::min(t, sv);
-					else if (oper == L">") t = std::max(t, sv);
+					else if (oper == L"<") t = (std::min)(t, sv);
+					else if (oper == L">") t = (std::max)(t, sv);
 					else if (oper == L"><") std::swap(t, sv);
 					else return fail(src, L"Operação inválida: " + oper);
 				}
@@ -462,7 +463,7 @@ namespace HSCommands
 			auto &q = scheduled();
 			q.erase(std::remove_if(q.begin(), q.end(), [&](const Scheduled &s) { return s.name == name; }), q.end());
 		}
-		scheduled().push_back({ name, tickCounter() + std::max(1LL, delayTicks) });
+		scheduled().push_back({ name, tickCounter() + (std::max)(1LL, delayTicks) });
 	}
 
 	void tick(MinecraftServer *server)
@@ -779,13 +780,13 @@ namespace HSCommands
 						if (!parseBlockPos(s, a, i + 2, ax, ay, az) || !parseBlockPos(s, a, i + 5, bx, by, bz) || !parseBlockPos(s, a, i + 8, dx, dy, dz)) return fail(src, L"Coordenadas inválidas.");
 						const bool masked = toLower(a[i + 11]) == L"masked";
 						match = s.level != nullptr;
-						for (int y = std::min(ay, by); match && y <= std::max(ay, by); y++)
-						for (int x = std::min(ax, bx); match && x <= std::max(ax, bx); x++)
-						for (int z = std::min(az, bz); match && z <= std::max(az, bz); z++)
+						for (int y = (std::min)(ay, by); match && y <= (std::max)(ay, by); y++)
+						for (int x = (std::min)(ax, bx); match && x <= (std::max)(ax, bx); x++)
+						for (int z = (std::min)(az, bz); match && z <= (std::max)(az, bz); z++)
 						{
 							const int t1 = s.level->getTile(x, y, z);
 							if (masked && t1 == 0) continue;
-							const int ox = dx + (x - std::min(ax, bx)), oy = dy + (y - std::min(ay, by)), oz = dz + (z - std::min(az, bz));
+							const int ox = dx + (x - (std::min)(ax, bx)), oy = dy + (y - (std::min)(ay, by)), oz = dz + (z - (std::min)(az, bz));
 							if (t1 != s.level->getTile(ox, oy, oz) || s.level->getData(x, y, z) != s.level->getData(ox, oy, oz)) match = false;
 						}
 						consumed = 12;

@@ -846,7 +846,7 @@ namespace
 		const unsigned int title = cbString(0, L"Bloco de comando");
 		const unsigned int body = cbString(1, L"Como este bloco deve rodar?\n\nComando: " + g_cbEdit.command +
 			L"\n\nCondicional: só roda se o bloco de comando atrás dele teve sucesso.");
-		ui.RequestMessageBox(title, body, options, 4, g_cbEdit.pad, &commandBlockModeReturned, nullptr, nullptr, g_cbEdit.autoActive ? (g_cbEdit.conditional ? 3 : 1) : (g_cbEdit.conditional ? 2 : 0), false);
+		ui.RequestAlertMessage(title, body, options, 4, g_cbEdit.pad, &commandBlockModeReturned, nullptr, nullptr);
 		return 0;
 	}
 }

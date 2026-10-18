@@ -559,9 +559,9 @@ namespace HSCommands
 			if (distance.has && !distance.contains(sqrt(ddx * ddx + ddy * ddy + ddz * ddz))) continue;
 			if (hasBox)
 			{
-				const double x0 = std::min(bx, bx + dx), x1 = std::max(bx, bx + dx) + 1;
-				const double y0 = std::min(by, by + dy), y1 = std::max(by, by + dy) + 1;
-				const double z0 = std::min(bz, bz + dz), z1 = std::max(bz, bz + dz) + 1;
+				const double x0 = (std::min)(bx, bx + dx), x1 = (std::max)(bx, bx + dx) + 1;
+				const double y0 = (std::min)(by, by + dy), y1 = (std::max)(by, by + dy) + 1;
+				const double z0 = (std::min)(bz, bz + dz), z1 = (std::max)(bz, bz + dz) + 1;
 				if (e->x < x0 || e->x > x1 || e->y < y0 || e->y > y1 || e->z < z0 || e->z > z1) continue;
 			}
 			bool ok = true;
