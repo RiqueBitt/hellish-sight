@@ -845,7 +845,7 @@ namespace
 		options[3] = cbString(5, L"Sempre ativo + condicional");
 		const unsigned int title = cbString(0, L"Bloco de comando");
 		const unsigned int body = cbString(1, L"Como este bloco deve rodar?\n\nComando: " + g_cbEdit.command +
-			L"\n\nCondicional: só roda se o bloco de comando atrás dele teve sucesso.");
+			L"\n\nCondicional: s\u00F3 roda se o bloco de comando atr\u00E1s dele teve sucesso.");
 		ui.RequestAlertMessage(title, body, options, 4, g_cbEdit.pad, &commandBlockModeReturned, nullptr, nullptr);
 		return 0;
 	}
@@ -866,7 +866,7 @@ bool CMinecraftApp::LoadCommandBlockMenu(int iPad, shared_ptr<CommandBlockEntity
 	static std::wstring s_default;
 	s_default = g_cbEdit.command;
 	static std::wstring s_title;
-	s_title = L"Comando (saída anterior: " + (commandBlock->lastOutput.empty() ? std::wstring(L"nenhuma") : commandBlock->lastOutput) + L")";
+	s_title = L"Comando (sa\u00EDda anterior: " + (commandBlock->lastOutput.empty() ? std::wstring(L"nenhuma") : commandBlock->lastOutput) + L")";
 
 	UIKeyboardInitData kbData;
 	kbData.title = s_title.c_str();

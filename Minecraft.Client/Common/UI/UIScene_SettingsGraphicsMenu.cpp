@@ -87,11 +87,11 @@ UIScene_SettingsGraphicsMenu::UIScene_SettingsGraphicsMenu(int iPad, void *initD
 		int renderChunks = app.GetGameSettings(m_iPad,eGameSetting_RenderDistance);
 		if (renderChunks < 2) renderChunks = 2;
 		if (renderChunks > 32) renderChunks = 32;
-		swprintf(TempString, 256, L"Distância de renderização: %d chunks", renderChunks);
+		swprintf(TempString, 256, L"Dist\u00E2ncia de renderiza\u00E7\u00E3o: %d chunks", renderChunks);
 		m_sliderRenderDistance.init(TempString,eControl_RenderDistance,2,32,renderChunks);
 
 		const int simChunks = Level::s_simulationChunks;
-		swprintf(TempString, 256, L"Distância de simulação: %d chunks", simChunks);
+		swprintf(TempString, 256, L"Dist\u00E2ncia de simula\u00E7\u00E3o: %d chunks", simChunks);
 		m_sliderSimulationDistance.init(TempString,eControl_SimulationDistance,2,32,simChunks);
 	}
 	
@@ -265,7 +265,7 @@ void UIScene_SettingsGraphicsMenu::handleSliderMove(F64 sliderId, F64 currentVal
 			const int dist = value < 2 ? 2 : (value > 32 ? 32 : value);
 			app.SetGameSettings(m_iPad,eGameSetting_RenderDistance,dist);
 			ApplyRenderDistance(dist);
-			swprintf(TempString,256,L"Distância de renderização: %d chunks",dist);
+			swprintf(TempString,256,L"Dist\u00E2ncia de renderiza\u00E7\u00E3o: %d chunks",dist);
 			m_sliderRenderDistance.setLabel(TempString);
 		}
 		break;
@@ -276,7 +276,7 @@ void UIScene_SettingsGraphicsMenu::handleSliderMove(F64 sliderId, F64 currentVal
 			const int sim = value < 2 ? 2 : (value > 32 ? 32 : value);
 			Level::s_simulationChunks = sim;
 			HSSettings::setInt("simulationDistance", sim);
-			swprintf(TempString,256,L"Distância de simulação: %d chunks",sim);
+			swprintf(TempString,256,L"Dist\u00E2ncia de simula\u00E7\u00E3o: %d chunks",sim);
 			m_sliderSimulationDistance.setLabel(TempString);
 		}
 		break;

@@ -46,7 +46,7 @@ namespace HSCommands
 		}
 		if (player)
 		{
-			player->sendMessage((error ? L"§c" : L"§7") + message);
+			player->sendMessage((error ? L"\u00A7c" : L"\u00A77") + message);
 		}
 		else if (server)
 		{
@@ -210,7 +210,7 @@ namespace HSCommands
 	{
 		const std::wstring l = toLower(s);
 		if (l == L"true" || l == L"1" || l == L"on" || l == L"sim") { out = true; return true; }
-		if (l == L"false" || l == L"0" || l == L"off" || l == L"nao" || l == L"não") { out = false; return true; }
+		if (l == L"false" || l == L"0" || l == L"off" || l == L"nao" || l == L"n\u00E3o") { out = false; return true; }
 		return false;
 	}
 
@@ -459,16 +459,16 @@ namespace HSCommands
 					if (p && equalsIgnoreCase(p->getName(), selector)) { out.push_back(p); return true; }
 				}
 			}
-			error = L"Jogador não encontrado: " + selector;
+			error = L"Jogador n\u00E3o encontrado: " + selector;
 			return false;
 		}
 
-		if (selector.size() < 2) { error = L"Seletor inválido: " + selector; return false; }
+		if (selector.size() < 2) { error = L"Seletor inv\u00E1lido: " + selector; return false; }
 		const wchar_t kind = towlower(selector[1]);
 		std::wstring body;
 		if (selector.size() > 2)
 		{
-			if (selector[2] != L'[' || selector.back() != L']') { error = L"Seletor inválido: " + selector; return false; }
+			if (selector[2] != L'[' || selector.back() != L']') { error = L"Seletor inv\u00E1lido: " + selector; return false; }
 			body = selector.substr(3, selector.size() - 4);
 		}
 		std::vector<SelectorArg> args = splitArgs(body);
@@ -484,22 +484,22 @@ namespace HSCommands
 
 		for (const SelectorArg &a : args)
 		{
-			if (a.key == L"x") { if (!parseDouble(a.value, bx)) { error = L"x inválido"; return false; } }
-			else if (a.key == L"y") { if (!parseDouble(a.value, by)) { error = L"y inválido"; return false; } }
-			else if (a.key == L"z") { if (!parseDouble(a.value, bz)) { error = L"z inválido"; return false; } }
-			else if (a.key == L"distance") { if (!parseRange(a.value, distance)) { error = L"distance inválido"; return false; } }
-			else if (a.key == L"r") { distance.has = true; if (!parseDouble(a.value, distance.max)) { error = L"r inválido"; return false; } }
-			else if (a.key == L"rm") { distance.has = true; if (!parseDouble(a.value, distance.min)) { error = L"rm inválido"; return false; } }
+			if (a.key == L"x") { if (!parseDouble(a.value, bx)) { error = L"x inv\u00E1lido"; return false; } }
+			else if (a.key == L"y") { if (!parseDouble(a.value, by)) { error = L"y inv\u00E1lido"; return false; } }
+			else if (a.key == L"z") { if (!parseDouble(a.value, bz)) { error = L"z inv\u00E1lido"; return false; } }
+			else if (a.key == L"distance") { if (!parseRange(a.value, distance)) { error = L"distance inv\u00E1lido"; return false; } }
+			else if (a.key == L"r") { distance.has = true; if (!parseDouble(a.value, distance.max)) { error = L"r inv\u00E1lido"; return false; } }
+			else if (a.key == L"rm") { distance.has = true; if (!parseDouble(a.value, distance.min)) { error = L"rm inv\u00E1lido"; return false; } }
 			else if (a.key == L"dx") { hasBox = true; parseDouble(a.value, dx); }
 			else if (a.key == L"dy") { hasBox = true; parseDouble(a.value, dy); }
 			else if (a.key == L"dz") { hasBox = true; parseDouble(a.value, dz); }
-			else if (a.key == L"limit" || a.key == L"c") { if (!parseInt(a.value, limit)) { error = L"limit inválido"; return false; } }
+			else if (a.key == L"limit" || a.key == L"c") { if (!parseInt(a.value, limit)) { error = L"limit inv\u00E1lido"; return false; } }
 			else if (a.key == L"sort") sort = toLower(a.value);
 			else if (a.key == L"type") types.push_back({ a.value, a.negate });
 			else if (a.key == L"name") names.push_back({ a.value, a.negate });
 			else if (a.key == L"tag") tags.push_back({ a.value, a.negate });
 			else if (a.key == L"gamemode" || a.key == L"m") modes.push_back({ a.value, a.negate });
-			else if (a.key == L"level") { if (!parseRange(a.value, level)) { error = L"level inválido"; return false; } }
+			else if (a.key == L"level") { if (!parseRange(a.value, level)) { error = L"level inv\u00E1lido"; return false; } }
 			else if (a.key == L"l") { level.has = true; parseDouble(a.value, level.max); }
 			else if (a.key == L"lm") { level.has = true; parseDouble(a.value, level.min); }
 			else if (a.key == L"x_rotation") parseRange(a.value, xRotR);
@@ -512,7 +512,7 @@ namespace HSCommands
 				for (const SelectorArg &s : splitArgs(inner))
 				{
 					Range r;
-					if (!parseRange(s.value, r)) { error = L"scores inválido"; return false; }
+					if (!parseRange(s.value, r)) { error = L"scores inv\u00E1lido"; return false; }
 					scores.push_back({ s.key, r });
 				}
 			}
@@ -650,7 +650,7 @@ namespace HSCommands
 	{
 		std::vector<std::shared_ptr<ServerPlayer> > players;
 		if (!selectPlayers(src, selector, players, error)) return nullptr;
-		if (players.size() > 1) { error = L"Somente um jogador é permitido, mas o seletor encontrou vários."; return nullptr; }
+		if (players.size() > 1) { error = L"Somente um jogador \u00E9 permitido, mas o seletor encontrou v\u00E1rios."; return nullptr; }
 		return players[0];
 	}
 
@@ -875,8 +875,8 @@ namespace HSCommands
 		if (src.permission < info->permission)
 		{
 			if (!app.GetGameHostOption(eGameHostOption_CheatsEnabled))
-				return fail(src, L"Os comandos estão desativados neste mundo (ative \"Permitir trapaças\" nas opções do anfitrião).");
-			return fail(src, L"Você não tem permissão para usar este comando.");
+				return fail(src, L"Os comandos est\u00E3o desativados neste mundo (ative \"Permitir trapa\u00E7as\" nas op\u00E7\u00F5es do anfitri\u00E3o).");
+			return fail(src, L"Voc\u00EA n\u00E3o tem permiss\u00E3o para usar este comando.");
 		}
 
 		Args args;

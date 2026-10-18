@@ -163,7 +163,7 @@ void RubyLoader::onClientBoot()
 	// Hellish Sight: names of the repeating / chain command blocks
 	{
 		struct N { int tile; const wchar_t *name; };
-		static const N names[] = { { 210, L"Bloco de Comando de Repetição" }, { 211, L"Bloco de Comando em Cadeia" } };
+		static const N names[] = { { 210, L"Bloco de Comando de Repeti\u00E7\u00E3o" }, { 211, L"Bloco de Comando em Cadeia" } };
 		for (const N &n : names)
 		{
 			if (Tile::tiles[n.tile] == nullptr) continue;

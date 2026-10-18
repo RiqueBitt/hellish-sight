@@ -101,7 +101,7 @@ namespace HSCommands
 		int gameModeFromName(const std::wstring &s)
 		{
 			const std::wstring l = toLower(s);
-			if (l == L"survival" || l == L"s" || l == L"0" || l == L"sobrevivencia" || l == L"sobrevivência") return 0;
+			if (l == L"survival" || l == L"s" || l == L"0" || l == L"sobrevivencia" || l == L"sobreviv\u00EAncia") return 0;
 			if (l == L"creative" || l == L"c" || l == L"1" || l == L"criativo") return 1;
 			if (l == L"adventure" || l == L"a" || l == L"2" || l == L"aventura") return 2;
 			if (l == L"spectator" || l == L"sp" || l == L"3" || l == L"espectador") return 3;
@@ -112,7 +112,7 @@ namespace HSCommands
 		{
 			switch (id)
 			{
-			case 0: return L"Sobrevivência";
+			case 0: return L"Sobreviv\u00EAncia";
 			case 1: return L"Criativo";
 			case 2: return L"Aventura";
 			case 3: return L"Espectador";
@@ -149,9 +149,9 @@ namespace HSCommands
 			std::vector<std::shared_ptr<Entity> > dest;
 			std::wstring err;
 			if (!selectEntities(src, a[i], dest, false, err)) return fail(src, err);
-			if (dest.size() != 1) return fail(src, L"O destino precisa ser uma única entidade.");
+			if (dest.size() != 1) return fail(src, L"O destino precisa ser uma \u00FAnica entidade.");
 			for (auto &e : who) teleportEntity(e, levelOf(dest[0]), dest[0]->x, dest[0]->y, dest[0]->z, dest[0]->yRot, dest[0]->xRot);
-			feedback(src, L"Teleportado " + names(who) + L" até " + entityName(dest[0]));
+			feedback(src, L"Teleportado " + names(who) + L" at\u00E9 " + entityName(dest[0]));
 			return static_cast<int>(who.size());
 		}
 
@@ -161,7 +161,7 @@ namespace HSCommands
 		{
 			Source rel = src;
 			double x, y, z;
-			if (!parseVec3(rel, a, i, x, y, z, true)) return fail(src, L"Coordenadas inválidas.");
+			if (!parseVec3(rel, a, i, x, y, z, true)) return fail(src, L"Coordenadas inv\u00E1lidas.");
 			float yRot = e->yRot, xRot = e->xRot;
 			if (a.has(i + 3))
 			{
@@ -179,8 +179,8 @@ namespace HSCommands
 				}
 				else
 				{
-					if (!parseRotation(src, a[i + 3], e->yRot, yRot)) return fail(src, L"Rotação inválida.");
-					if (a.has(i + 4) && !parseRotation(src, a[i + 4], e->xRot, xRot)) return fail(src, L"Rotação inválida.");
+					if (!parseRotation(src, a[i + 3], e->yRot, yRot)) return fail(src, L"Rota\u00E7\u00E3o inv\u00E1lida.");
+					if (a.has(i + 4) && !parseRotation(src, a[i + 4], e->xRot, xRot)) return fail(src, L"Rota\u00E7\u00E3o inv\u00E1lida.");
 				}
 			}
 			teleportEntity(e, levelOf(e), x, y, z, yRot, xRot);
@@ -201,7 +201,7 @@ namespace HSCommands
 		int id, aux;
 		if (!resolveItem(a[1], id, aux)) return fail(src, L"Item desconhecido: " + a[1]);
 		int count = 1;
-		if (a.has(2) && (!parseInt(a[2], count) || count < 1 || count > 6400)) return fail(src, L"Quantidade inválida: " + a[2]);
+		if (a.has(2) && (!parseInt(a[2], count) || count < 1 || count > 6400)) return fail(src, L"Quantidade inv\u00E1lida: " + a[2]);
 		if (a.has(3)) { int d; if (parseInt(a[3], d)) aux = d; }	// 1.12 style data value
 		for (auto &p : players)
 		{
@@ -294,12 +294,12 @@ namespace HSCommands
 		std::vector<std::shared_ptr<ServerPlayer> > players;
 		if (!playerTargets(src, a, 1, players, true)) return 0;
 		GameType *gt = GameType::byId(mode);
-		if (!gt) return fail(src, L"Modo de jogo indisponível.");
+		if (!gt) return fail(src, L"Modo de jogo indispon\u00EDvel.");
 		for (auto &p : players)
 		{
 			p->setGameMode(gt);
 			p->resetLastActionTime();
-			p->sendMessage(std::wstring(L"§7Seu modo de jogo agora é ") + gameModeName(mode));
+			p->sendMessage(std::wstring(L"\u00A77Seu modo de jogo agora \u00E9 ") + gameModeName(mode));
 		}
 		feedback(src, std::wstring(L"Modo de jogo de ") + pnames(players) + L" definido como " + gameModeName(mode));
 		return static_cast<int>(players.size());
@@ -317,7 +317,7 @@ namespace HSCommands
 				if (src.server->levels[i]) src.server->levels[i]->getLevelData()->setGameType(gt);
 		}
 		app.SetGameHostOption(eGameHostOption_GameType, mode);
-		feedback(src, std::wstring(L"Modo de jogo padrão: ") + gameModeName(mode));
+		feedback(src, std::wstring(L"Modo de jogo padr\u00E3o: ") + gameModeName(mode));
 		return 1;
 	}
 
@@ -371,10 +371,10 @@ namespace HSCommands
 		if (a.has(i + 2))
 		{
 			if (toLower(a[i + 2]) == L"infinite") infinite = true;
-			else if (!parseInt(a[i + 2], seconds) || seconds < 0 || seconds > 1000000) return fail(src, L"Duração inválida: " + a[i + 2]);
+			else if (!parseInt(a[i + 2], seconds) || seconds < 0 || seconds > 1000000) return fail(src, L"Dura\u00E7\u00E3o inv\u00E1lida: " + a[i + 2]);
 		}
 		int amp = 0;
-		if (a.has(i + 3) && (!parseInt(a[i + 3], amp) || amp < 0 || amp > 255)) return fail(src, L"Amplificador inválido: " + a[i + 3]);
+		if (a.has(i + 3) && (!parseInt(a[i + 3], amp) || amp < 0 || amp > 255)) return fail(src, L"Amplificador inv\u00E1lido: " + a[i + 3]);
 		bool hide = false;
 		if (a.has(i + 4)) parseBool(a[i + 4], hide);
 
@@ -407,7 +407,7 @@ namespace HSCommands
 		if (id < 0) return fail(src, L"Encantamento desconhecido: " + a[1]);
 		Enchantment *ench = Enchantment::enchantments[id];
 		int level = 1;
-		if (a.has(2) && !parseInt(a[2], level)) return fail(src, L"Nível inválido: " + a[2]);
+		if (a.has(2) && !parseInt(a[2], level)) return fail(src, L"N\u00EDvel inv\u00E1lido: " + a[2]);
 		if (level < 1) level = 1;
 		if (level > 255) level = 255;
 		int n = 0;
@@ -419,7 +419,7 @@ namespace HSCommands
 			if (!item) continue;
 			if (!ench->canEnchant(item))
 			{
-				fail(src, entityName(e) + L": este item não aceita esse encantamento.");
+				fail(src, entityName(e) + L": este item n\u00E3o aceita esse encantamento.");
 				continue;
 			}
 			item->enchant(ench, level);
@@ -453,7 +453,7 @@ namespace HSCommands
 				if (levels) p->giveExperienceLevels(amount);
 				else if (amount > 0) p->increaseXp(amount);
 			}
-			feedback(src, L"Experiência dada a " + pnames(ps));
+			feedback(src, L"Experi\u00EAncia dada a " + pnames(ps));
 			return static_cast<int>(ps.size());
 		}
 		std::vector<std::shared_ptr<ServerPlayer> > ps;
@@ -464,7 +464,7 @@ namespace HSCommands
 			if (ps.size() != 1) return fail(src, L"Somente um jogador.");
 			std::shared_ptr<ServerPlayer> p = ps[0];
 			const int v = levels ? p->experienceLevel : static_cast<int>(p->experienceProgress * p->getXpNeededForNextLevel());
-			feedback(src, p->getName() + L" tem " + std::to_wstring(v) + (levels ? L" níveis" : L" pontos de experiência"));
+			feedback(src, p->getName() + L" tem " + std::to_wstring(v) + (levels ? L" n\u00EDveis" : L" pontos de experi\u00EAncia"));
 			return v;
 		}
 		int amount;
@@ -491,7 +491,7 @@ namespace HSCommands
 			// force the XP bar to resync
 			p->resetSentInfo();
 		}
-		feedback(src, L"Experiência de " + pnames(ps) + L" alterada");
+		feedback(src, L"Experi\u00EAncia de " + pnames(ps) + L" alterada");
 		return static_cast<int>(ps.size());
 	}
 
@@ -508,7 +508,7 @@ namespace HSCommands
 			if (a.has(3))
 			{
 				Source rel = src;
-				if (!parseBlockPos(rel, a, 1, x, y, z)) return fail(src, L"Coordenadas inválidas.");
+				if (!parseBlockPos(rel, a, 1, x, y, z)) return fail(src, L"Coordenadas inv\u00E1lidas.");
 			}
 			Pos pos(x, y, z);
 			p->setRespawnPosition(&pos, true);
@@ -586,7 +586,7 @@ namespace HSCommands
 		std::vector<std::shared_ptr<Entity> > veh;
 		std::wstring err;
 		if (!selectEntities(src, a[2], veh, false, err)) return fail(src, err);
-		if (veh.size() != 1 || veh[0] == who[0]) return fail(src, L"Veículo inválido.");
+		if (veh.size() != 1 || veh[0] == who[0]) return fail(src, L"Ve\u00EDculo inv\u00E1lido.");
 		who[0]->ride(veh[0]);
 		feedback(src, entityName(who[0]) + L" montou em " + entityName(veh[0]));
 		return 1;
@@ -601,7 +601,7 @@ namespace HSCommands
 		std::vector<std::shared_ptr<Entity> > who;
 		if (!targets(src, a, 0, who, false, false)) return 0;
 		double amount;
-		if (!parseDouble(a[1], amount) || amount < 0) return fail(src, L"Dano inválido: " + a[1]);
+		if (!parseDouble(a[1], amount) || amount < 0) return fail(src, L"Dano inv\u00E1lido: " + a[1]);
 		DamageSource *type = DamageSource::genericSource;
 		if (a.has(2))
 		{
@@ -633,7 +633,7 @@ namespace HSCommands
 		if (!targets(src, a, 0, who, false, false)) return 0;
 		if (who.size() != 1) return fail(src, L"Somente uma entidade.");
 		std::shared_ptr<LivingEntity> le = std::dynamic_pointer_cast<LivingEntity>(who[0]);
-		if (!le) return fail(src, L"A entidade não tem atributos.");
+		if (!le) return fail(src, L"A entidade n\u00E3o tem atributos.");
 		const std::wstring n = toLower(stripNamespace(a[1]));
 		Attribute *attr = nullptr;
 		if (n == L"generic.max_health" || n == L"max_health") attr = SharedMonsterAttributes::MAX_HEALTH;
@@ -643,7 +643,7 @@ namespace HSCommands
 		else if (n == L"generic.follow_range" || n == L"follow_range") attr = SharedMonsterAttributes::FOLLOW_RANGE;
 		if (!attr) return fail(src, L"Atributo desconhecido: " + a[1]);
 		AttributeInstance *inst = le->getAttribute(attr);
-		if (!inst) return fail(src, L"A entidade não tem esse atributo.");
+		if (!inst) return fail(src, L"A entidade n\u00E3o tem esse atributo.");
 		const std::wstring op = toLower(a[2]);
 		if (op == L"get")
 		{
@@ -753,7 +753,7 @@ namespace HSCommands
 		if (a.size() < 1) return usage(src, self(L"summon"));
 		if (!src.level) return fail(src, L"Sem mundo.");
 		double x = src.x, y = src.y, z = src.z;
-		if (a.has(3) && !parseVec3(src, a, 1, x, y, z, true)) return fail(src, L"Coordenadas inválidas.");
+		if (a.has(3) && !parseVec3(src, a, 1, x, y, z, true)) return fail(src, L"Coordenadas inv\u00E1lidas.");
 		const std::wstring type = toLower(stripNamespace(a[0]));
 		if (type == L"lightning_bolt" || type == L"lightningbolt" || type == L"lightning")
 		{
@@ -764,7 +764,7 @@ namespace HSCommands
 		const std::wstring id = resolveEntityType(a[0]);
 		if (id.empty()) return fail(src, L"Entidade desconhecida: " + a[0]);
 		std::shared_ptr<Entity> e = EntityIO::newEntity(id, src.level);
-		if (!e) return fail(src, L"Não foi possível criar " + a[0]);
+		if (!e) return fail(src, L"N\u00E3o foi poss\u00EDvel criar " + a[0]);
 		e->moveTo(x, y, z, src.level->random->nextFloat() * 360.0f, 0);
 		std::shared_ptr<Mob> mob = std::dynamic_pointer_cast<Mob>(e);
 		if (mob) mob->finalizeMobSpawn(nullptr);
@@ -832,7 +832,7 @@ namespace HSCommands
 						static const wchar_t *colours[16] = { L"black", L"dark_blue", L"dark_green", L"dark_aqua", L"dark_red", L"dark_purple", L"gold", L"gray",
 							L"dark_gray", L"blue", L"green", L"aqua", L"red", L"light_purple", L"yellow", L"white" };
 						const std::wstring cn = s.substr(c1 + 1, c2 - c1 - 1);
-						for (int k = 0; k < 16; k++) if (cn == colours[k]) { out += L'§'; out += L"0123456789abcdef"[k]; }
+						for (int k = 0; k < 16; k++) if (cn == colours[k]) { out += L'\u00A7'; out += L"0123456789abcdef"[k]; }
 					}
 				}
 				out += piece;
@@ -868,8 +868,8 @@ namespace HSCommands
 		std::wstring err;
 		if (!selectPlayers(src, a[0], ps, err)) return fail(src, err);
 		const std::wstring msg = a.rest(1);
-		for (auto &p : ps) p->sendMessage(L"§7§o" + src.name + L" sussurra para você: " + msg);
-		feedback(src, L"§oVocê sussurra para " + pnames(ps) + L": " + msg);
+		for (auto &p : ps) p->sendMessage(L"\u00A77\u00A7o" + src.name + L" sussurra para voc\u00EA: " + msg);
+		feedback(src, L"\u00A7oVoc\u00EA sussurra para " + pnames(ps) + L": " + msg);
 		return static_cast<int>(ps.size());
 	}
 
@@ -894,7 +894,7 @@ namespace HSCommands
 		if (op == L"clear" || op == L"reset" || op == L"times") return static_cast<int>(ps.size());
 		if (!a.has(2)) return usage(src, self(L"title"));
 		std::wstring text = jsonText(a.rest(2));
-		std::wstring prefix = op == L"title" ? L"§l" : (op == L"subtitle" ? L"§7" : L"§e");
+		std::wstring prefix = op == L"title" ? L"\u00A7l" : (op == L"subtitle" ? L"\u00A77" : L"\u00A7e");
 		for (auto &p : ps) p->sendMessage(prefix + text);
 		return static_cast<int>(ps.size());
 	}
@@ -906,7 +906,7 @@ namespace HSCommands
 		if (!pl) return 0;
 		std::wstring names;
 		for (auto &p : pl->players) { if (!p) continue; if (!names.empty()) names += L", "; names += p->getName(); }
-		feedback(src, L"Há " + std::to_wstring(pl->getPlayerCount()) + L" jogador(es) online: " + names);
+		feedback(src, L"H\u00E1 " + std::to_wstring(pl->getPlayerCount()) + L" jogador(es) online: " + names);
 		return pl->getPlayerCount();
 	}
 
@@ -931,7 +931,7 @@ namespace HSCommands
 		int n = 0;
 		for (auto &p : ps)
 		{
-			if (p->connection && p->connection->isLocal()) { fail(src, L"Não é possível expulsar o anfitrião."); continue; }
+			if (p->connection && p->connection->isLocal()) { fail(src, L"N\u00E3o \u00E9 poss\u00EDvel expulsar o anfitri\u00E3o."); continue; }
 			if (p->connection) p->connection->disconnect(DisconnectPacket::eDisconnect_Kicked);
 			n++;
 		}
@@ -945,7 +945,7 @@ namespace HSCommands
 		std::vector<std::shared_ptr<ServerPlayer> > ps;
 		if (!playerTargets(src, a, 0, ps, false)) return 0;
 		for (auto &p : ps) { p->setPlayerGamePrivilege(Player::ePlayerGamePrivilege_Op, 1); syncPrivileges(src, p); }
-		feedback(src, pnames(ps) + L" agora é operador");
+		feedback(src, pnames(ps) + L" agora \u00E9 operador");
 		return static_cast<int>(ps.size());
 	}
 
@@ -955,7 +955,7 @@ namespace HSCommands
 		std::vector<std::shared_ptr<ServerPlayer> > ps;
 		if (!playerTargets(src, a, 0, ps, false)) return 0;
 		for (auto &p : ps) { p->setPlayerGamePrivilege(Player::ePlayerGamePrivilege_Op, 0); syncPrivileges(src, p); }
-		feedback(src, pnames(ps) + L" não é mais operador");
+		feedback(src, pnames(ps) + L" n\u00E3o \u00E9 mais operador");
 		return static_cast<int>(ps.size());
 	}
 
@@ -973,14 +973,14 @@ namespace HSCommands
 				if (p->connection && !p->connection->isLocal()) p->connection->disconnect(DisconnectPacket::eDisconnect_Kicked);
 			}
 		}
-		feedback(src, L"Banido: " + a[0] + L" (até o servidor reiniciar)");
+		feedback(src, L"Banido: " + a[0] + L" (at\u00E9 o servidor reiniciar)");
 		return 1;
 	}
 
 	int cmdPardon(Source &src, const Args &a)
 	{
 		if (a.size() < 1) return usage(src, self(L"pardon"));
-		if (bans().erase(toLower(a[0])) == 0) return fail(src, a[0] + L" não está banido.");
+		if (bans().erase(toLower(a[0])) == 0) return fail(src, a[0] + L" n\u00E3o est\u00E1 banido.");
 		feedback(src, L"Desbanido: " + a[0]);
 		return 1;
 	}
@@ -1018,8 +1018,8 @@ namespace HSCommands
 		for (auto &e : who)
 		{
 			float yRot = e->yRot, xRot = e->xRot;
-			if (!parseRotation(src, a[1], e->yRot, yRot)) return fail(src, L"Rotação inválida.");
-			if (a.has(2) && !parseRotation(src, a[2], e->xRot, xRot)) return fail(src, L"Rotação inválida.");
+			if (!parseRotation(src, a[1], e->yRot, yRot)) return fail(src, L"Rota\u00E7\u00E3o inv\u00E1lida.");
+			if (a.has(2) && !parseRotation(src, a[2], e->xRot, xRot)) return fail(src, L"Rota\u00E7\u00E3o inv\u00E1lida.");
 			teleportEntity(e, levelOf(e), e->x, e->y, e->z, yRot, xRot);
 		}
 		return static_cast<int>(who.size());
@@ -1034,7 +1034,7 @@ namespace HSCommands
 		std::vector<std::shared_ptr<ServerPlayer> > ps;
 		if (!playerTargets(src, a, 1, ps, true)) return 0;
 		for (auto &p : ps) teleportEntity(p, levelOf(dest[0]), dest[0]->x, dest[0]->y, dest[0]->z, dest[0]->yRot, dest[0]->xRot);
-		feedback(src, L"Espectando " + entityName(dest[0]) + L" (teleporte; este jogo não tem câmera de espectador)");
+		feedback(src, L"Espectando " + entityName(dest[0]) + L" (teleporte; este jogo n\u00E3o tem c\u00E2mera de espectador)");
 		return static_cast<int>(ps.size());
 	}
 }

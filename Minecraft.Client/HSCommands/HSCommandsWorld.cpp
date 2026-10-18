@@ -88,15 +88,15 @@ namespace HSCommands
 	{
 		if (a.size() < 4 || !src.level) return usage(src, self(L"setblock"));
 		int x, y, z, id, data;
-		if (!parseBlockPos(src, a, 0, x, y, z)) return fail(src, L"Coordenadas inválidas.");
+		if (!parseBlockPos(src, a, 0, x, y, z)) return fail(src, L"Coordenadas inv\u00E1lidas.");
 		if (!resolveBlock(a[3], id, data)) return fail(src, L"Bloco desconhecido: " + a[3]);
 		size_t mi = 4;
 		int d; if (a.has(4) && parseInt(a[4], d)) { data = d; mi = 5; }	// 1.12 data value
 		const std::wstring mode = a.has(mi) ? toLower(a[mi]) : L"replace";
 		if (!inWorld(y)) return fail(src, L"Fora do mundo.");
-		if (mode == L"keep" && src.level->getTile(x, y, z) != 0) return fail(src, L"Não foi possível colocar o bloco.");
+		if (mode == L"keep" && src.level->getTile(x, y, z) != 0) return fail(src, L"N\u00E3o foi poss\u00EDvel colocar o bloco.");
 		if (src.level->getTile(x, y, z) == id && src.level->getData(x, y, z) == data) return fail(src, L"Nada mudou.");
-		if (!setBlock(src.level, x, y, z, id, data, mode == L"destroy")) return fail(src, L"Não foi possível colocar o bloco.");
+		if (!setBlock(src.level, x, y, z, id, data, mode == L"destroy")) return fail(src, L"N\u00E3o foi poss\u00EDvel colocar o bloco.");
 		feedback(src, L"Bloco alterado em " + posText(x, y, z));
 		return 1;
 	}
@@ -108,7 +108,7 @@ namespace HSCommands
 	{
 		if (a.size() < 7 || !src.level) return usage(src, self(L"fill"));
 		int ax, ay, az, bx, by, bz, id, data;
-		if (!parseBlockPos(src, a, 0, ax, ay, az) || !parseBlockPos(src, a, 3, bx, by, bz)) return fail(src, L"Coordenadas inválidas.");
+		if (!parseBlockPos(src, a, 0, ax, ay, az) || !parseBlockPos(src, a, 3, bx, by, bz)) return fail(src, L"Coordenadas inv\u00E1lidas.");
 		if (!resolveBlock(a[6], id, data)) return fail(src, L"Bloco desconhecido: " + a[6]);
 		size_t mi = 7;
 		int d; if (a.has(7) && parseInt(a[7], d)) { data = d; mi = 8; }
@@ -121,7 +121,7 @@ namespace HSCommands
 			int fd; if (a.has(mi + 2) && parseInt(a[mi + 2], fd)) fdata = fd;
 		}
 		Box b = makeBox(ax, ay, az, bx, by, bz);
-		if (b.volume() > MAX_FILL) return fail(src, L"Área grande demais: " + std::to_wstring(b.volume()) + L" blocos (máximo " + std::to_wstring(MAX_FILL) + L")");
+		if (b.volume() > MAX_FILL) return fail(src, L"\u00C1rea grande demais: " + std::to_wstring(b.volume()) + L" blocos (m\u00E1ximo " + std::to_wstring(MAX_FILL) + L")");
 		int changed = 0;
 		for (int y = b.y0; y <= b.y1; y++)
 		for (int x = b.x0; x <= b.x1; x++)
@@ -149,11 +149,11 @@ namespace HSCommands
 	{
 		if (a.size() < 9 || !src.level) return usage(src, self(L"clone"));
 		int ax, ay, az, bx, by, bz, dx, dy, dz;
-		if (!parseBlockPos(src, a, 0, ax, ay, az) || !parseBlockPos(src, a, 3, bx, by, bz) || !parseBlockPos(src, a, 6, dx, dy, dz)) return fail(src, L"Coordenadas inválidas.");
+		if (!parseBlockPos(src, a, 0, ax, ay, az) || !parseBlockPos(src, a, 3, bx, by, bz) || !parseBlockPos(src, a, 6, dx, dy, dz)) return fail(src, L"Coordenadas inv\u00E1lidas.");
 		const std::wstring mask = a.has(9) ? toLower(a[9]) : L"replace";
 		const std::wstring mode = a.has(10) ? toLower(a[10]) : L"normal";
 		Box b = makeBox(ax, ay, az, bx, by, bz);
-		if (b.volume() > MAX_FILL) return fail(src, L"Área grande demais.");
+		if (b.volume() > MAX_FILL) return fail(src, L"\u00C1rea grande demais.");
 		struct Cell { int id, data; std::shared_ptr<TileEntity> te; };
 		std::vector<Cell> cells;
 		cells.reserve(static_cast<size_t>(b.volume()));
@@ -214,7 +214,7 @@ namespace HSCommands
 			else if (q == L"gametime") v = ov->getGameTime();
 			else if (q == L"day") v = ov->getDayTime() / 24000;
 			else return usage(src, self(L"time"));
-			feedback(src, L"O tempo é " + std::to_wstring(v));
+			feedback(src, L"O tempo \u00E9 " + std::to_wstring(v));
 			return static_cast<int>(v % 2147483647LL);
 		}
 		long long t = 0;
@@ -230,7 +230,7 @@ namespace HSCommands
 				v.pop_back();
 			}
 			double n;
-			if (!parseDouble(v, n)) return fail(src, L"Tempo inválido: " + a[1]);
+			if (!parseDouble(v, n)) return fail(src, L"Tempo inv\u00E1lido: " + a[1]);
 			t = static_cast<long long>(n * mul);
 		}
 		for (unsigned int i = 0; i < src.server->levels.length; i++)
@@ -261,7 +261,7 @@ namespace HSCommands
 			else if (!d.empty() && d.back() == L's') d.pop_back();
 			else if (!d.empty() && d.back() == L'd') { mul = 1200; d.pop_back(); }
 			int n;
-			if (!parseInt(d, n) || n < 0) return fail(src, L"Duração inválida.");
+			if (!parseInt(d, n) || n < 0) return fail(src, L"Dura\u00E7\u00E3o inv\u00E1lida.");
 			seconds = mul == 0 ? n / 20 : n * mul;
 		}
 		const int ticks = (std::max)(1, seconds * 20);
@@ -292,15 +292,15 @@ namespace HSCommands
 	// ---------------------------------------------------------------------------------
 	int cmdDifficulty(Source &src, const Args &a)
 	{
-		static const wchar_t *names[4] = { L"Pacífico", L"Fácil", L"Normal", L"Difícil" };
+		static const wchar_t *names[4] = { L"Pac\u00EDfico", L"F\u00E1cil", L"Normal", L"Dif\u00EDcil" };
 		const int cur = app.GetGameHostOption(eGameHostOption_Difficulty);
 		if (a.size() < 1) { feedback(src, std::wstring(L"Dificuldade: ") + names[(std::min)(3, (std::max)(0, cur))]); return cur; }
 		const std::wstring v = toLower(a[0]);
 		int d = -1;
-		if (v == L"peaceful" || v == L"p" || v == L"0" || v == L"pacifico" || v == L"pacífico") d = 0;
-		else if (v == L"easy" || v == L"e" || v == L"1" || v == L"facil" || v == L"fácil") d = 1;
+		if (v == L"peaceful" || v == L"p" || v == L"0" || v == L"pacifico" || v == L"pac\u00EDfico") d = 0;
+		else if (v == L"easy" || v == L"e" || v == L"1" || v == L"facil" || v == L"f\u00E1cil") d = 1;
 		else if (v == L"normal" || v == L"n" || v == L"2") d = 2;
-		else if (v == L"hard" || v == L"h" || v == L"3" || v == L"dificil" || v == L"difícil") d = 3;
+		else if (v == L"hard" || v == L"h" || v == L"3" || v == L"dificil" || v == L"dif\u00EDcil") d = 3;
 		if (d < 0) return fail(src, L"Dificuldade desconhecida: " + a[0]);
 		app.SetGameHostOption(eGameHostOption_Difficulty, d);
 		if (src.server)
@@ -337,7 +337,7 @@ namespace HSCommands
 		{
 			bool v;
 			if (!a.has(1)) { feedback(src, a[0] + L" = " + (commandBlockOutput ? L"true" : L"false")); return 1; }
-			if (!parseBool(a[1], v)) return fail(src, L"Valor inválido: " + a[1]);
+			if (!parseBool(a[1], v)) return fail(src, L"Valor inv\u00E1lido: " + a[1]);
 			commandBlockOutput = v;
 			feedback(src, a[0] + L" = " + a[1]);
 			return 1;
@@ -352,13 +352,13 @@ namespace HSCommands
 				return v ? 1 : 0;
 			}
 			bool v;
-			if (!parseBool(a[1], v)) return fail(src, L"Valor inválido: " + a[1]);
+			if (!parseBool(a[1], v)) return fail(src, L"Valor inv\u00E1lido: " + a[1]);
 			app.SetGameHostOption(r.opt, v ? 1 : 0);
 			syncHostOptions(src);
 			feedback(src, std::wstring(L"Regra ") + r.name + L" = " + (v ? L"true" : L"false"));
 			return 1;
 		}
-		return fail(src, L"Regra desconhecida (ou não existe neste jogo): " + a[0]);
+		return fail(src, L"Regra desconhecida (ou n\u00E3o existe neste jogo): " + a[0]);
 	}
 
 	// ---------------------------------------------------------------------------------
@@ -377,7 +377,7 @@ namespace HSCommands
 	{
 		if (!src.server) return 0;
 		int x = Mth::floor(src.x), y = Mth::floor(src.y), z = Mth::floor(src.z);
-		if (a.size() >= 3 && !parseBlockPos(src, a, 0, x, y, z)) return fail(src, L"Coordenadas inválidas.");
+		if (a.size() >= 3 && !parseBlockPos(src, a, 0, x, y, z)) return fail(src, L"Coordenadas inv\u00E1lidas.");
 		ServerLevel *ov = src.server->getLevel(0);
 		if (!ov) return 0;
 		ov->getLevelData()->setSpawn(x, y, z);
@@ -409,12 +409,12 @@ namespace HSCommands
 					for (auto &ch : bn) if (ch == L' ') ch = L'_';
 					if (bn == what || bn.find(what) != std::wstring::npos)
 					{
-						feedback(src, L"O bioma " + b->m_name + L" mais próximo está em " + std::to_wstring(x) + L", ~, " + std::to_wstring(z) + L" (" + std::to_wstring(r) + L" blocos)");
+						feedback(src, L"O bioma " + b->m_name + L" mais pr\u00F3ximo est\u00E1 em " + std::to_wstring(x) + L", ~, " + std::to_wstring(z) + L" (" + std::to_wstring(r) + L" blocos)");
 						return (std::max)(1, r);
 					}
 				}
 			}
-			return fail(src, L"Bioma não encontrado num raio de 6400 blocos: " + a[i]);
+			return fail(src, L"Bioma n\u00E3o encontrado num raio de 6400 blocos: " + a[i]);
 		}
 		std::wstring feature;
 		if (what == L"stronghold") feature = LargeFeature::STRONGHOLD;
@@ -426,7 +426,7 @@ namespace HSCommands
 		TilePos *p = src.level->getChunkSource()->findNearestMapFeature(src.level, feature, Mth::floor(src.x), Mth::floor(src.y), Mth::floor(src.z));
 		if (!p) return fail(src, L"Nenhuma estrutura desse tipo foi encontrada por perto (explore mais o mundo).");
 		const double dist = sqrt((p->x - src.x) * (p->x - src.x) + (p->z - src.z) * (p->z - src.z));
-		feedback(src, L"A estrutura " + what + L" mais próxima está em " + std::to_wstring(p->x) + L", ~, " + std::to_wstring(p->z) + L" (" + std::to_wstring(static_cast<int>(dist)) + L" blocos)");
+		feedback(src, L"A estrutura " + what + L" mais pr\u00F3xima est\u00E1 em " + std::to_wstring(p->x) + L", ~, " + std::to_wstring(p->z) + L" (" + std::to_wstring(static_cast<int>(dist)) + L" blocos)");
 		delete p;
 		return (std::max)(1, static_cast<int>(dist));
 	}
@@ -450,7 +450,7 @@ namespace HSCommands
 		for (const M &m : map) if (name == m.modern) { name = m.legacy; break; }
 		double x = src.x, y = src.y, z = src.z, dx = 0, dy = 0, dz = 0, speed = 0;
 		int count = 1;
-		if (a.has(3) && !parseVec3(src, a, 1, x, y, z, false)) return fail(src, L"Coordenadas inválidas.");
+		if (a.has(3) && !parseVec3(src, a, 1, x, y, z, false)) return fail(src, L"Coordenadas inv\u00E1lidas.");
 		if (a.has(6)) { parseDouble(a[4], dx); parseDouble(a[5], dy); parseDouble(a[6], dz); }
 		if (a.has(7)) parseDouble(a[7], speed);
 		if (a.has(8)) parseInt(a[8], count);
@@ -459,7 +459,7 @@ namespace HSCommands
 			static_cast<float>(dx), static_cast<float>(dy), static_cast<float>(dz), static_cast<float>(speed), count);
 		const int dim = src.level && src.level->dimension ? src.level->dimension->id : 0;
 		src.server->getPlayers()->broadcastAll(pkt, dim);
-		feedback(src, L"Partícula " + name + L" exibida");
+		feedback(src, L"Part\u00EDcula " + name + L" exibida");
 		return 1;
 	}
 
@@ -504,7 +504,7 @@ namespace HSCommands
 	int cmdStopSound(Source &src, const Args &a)
 	{
 		(void)a;
-		feedback(src, L"Este jogo não permite parar sons já tocando.");
+		feedback(src, L"Este jogo n\u00E3o permite parar sons j\u00E1 tocando.");
 		return 1;
 	}
 
@@ -515,7 +515,7 @@ namespace HSCommands
 	{
 		if (a.size() < 7 || !src.level) return usage(src, self(L"fillbiome"));
 		int ax, ay, az, bx, by, bz;
-		if (!parseBlockPos(src, a, 0, ax, ay, az) || !parseBlockPos(src, a, 3, bx, by, bz)) return fail(src, L"Coordenadas inválidas.");
+		if (!parseBlockPos(src, a, 0, ax, ay, az) || !parseBlockPos(src, a, 3, bx, by, bz)) return fail(src, L"Coordenadas inv\u00E1lidas.");
 		std::wstring want = toLower(stripNamespace(a[6]));
 		Biome *target = nullptr;
 		int bid;
@@ -561,9 +561,9 @@ namespace HSCommands
 	int cmdPlace(Source &src, const Args &a)
 	{
 		if (a.size() < 2 || !src.level) return usage(src, self(L"place"));
-		if (toLower(a[0]) != L"feature") return fail(src, L"Somente /place feature <árvore> é suportado.");
+		if (toLower(a[0]) != L"feature") return fail(src, L"Somente /place feature <\u00E1rvore> \u00E9 suportado.");
 		int x = Mth::floor(src.x), y = Mth::floor(src.y), z = Mth::floor(src.z);
-		if (a.has(4) && !parseBlockPos(src, a, 2, x, y, z)) return fail(src, L"Coordenadas inválidas.");
+		if (a.has(4) && !parseBlockPos(src, a, 2, x, y, z)) return fail(src, L"Coordenadas inv\u00E1lidas.");
 		const std::wstring f = toLower(stripNamespace(a[1]));
 		Feature *feature = nullptr;
 		if (f == L"oak" || f == L"tree") feature = new TreeFeature(true);
@@ -583,7 +583,7 @@ namespace HSCommands
 		else return fail(src, L"Feature desconhecida: " + a[1]);
 		const bool ok = feature->place(src.level, src.level->random, x, y, z);
 		delete feature;
-		if (!ok) return fail(src, L"Não foi possível colocar aqui.");
+		if (!ok) return fail(src, L"N\u00E3o foi poss\u00EDvel colocar aqui.");
 		feedback(src, L"Colocado " + f + L" em " + posText(x, y, z));
 		return 1;
 	}
@@ -596,14 +596,14 @@ namespace HSCommands
 		(void)a;
 		ServerLevel *ov = src.server ? src.server->getLevel(0) : nullptr;
 		const int size = ov ? ov->getLevelData()->getXZSize() * 16 : 0;
-		feedback(src, L"A borda do mundo é definida pelo tamanho do mundo: " + std::to_wstring(size) + L" blocos de largura.");
+		feedback(src, L"A borda do mundo \u00E9 definida pelo tamanho do mundo: " + std::to_wstring(size) + L" blocos de largura.");
 		return size;
 	}
 
 	int cmdForceload(Source &src, const Args &a)
 	{
 		(void)a;
-		feedback(src, L"Chunks perto dos jogadores já ficam carregados; /forceload não é suportado por este motor.");
+		feedback(src, L"Chunks perto dos jogadores j\u00E1 ficam carregados; /forceload n\u00E3o \u00E9 suportado por este motor.");
 		return 0;
 	}
 
@@ -624,7 +624,7 @@ namespace HSCommands
 		(void)a;
 		if (!src.server) return 0;
 		for (unsigned int i = 0; i < src.server->levels.length; i++) if (src.server->levels[i]) src.server->levels[i]->noSave = true;
-		feedback(src, L"Salvamento automático desligado.");
+		feedback(src, L"Salvamento autom\u00E1tico desligado.");
 		return 1;
 	}
 
@@ -633,7 +633,7 @@ namespace HSCommands
 		(void)a;
 		if (!src.server) return 0;
 		for (unsigned int i = 0; i < src.server->levels.length; i++) if (src.server->levels[i]) src.server->levels[i]->noSave = false;
-		feedback(src, L"Salvamento automático ligado.");
+		feedback(src, L"Salvamento autom\u00E1tico ligado.");
 		return 1;
 	}
 

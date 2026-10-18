@@ -97,12 +97,12 @@ namespace HSCommands
 		const std::wstring r = a[1];
 		const size_t dots = r.find(L"..");
 		int lo, hi;
-		if (dots == std::wstring::npos || !parseInt(r.substr(0, dots), lo) || !parseInt(r.substr(dots + 2), hi) || hi < lo) return fail(src, L"Intervalo inválido (ex.: 1..6)");
+		if (dots == std::wstring::npos || !parseInt(r.substr(0, dots), lo) || !parseInt(r.substr(dots + 2), hi) || hi < lo) return fail(src, L"Intervalo inv\u00E1lido (ex.: 1..6)");
 		Random *rnd = src.level ? src.level->random : nullptr;
 		const int v = lo + (rnd ? rnd->nextInt(hi - lo + 1) : 0);
 		if (op == L"roll" && src.server && src.server->getPlayers())
 			src.server->getPlayers()->broadcastAll(std::make_shared<ChatPacket>(src.name + L" rolou " + std::to_wstring(v) + L" (de " + std::to_wstring(lo) + L" a " + std::to_wstring(hi) + L")"));
-		else feedback(src, L"Valor aleatório: " + std::to_wstring(v));
+		else feedback(src, L"Valor aleat\u00F3rio: " + std::to_wstring(v));
 		return v;
 	}
 
@@ -149,9 +149,9 @@ namespace HSCommands
 			std::vector<std::pair<int, std::wstring> > rows;
 			for (auto &s : it->second.scores) rows.push_back({ s.second, s.first });
 			std::sort(rows.rbegin(), rows.rend());
-			std::wstring msg = L"§e" + it->second.displayName + L":";
+			std::wstring msg = L"\u00A7e" + it->second.displayName + L":";
 			int n = 0;
-			for (auto &r : rows) { if (n++ >= 15) break; msg += L"  " + r.second + L" §c" + std::to_wstring(r.first) + L"§e"; }
+			for (auto &r : rows) { if (n++ >= 15) break; msg += L"  " + r.second + L" \u00A7c" + std::to_wstring(r.first) + L"\u00A7e"; }
 			(void)src;
 		}
 	}
@@ -173,7 +173,7 @@ namespace HSCommands
 			if (op == L"add")
 			{
 				if (!a.has(3)) return usage(src, info);
-				if (objectives().count(a[2])) return fail(src, L"Já existe um objetivo com esse nome.");
+				if (objectives().count(a[2])) return fail(src, L"J\u00E1 existe um objetivo com esse nome.");
 				Objective o;
 				o.criteria = a[3];
 				o.displayName = a.has(4) ? a.rest(4) : a[2];
@@ -194,7 +194,7 @@ namespace HSCommands
 				if (a.has(3)) { if (!objectives().count(a[3])) return fail(src, L"Objetivo desconhecido."); sidebarObjective() = a[3]; }
 				else sidebarObjective().clear();
 				showSidebar(src);
-				feedback(src, L"Exibição definida (este jogo mostra o placar pelo chat com /scoreboard players list)");
+				feedback(src, L"Exibi\u00E7\u00E3o definida (este jogo mostra o placar pelo chat com /scoreboard players list)");
 				return 1;
 			}
 			if (op == L"modify" && a.has(4))
@@ -217,7 +217,7 @@ namespace HSCommands
 				for (auto &o : objectives()) for (auto &s : o.second.scores) all[s.first] = true;
 				std::wstring s;
 				for (auto &kv : all) { if (!s.empty()) s += L", "; s += kv.first; }
-				feedback(src, L"Com pontuação: " + s);
+				feedback(src, L"Com pontua\u00E7\u00E3o: " + s);
 				return static_cast<int>(all.size());
 			}
 			std::vector<std::wstring> hs;
@@ -248,7 +248,7 @@ namespace HSCommands
 				if (a.has(3) && o.first != a[3]) continue;
 				for (auto &h : hs) n += static_cast<int>(o.second.scores.erase(h));
 			}
-			feedback(src, L"Pontuações apagadas");
+			feedback(src, L"Pontua\u00E7\u00F5es apagadas");
 			return (std::max)(1, n);
 		}
 		if (op == L"enable") { feedback(src, L"Trigger liberado"); return 1; }
@@ -260,7 +260,7 @@ namespace HSCommands
 		{
 			if (hs.size() != 1) return fail(src, L"Somente um alvo.");
 			auto it = o->scores.find(hs[0]);
-			if (it == o->scores.end()) return fail(src, hs[0] + L" não tem pontuação em " + a[3]);
+			if (it == o->scores.end()) return fail(src, hs[0] + L" n\u00E3o tem pontua\u00E7\u00E3o em " + a[3]);
 			feedback(src, hs[0] + L" tem " + std::to_wstring(it->second) + L" [" + o->displayName + L"]");
 			return it->second;
 		}
@@ -274,7 +274,7 @@ namespace HSCommands
 				if (op == L"set") s = v; else if (op == L"add") s += v; else s -= v;
 			}
 			showSidebar(src);
-			feedback(src, L"Pontuação de " + std::to_wstring(hs.size()) + L" alvo(s) alterada em " + a[3]);
+			feedback(src, L"Pontua\u00E7\u00E3o de " + std::to_wstring(hs.size()) + L" alvo(s) alterada em " + a[3]);
 			return static_cast<int>(hs.size());
 		}
 		if (op == L"operation")
@@ -301,7 +301,7 @@ namespace HSCommands
 					else if (oper == L"<") t = (std::min)(t, sv);
 					else if (oper == L">") t = (std::max)(t, sv);
 					else if (oper == L"><") std::swap(t, sv);
-					else return fail(src, L"Operação inválida: " + oper);
+					else return fail(src, L"Opera\u00E7\u00E3o inv\u00E1lida: " + oper);
 				}
 			}
 			showSidebar(src);
@@ -314,7 +314,7 @@ namespace HSCommands
 	{
 		if (a.size() < 1 || !src.entity) return usage(src, self(L"trigger"));
 		auto it = objectives().find(a[0]);
-		if (it == objectives().end() || toLower(it->second.criteria) != L"trigger") return fail(src, L"Objetivo de trigger inválido: " + a[0]);
+		if (it == objectives().end() || toLower(it->second.criteria) != L"trigger") return fail(src, L"Objetivo de trigger inv\u00E1lido: " + a[0]);
 		int v = 1;
 		std::wstring mode = L"add";
 		if (a.has(2)) { mode = toLower(a[1]); parseInt(a[2], v); }
@@ -350,7 +350,7 @@ namespace HSCommands
 			feedback(src, op == L"join" ? L"Entrou no time " + a[1] : L"Saiu do time");
 			return static_cast<int>(hs.size());
 		}
-		if (op == L"modify") { feedback(src, L"Opções de time não têm efeito neste jogo."); return 1; }
+		if (op == L"modify") { feedback(src, L"Op\u00E7\u00F5es de time n\u00E3o t\u00EAm efeito neste jogo."); return 1; }
 		return usage(src, self(L"team"));
 	}
 
@@ -359,7 +359,7 @@ namespace HSCommands
 	// =================================================================================
 	int cmdData(Source &src, const Args &a)
 	{
-		if (a.size() < 3 || toLower(a[0]) != L"get") return fail(src, L"Somente /data get entity <alvo> [Pos|Health|Rotation|...] é suportado.");
+		if (a.size() < 3 || toLower(a[0]) != L"get") return fail(src, L"Somente /data get entity <alvo> [Pos|Health|Rotation|...] \u00E9 suportado.");
 		if (toLower(a[1]) != L"entity") return fail(src, L"Somente entidades: /data get entity <alvo>");
 		std::vector<std::shared_ptr<Entity> > es;
 		std::wstring err;
@@ -444,15 +444,15 @@ namespace HSCommands
 	int runFunction(Source &src, const std::wstring &name)
 	{
 		std::vector<std::wstring> lines;
-		if (!readFunction(name, lines)) return fail(src, L"Função não encontrada: " + name + L" (pasta functions/<namespace>/<nome>.mcfunction)");
-		if (functionDepth() > 32) return fail(src, L"Funções aninhadas demais.");
+		if (!readFunction(name, lines)) return fail(src, L"Fun\u00E7\u00E3o n\u00E3o encontrada: " + name + L" (pasta functions/<namespace>/<nome>.mcfunction)");
+		if (functionDepth() > 32) return fail(src, L"Fun\u00E7\u00F5es aninhadas demais.");
 		functionDepth()++;
 		int total = 0;
 		Source child = src;
 		child.silent = true;
 		for (auto &l : lines) total += execute(child, l) > 0 ? 1 : 0;
 		functionDepth()--;
-		feedback(src, L"Executados " + std::to_wstring(lines.size()) + L" comandos da função " + name);
+		feedback(src, L"Executados " + std::to_wstring(lines.size()) + L" comandos da fun\u00E7\u00E3o " + name);
 		return total;
 	}
 
@@ -517,17 +517,17 @@ namespace HSCommands
 		double mul = 1;
 		if (!t.empty() && (t.back() == L'd' || t.back() == L's' || t.back() == L't')) { mul = t.back() == L'd' ? 24000 : (t.back() == L's' ? 20 : 1); t.pop_back(); }
 		double n;
-		if (!parseDouble(t, n) || n <= 0) return fail(src, L"Tempo inválido: " + a[2]);
+		if (!parseDouble(t, n) || n <= 0) return fail(src, L"Tempo inv\u00E1lido: " + a[2]);
 		const bool replace = !a.has(3) || toLower(a[3]) != L"append";
 		scheduleFunction(a[1], static_cast<long long>(n * mul), replace);
-		feedback(src, L"Função " + a[1] + L" agendada para daqui a " + std::to_wstring(static_cast<long long>(n * mul)) + L" ticks");
+		feedback(src, L"Fun\u00E7\u00E3o " + a[1] + L" agendada para daqui a " + std::to_wstring(static_cast<long long>(n * mul)) + L" ticks");
 		return 1;
 	}
 
 	int cmdReload(Source &src, const Args &a)
 	{
 		(void)a;
-		feedback(src, L"Funções são lidas da pasta functions a cada uso; nada para recarregar.");
+		feedback(src, L"Fun\u00E7\u00F5es s\u00E3o lidas da pasta functions a cada uso; nada para recarregar.");
 		return 1;
 	}
 
@@ -602,13 +602,13 @@ namespace HSCommands
 				s.x = e->x; s.y = e->y; s.z = e->z; s.yRot = e->yRot; s.xRot = e->xRot;
 				s.name = entityName(e);
 				double x, y, z;
-				if (!parseVec3(s, a, 1, x, y, z, false)) return fail(src, L"Coordenadas inválidas.");
+				if (!parseVec3(s, a, 1, x, y, z, false)) return fail(src, L"Coordenadas inv\u00E1lidas.");
 				s.x = x; s.y = y; s.z = z;
 				if (toLower(a[4]) == L"detect")
 				{
 					if (!a.has(9)) return usage(src, info);
 					int bx, by, bz, id, data;
-					if (!parseBlockPos(s, a, 5, bx, by, bz) || !resolveBlock(a[8], id, data)) return fail(src, L"detect inválido.");
+					if (!parseBlockPos(s, a, 5, bx, by, bz) || !resolveBlock(a[8], id, data)) return fail(src, L"detect inv\u00E1lido.");
 					int d = -1;
 					parseInt(a[9], d);
 					if (!s.level || s.level->getTile(bx, by, bz) != id || (d >= 0 && s.level->getData(bx, by, bz) != d)) continue;
@@ -669,7 +669,7 @@ namespace HSCommands
 					for (auto &s : ctx)
 					{
 						Source n = s;
-						if (!parseVec3(n, a, i + 1, n.x, n.y, n.z, false)) return fail(src, L"Coordenadas inválidas em positioned.");
+						if (!parseVec3(n, a, i + 1, n.x, n.y, n.z, false)) return fail(src, L"Coordenadas inv\u00E1lidas em positioned.");
 						next.push_back(n);
 					}
 					i += 4;
@@ -693,7 +693,7 @@ namespace HSCommands
 					for (auto &s : ctx)
 					{
 						Source n = s;
-						if (!parseRotation(n, a[i + 1], s.yRot, n.yRot) || !parseRotation(n, a[i + 2], s.xRot, n.xRot)) return fail(src, L"Rotação inválida.");
+						if (!parseRotation(n, a[i + 1], s.yRot, n.yRot) || !parseRotation(n, a[i + 2], s.xRot, n.xRot)) return fail(src, L"Rota\u00E7\u00E3o inv\u00E1lida.");
 						next.push_back(n);
 					}
 					i += 3;
@@ -712,7 +712,7 @@ namespace HSCommands
 						if (!selectEntities(s, a[i + 2], es, false, err)) continue;
 						fx = es[0]->x; fy = es[0]->y + 1.62; fz = es[0]->z;
 					}
-					else if (!parseVec3(s, a, i + 1, fx, fy, fz, false)) return fail(src, L"Coordenadas inválidas em facing.");
+					else if (!parseVec3(s, a, i + 1, fx, fy, fz, false)) return fail(src, L"Coordenadas inv\u00E1lidas em facing.");
 					Source n = s;
 					const double dx = fx - s.x, dy = fy - s.y, dz = fz - s.z;
 					n.yRot = static_cast<float>(atan2(dz, dx) * 180.0 / 3.14159265358979) - 90.0f;
@@ -748,7 +748,7 @@ namespace HSCommands
 				{
 					Source n = s;
 					n.level = levelForDimension(src.server, dim);
-					if (!n.level) return fail(src, L"Dimensão indisponível.");
+					if (!n.level) return fail(src, L"Dimens\u00E3o indispon\u00EDvel.");
 					next.push_back(n);
 				}
 				i += 2;
@@ -770,14 +770,14 @@ namespace HSCommands
 					}
 					else if (type == L"block")
 					{
-						if (!blockMatches(s, a, i + 2, match)) return fail(src, L"Bloco/coordenadas inválidos em " + k + L" block.");
+						if (!blockMatches(s, a, i + 2, match)) return fail(src, L"Bloco/coordenadas inv\u00E1lidos em " + k + L" block.");
 						consumed = 6;
 					}
 					else if (type == L"blocks")
 					{
 						// if blocks <start> <end> <destination> all|masked
 						int ax, ay, az, bx, by, bz, dx, dy, dz;
-						if (!parseBlockPos(s, a, i + 2, ax, ay, az) || !parseBlockPos(s, a, i + 5, bx, by, bz) || !parseBlockPos(s, a, i + 8, dx, dy, dz)) return fail(src, L"Coordenadas inválidas.");
+						if (!parseBlockPos(s, a, i + 2, ax, ay, az) || !parseBlockPos(s, a, i + 5, bx, by, bz) || !parseBlockPos(s, a, i + 8, dx, dy, dz)) return fail(src, L"Coordenadas inv\u00E1lidas.");
 						const bool masked = toLower(a[i + 11]) == L"masked";
 						match = s.level != nullptr;
 						for (int y = (std::min)(ay, by); match && y <= (std::max)(ay, by); y++)
@@ -827,7 +827,7 @@ namespace HSCommands
 							}
 						}
 					}
-					else return fail(src, L"Condição desconhecida: " + type);
+					else return fail(src, L"Condi\u00E7\u00E3o desconhecida: " + type);
 					if (match == want) next.push_back(s);
 				}
 				if (ctx.empty()) consumed = (type == L"entity") ? 3 : (type == L"block" ? 6 : 6);
@@ -842,7 +842,7 @@ namespace HSCommands
 			}
 			else if (k == L"store")
 			{
-				return fail(src, L"/execute store não é suportado neste jogo.");
+				return fail(src, L"/execute store n\u00E3o \u00E9 suportado neste jogo.");
 			}
 			else
 			{
