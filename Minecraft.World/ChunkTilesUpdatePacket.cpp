@@ -52,10 +52,9 @@ void ChunkTilesUpdatePacket::read(DataInputStream *dis) //throws IOException
 {
 	// 4J - changed format. See comments in write method.
 #ifdef _LARGE_WORLDS
-	xc = dis->readShort();
-	zc = dis->readShort();
-	xc = ( xc << 16 ) >> 16;
-	zc = ( zc << 16 ) >> 16;
+	// Hellish Sight: full ints, chunk coords reach +/-1,874,999 in infinite worlds
+	xc = dis->readInt();
+	zc = dis->readInt();
 #else
 	xc = dis->read();
 	zc = dis->read();
@@ -98,8 +97,8 @@ void ChunkTilesUpdatePacket::write(DataOutputStream *dos) //throws IOException
 {
 	// 4J - changed format to reduce size of these packets.
 #ifdef _LARGE_WORLDS
-	dos->writeShort(xc);
-	dos->writeShort(zc);
+	dos->writeInt(xc);
+	dos->writeInt(zc);
 #else
 	dos->write(xc);
 	dos->write(zc);
@@ -163,7 +162,7 @@ int ChunkTilesUpdatePacket::getEstimatedSize()
 			lastBlockType = thisBlockType;
 		}
 	}
-	int byteCount = 3 + 2 * count + blockTypeChanges;
+	int byteCount = 3 + 8 + 2 * count + blockTypeChanges;	// +8: int chunk coords
 	if( !dataAllZero )
 	{
 		byteCount += count;
