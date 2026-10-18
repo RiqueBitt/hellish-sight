@@ -259,7 +259,7 @@ int BlockRegistry::registerBlock(const std::wstring& path, const std::string& id
 		pendingDrops.back().tile = static_cast<ModTile *>(tile);
 	}
 
-	Item::items[tileId] = (new TileItem(tileId - 512))
+	Item::items[tileId] = (new TileItem(tileId - 256))
 		->setIconName(traits.textureIconName.empty() ? traits.placeholderIconName : traits.textureIconName)
 		->setDescriptionId(nameId)
 		->setBaseItemTypeAndMaterial(traits.craftingCategory, traits.itemMaterial)
@@ -439,7 +439,7 @@ int BlockRegistry::registerMachine(const std::wstring& path, const std::string& 
 	Tile *tile = new ModMachineTile(tileId, defIndex, hardness);
 	tile->setDescriptionId(nameId);
 
-	Item::items[tileId] = (new TileItem(tileId - 512))
+	Item::items[tileId] = (new TileItem(tileId - 256))
 		->setIconName(def.iconFront.empty() ? def.iconSide : def.iconFront)
 		->setDescriptionId(nameId)
 		->setUseDescriptionId(IDS_DESC_STONE);

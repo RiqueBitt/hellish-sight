@@ -56,7 +56,7 @@ int SaplingRegistry::registerSapling(const std::string &modId, const std::string
 	Tile *tile = new ModSaplingTile(tileId, icon, treeFeature);
 	tile->setDescriptionId(nameId);
 
-	Item::items[tileId] = (new TileItem(tileId - 512))
+	Item::items[tileId] = (new TileItem(tileId - 256))
 		->setIconName(icon.empty() ? L"sapling" : icon)
 		->setDescriptionId(nameId)
 		->setBaseItemTypeAndMaterial(Item::eBaseItemType_structblock, Item::eMaterial_undefined)

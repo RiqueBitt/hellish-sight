@@ -149,7 +149,7 @@ int ItemRegistry::registerItem(const std::wstring& path, const std::string& id, 
         else Loader::_debugPrint("item '" + id + "': unknown custom tier handle " + std::to_string(resolved.tierIndex));
     }
 
-    Item *item = ItemFactory::create(resolved, itemId - 512);
+    Item *item = ItemFactory::create(resolved, itemId - 256);
 
     if (item == nullptr) {
         Loader::_debugPrint("could not create item '" + id + "'");
