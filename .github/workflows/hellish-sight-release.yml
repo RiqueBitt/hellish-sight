@@ -1,7 +1,8 @@
 name: Hellish Sight Release
 
-# Builds the Windows client and publishes it as a GitHub release.
-#  - Push a tag like v1.0.0  -> builds and publishes release "Hellish Sight v1.0.0"
+# Hellish Sight (mod hub based on Hellish Ends): builds the Windows client and publishes it as a GitHub release.
+#  - Push a tag like v1.0.0  -> builds and publishes release "Hellish Sight v1.0.0" (latest)
+#  - Push a tag like v1.0.0-rc1 -> same, but as a pre-release (test build)
 #  - Push to main/feature/** or run manually -> builds and uploads the zip as a workflow artifact only
 #
 # The Emerald Legacy Launcher installs this version from:
@@ -76,12 +77,14 @@ jobs:
       with:
         name: Hellish Sight ${{ github.ref_name }}
         files: ${{ env.ZIP_NAME }}
-        make_latest: true
+        # Tags with a suffix (v1.0.0-rc1) are test builds: pre-release, never "latest".
+        prerelease: ${{ contains(github.ref_name, '-') }}
+        make_latest: ${{ contains(github.ref_name, '-') && 'false' || 'true' }}
         body: |
-          **Hellish Sight** — Hellish Ends with the built-in **Glance** HUD API (see what you're looking at).
+          **Hellish Sight** — a mod hub built on Hellish Ends: run many Lua mods together, with extra APIs (HUD API included).
 
           ### Install
-          - **Emerald Legacy Launcher:** Workshop → Versions → *Hellish Sight* → Install. Then install the **Glance** mod from the Workshop.
-          - **Manual:** extract `${{ env.ZIP_NAME }}` to a folder and run `Minecraft.Client.exe`.
+          - **Emerald Legacy Launcher:** Workshop → Versions → *Hellish Sight* → Install. Then install mods (e.g. **Glance**) choosing *Hellish Sight*.
+          - **Manual:** extract `${{ env.ZIP_NAME }}` to a folder and run `Minecraft.Client.exe`. Put mods in the `mods` folder next to it.
 
-          Requires Windows 7+ and a DirectX 11 GPU. Based on [Hellish Ends](https://github.com/deadvoxelx/ThatModdedRepo).
+          Requires Windows 7+ and a DirectX 11 GPU. Based on [Hellish Ends](https://github.com/deadvoxelx/ThatModdedRepo) by DeadVoxelx.
