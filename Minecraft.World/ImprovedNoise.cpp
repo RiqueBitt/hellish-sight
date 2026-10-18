@@ -1,5 +1,26 @@
 #include "stdafx.h"
 #include "ImprovedNoise.h"
+#include <climits>
+#include <cstdint>
+
+// Hellish Sight: reproduce Java's numeric semantics exactly so the Far Lands
+// appear (around +-12,550,821 blocks) the same way they do in Java.
+//  - Java's (int) cast of a double saturates to INT_MIN/INT_MAX (NaN -> 0);
+//    C++ static_cast is undefined there and MSVC returns 0x80000000 instead.
+//  - Java int arithmetic wraps on overflow (xf-- at INT_MIN -> INT_MAX).
+// For every in-range value these are identical to the old code, so existing
+// terrain is unchanged.
+namespace
+{
+	inline int javaD2I(double v)
+	{
+		if (v != v) return 0;
+		if (v >= 2147483647.0) return INT_MAX;
+		if (v <= -2147483648.0) return INT_MIN;
+		return static_cast<int>(v);
+	}
+	inline int javaDec(int v) { return static_cast<int>(static_cast<uint32_t>(v) - 1u); }
+}
 
 ImprovedNoise::ImprovedNoise()
 {
@@ -46,13 +67,13 @@ double ImprovedNoise::noise(double _x, double _y, double _z)
         double y = _y + yo;
         double z = _z + zo;
 
-        int xf = static_cast<int>(x);
-        int yf = static_cast<int>(y);
-        int zf = static_cast<int>(z);
+        int xf = javaD2I(x);
+        int yf = javaD2I(y);
+        int zf = javaD2I(z);
 
-        if (x < xf) xf--;
-        if (y < yf) yf--;
-        if (z < zf) zf--;
+        if (x < xf) xf = javaDec(xf);
+        if (y < yf) yf = javaDec(yf);
+        if (z < zf) zf = javaDec(zf);
 
         int X = xf & 255, // FIND UNIT CUBE THAT
         Y = yf & 255, // CONTAINS POINT.
@@ -125,8 +146,8 @@ void ImprovedNoise::add(doubleArray buffer, double _x, double _y, double _z, int
         for (int xx = 0; xx < xSize; xx++)
 		{
             double x = _x + (xx) * xs + xo;
-            int xf = static_cast<int>(x);
-            if (x < xf) xf--;
+            int xf = javaD2I(x);
+            if (x < xf) xf = javaDec(xf);
             int X = xf & 255;
             x -= xf;
             double u = x * x * x * (x * (x * 6 - 15) + 10);
@@ -134,8 +155,8 @@ void ImprovedNoise::add(doubleArray buffer, double _x, double _y, double _z, int
             for (int zz = 0; zz < zSize; zz++)
 			{
                 double z = _z + (zz) * zs + zo;
-                int zf = static_cast<int>(z);
-                if (z < zf) zf--;
+                int zf = javaD2I(z);
+                if (z < zf) zf = javaDec(zf);
                 int Z = zf & 255;
                 z -= zf;
                 double w = z * z * z * (z * (z * 6 - 15) + 10);
@@ -163,8 +184,8 @@ void ImprovedNoise::add(doubleArray buffer, double _x, double _y, double _z, int
     for (int xx = 0; xx < xSize; xx++)
 	{
         double x = _x + (xx) * xs + xo;
-        int xf = static_cast<int>(x);
-        if (x < xf) xf--;
+        int xf = javaD2I(x);
+        if (x < xf) xf = javaDec(xf);
         int X = xf & 255;
         x -= xf;
         double u = x * x * x * (x * (x * 6 - 15) + 10);
@@ -173,8 +194,8 @@ void ImprovedNoise::add(doubleArray buffer, double _x, double _y, double _z, int
         for (int zz = 0; zz < zSize; zz++)
 		{
             double z = _z + (zz) * zs + zo;
-            int zf = static_cast<int>(z);
-            if (z < zf) zf--;
+            int zf = javaD2I(z);
+            if (z < zf) zf = javaDec(zf);
             int Z = zf & 255;
             z -= zf;
             double w = z * z * z * (z * (z * 6 - 15) + 10);
@@ -183,8 +204,8 @@ void ImprovedNoise::add(doubleArray buffer, double _x, double _y, double _z, int
             for (int yy = 0; yy < ySize; yy++)
 			{
                 double y = _y + (yy) * ys + yo;
-                int yf = static_cast<int>(y);
-                if (y < yf) yf--;
+                int yf = javaD2I(y);
+                if (y < yf) yf = javaDec(yf);
                 int Y = yf & 255;
                 y -= yf;
                 double v = y * y * y * (y * (y * 6 - 15) + 10);
