@@ -25,6 +25,9 @@ private:
 	unsigned char renderRemoveStage;	// 4J added
 
 public:
+	// Hellish Sight: lets mods register tile entity save ids ("HSMachine")
+	static void registerExternalId(tileEntityCreateFn createFn, const wstring &id) { idCreateMap[id] = createFn; }
+
 	Level *level;
 	int x, y, z;
 

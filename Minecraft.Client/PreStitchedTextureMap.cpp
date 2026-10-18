@@ -188,6 +188,10 @@ void PreStitchedTextureMap::stitch()
 	//BufferedImage *image = new BufferedImage(texturePack->getResource(L"/" + filename),false,true,drive); //ImageIO::read(texturePack->getResource(L"/" + filename));
 	BufferedImage *image = texturePack->getImageResource(filename, false, true, drive);
 	MemSect(0);
+	if (iconType != Icon::TYPE_TERRAIN && m_itemRows > 16 && image != nullptr && image->getHeight() * 32 < image->getWidth() * m_itemRows * 2)
+	{
+		image->growHeight(image->getWidth() * m_itemRows / ATLAS_COLUMNS);	// Hellish Sight
+	}
 	int height = image->getHeight();
 	int width = image->getWidth();
 
@@ -351,8 +355,29 @@ void PreStitchedTextureMap::allocateModTextureCells()
 	// Otherwise the game will just ignore the "empty cells" since theyre not already defined
 	const vector<RubyModTexture> &requests = RubyLoader::getModTextures();
 	bool taken[ATLAS_ROWS][ATLAS_COLUMNS];
-	// Vanilla: terrain atlas is 16x32 cells, items atlas is 16x16 cells
-	const int atlasRows = (iconType == Icon::TYPE_TERRAIN) ? ATLAS_ROWS : 16;
+	// Vanilla: terrain atlas is 16x32 cells, items atlas is 16x16 cells.
+	// Hellish Sight: the vanilla item atlas has only ~12 free cells, so when mods
+	// add item textures it grows to 16x32 (existing icons keep their pixels, their
+	// V coordinates are halved once).
+	if (iconType == Icon::TYPE_ITEM && !m_itemUVsHalved)
+	{
+		bool anyItemRequest = false;
+		for (auto &request : RubyLoader::getModTextures())
+		{
+			if (!request.block) { anyItemRequest = true; break; }
+		}
+		if (anyItemRequest)
+		{
+			for (auto &entry : texturesByName)
+			{
+				StitchedTexture *icon = static_cast<StitchedTexture *>(entry.second);
+				if (icon) icon->initUVs(icon->getU0(), icon->getV0() * 0.5f, icon->getU1(), icon->getV1() * 0.5f);
+			}
+			m_itemUVsHalved = true;
+			m_itemRows = 32;
+		}
+	}
+	const int atlasRows = (iconType == Icon::TYPE_TERRAIN) ? ATLAS_ROWS : m_itemRows;
 	const bool terrainAtlas = (iconType == Icon::TYPE_TERRAIN);
 	const char *atlasName = terrainAtlas ? "terrain" : "items";
 

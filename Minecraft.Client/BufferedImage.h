@@ -28,6 +28,7 @@ public:
 	Graphics *getGraphics();
 	int getTransparency();
 	BufferedImage *getSubimage(int x, int y, int w, int h);
+	void growHeight(int newHeight);	// Hellish Sight: extend an atlas downwards (new rows transparent)
 
 	void preMultiplyAlpha();
 };

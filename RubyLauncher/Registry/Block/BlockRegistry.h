@@ -53,6 +53,8 @@ public:
     static int maxBlockCount();
 
     static int registerBlock(const std::wstring& path, const std::string& id, const std::string& name, std::string modId, const std::string& texturePath, const BlockDefinition& def);
+    // Hellish Sight: processing machine (furnace screen); textures = {side, front, frontActive, top, bottom}
+    static int registerMachine(const std::wstring& path, const std::string& id, const std::string& name, const std::string& modId, sol::table textures, sol::table def);
 
     static void finalizeDrops();
 

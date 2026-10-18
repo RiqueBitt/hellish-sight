@@ -287,6 +287,25 @@ BufferedImage::BufferedImage(BYTE *pbData, DWORD dwBytes)
 	}
 }
 
+void BufferedImage::growHeight(int newHeight)
+{
+	if (newHeight <= height) return;
+	for (int l = 0; l < 10; l++)
+	{
+		if (data[l] == nullptr) continue;
+		const int w = width >> l;
+		const int oldH = height >> l;
+		const int newH = newHeight >> l;
+		if (w <= 0 || newH <= 0) continue;
+		int *grown = new int[w * newH];
+		memset(grown, 0, sizeof(int) * w * newH);
+		memcpy(grown, data[l], sizeof(int) * w * oldH);
+		delete[] data[l];
+		data[l] = grown;
+	}
+	height = newHeight;
+}
+
 BufferedImage::~BufferedImage()
 {
 	for(int i  = 0; i < 10; i++ )

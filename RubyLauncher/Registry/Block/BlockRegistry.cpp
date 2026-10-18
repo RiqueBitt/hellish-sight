@@ -11,6 +11,7 @@
 #include <algorithm>
 
 #include "Client/ModTile.h"
+#include "Client/ModMachine.h"
 #include "Common/ModPaths.h"
 #include "Host/RubyLauncherHost.h"
 #include "Registry/Item/ItemRegistry.h"
@@ -270,6 +271,95 @@ int BlockRegistry::registerBlock(const std::wstring& path, const std::string& id
 	RubyCreative::addEntry(tileId, 0, RubyCreativeGroup_BuildingBlocks);
 	Loader::_debugPrint("registered block " + modId + ":" + id + " as tile " + std::to_string(tileId) + " (hardness " + std::to_string(def.hardness) + ")" + (texturePath.empty() ? "" : ", texture '" + texturePath + "'"));
 
+	return tileId;
+}
+
+int BlockRegistry::registerMachine(const std::wstring& path, const std::string& id, const std::string& name, const std::string& modId, sol::table textures, sol::table table)
+{
+	ModMachines::registerTileEntityType();
+
+	const int nameId = ItemRegistry::nextItemNameId();
+	const int tileId = BlockRegistry::nextItemId();
+	if (tileId == -1)
+	{
+		Loader::_debugPrint("out of block ids, machine '" + id + "' was not registered");
+		return -1;
+	}
+
+	ModMachineDef def;
+	def.fullId = modId + ":" + id;
+	def.name = std::wstring(name.begin(), name.end());
+	def.tileId = tileId;
+
+	auto texture = [&](const char *key, const char *suffix) -> std::wstring {
+		sol::optional<std::string> value = textures[key];
+		if (!value || value.value().empty()) return L"";
+		RubyModTexture request;
+		request.iconName = rubyModTextureIconName(modId, id) + suffix;
+		request.filePath = RubyPaths::resolveModTexturePath(RubyPaths::toNarrow(path), value.value());
+		request.fallback = "furnace_side";
+		request.block = true;
+		RubyLoader::addModTexture(request);
+		return RubyPaths::toWide(request.iconName);
+	};
+	def.iconSide = texture("side", "");
+	def.iconFront = texture("front", "_front");
+	def.iconFrontActive = texture("frontActive", "_front_on");
+	def.iconTop = texture("top", "_top");
+	def.iconBottom = texture("bottom", "_bottom");
+	if (def.iconSide.empty()) def.iconSide = L"furnace_side";
+
+	float hardness = table.get_or("hardness", 3.5f);
+	def.processTicks = table.get_or("processTicks", 200);
+	def.furnaceRecipes = table.get_or("furnaceRecipes", false);
+	def.furnaceFuels = table.get_or("furnaceFuels", false);
+	def.needsPower = table.get_or("needsPower", true);
+
+	sol::optional<sol::table> recipes = table["recipes"];
+	if (recipes)
+	{
+		for (auto &kv : recipes.value())
+		{
+			if (!kv.second.is<sol::table>()) continue;
+			sol::table r = kv.second.as<sol::table>();
+			ModMachineRecipe recipe;
+			recipe.in = r.get_or<std::string>(1, "");
+			recipe.out = r.get_or<std::string>(2, "");
+			recipe.count = r.get_or(3, 1);
+			recipe.extra = r.get_or<std::string>("extra", "");
+			recipe.inCount = r.get_or("inCount", 1);
+			if (!recipe.in.empty() && !recipe.out.empty()) def.recipes.push_back(recipe);
+		}
+	}
+	sol::optional<sol::table> fuels = table["power"];
+	if (fuels)
+	{
+		for (auto &kv : fuels.value())
+		{
+			if (!kv.second.is<sol::table>()) continue;
+			sol::table f = kv.second.as<sol::table>();
+			ModMachineFuel fuel;
+			fuel.item = f.get_or<std::string>(1, "");
+			fuel.ticks = f.get_or(2, 200);
+			if (!fuel.item.empty()) def.fuels.push_back(fuel);
+		}
+	}
+
+	const int defIndex = static_cast<int>(ModMachines::defs().size());
+	ModMachines::defs().push_back(def);
+
+	Tile *tile = new ModMachineTile(tileId, defIndex, hardness);
+	tile->setDescriptionId(nameId);
+
+	Item::items[tileId] = (new TileItem(tileId - 512))
+		->setIconName(def.iconFront.empty() ? def.iconSide : def.iconFront)
+		->setDescriptionId(nameId)
+		->setUseDescriptionId(IDS_DESC_STONE);
+
+	ItemRegistry::langList[nameId] = def.name;
+	IDMapping::get()->add(modId, id, true, tileId);
+	RubyCreative::addEntry(tileId, 0, RubyCreativeGroup_Decoration);
+	Loader::_debugPrint("registered machine " + def.fullId + " as tile " + std::to_string(tileId) + " with " + std::to_string(def.recipes.size()) + " recipes");
 	return tileId;
 }
 

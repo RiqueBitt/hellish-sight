@@ -967,6 +967,21 @@ void LuaBindings::bindClientFunctions(sol::state& lua) {
         return registeredBlock;
     });
 
+    // Hellish Sight: registerMachine(id, name, {side=, front=, frontActive=, top=, bottom=},
+    //   {hardness, processTicks, needsPower, furnaceRecipes, furnaceFuels,
+    //    recipes = {{"in", "out", count, extra="item"}...}, power = {{"item", ticks}...}})
+    lua.set_function("registerMachine", [](sol::this_environment env, const std::string& id, const std::string& name, sol::table textures, sol::optional<sol::table> definition, sol::this_state state) -> int {
+        sol::environment& modEnv = env;
+        std::string envPath = modEnv["pathName"];
+        std::string modId = modEnv["modId"];
+        std::wstring path = std::wstring(envPath.begin(), envPath.end());
+        sol::state_view lua(state);
+        sol::table def = definition ? definition.value() : lua.create_table();
+        int tile = BlockRegistry::registerMachine(path, id, name, modId, textures, def);
+        if (tile == -1) RubyUtils::LuaException(state, "registerMachine: out of block ids");
+        return tile;
+    });
+
     lua.set_function("registerSapling", [](sol::this_environment env, const std::string &saplingId, const std::string &name, const std::string &texturePath, sol::optional<sol::object> options, sol::this_state state) -> int {
         sol::environment& modEnv = env;
         std::string modId = modEnv["modId"];

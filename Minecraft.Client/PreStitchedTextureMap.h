@@ -40,6 +40,8 @@ private:
 
 	vector<ModTextureCell> modTextures;
 	bool m_modTexturesAllocated;
+	int m_itemRows = 16;			// Hellish Sight: the item atlas doubles (16 -> 32 rows) when mods need cells
+	bool m_itemUVsHalved = false;
 
 	void loadUVs();
 	void allocateModTextureCells();

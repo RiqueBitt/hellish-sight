@@ -329,9 +329,11 @@ int FurnaceTileEntity::getBurnDuration(shared_ptr<ItemInstance> itemInstance)
 	return 0;
 }
 
+bool (*FurnaceTileEntity::s_extraFuelCheck)(shared_ptr<ItemInstance> item) = nullptr;
+
 bool FurnaceTileEntity::isFuel(shared_ptr<ItemInstance> item)
 {
-	return getBurnDuration(item) > 0;
+	return getBurnDuration(item) > 0 || (s_extraFuelCheck != nullptr && s_extraFuelCheck(item));
 }
 
 bool FurnaceTileEntity::stillValid(shared_ptr<Player> player)

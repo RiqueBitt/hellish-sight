@@ -71,6 +71,7 @@ public:
 
 	static int getBurnDuration(shared_ptr<ItemInstance> itemInstance);
 	static bool isFuel(shared_ptr<ItemInstance> item);
+	static bool (*s_extraFuelCheck)(shared_ptr<ItemInstance> item);	// Hellish Sight: mod machine power items
 
 public:
 	virtual bool stillValid(shared_ptr<Player> player);
