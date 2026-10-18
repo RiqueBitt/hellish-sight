@@ -962,6 +962,10 @@ void ServerChunkCache::evictUnloadedChunks()
 
 		if (m_unloaded.compareExchange(entry.x, entry.z, entry.chunk, nullptr))
 		{
+			// drop() can queue the same chunk more than once; the original code never freed
+			// chunks so stale m_toDrop entries were harmless. Purge them before freeing,
+			// otherwise tick() would dereference a freed chunk (crash when travelling far).
+			m_toDrop.erase(std::remove(m_toDrop.begin(), m_toDrop.end(), entry.chunk), m_toDrop.end());
 			delete entry.chunk;
 		}
 	}
