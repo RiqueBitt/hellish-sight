@@ -62,7 +62,17 @@ protected:
 		eSectionInventoryCreativeTab_5,
 		eSectionInventoryCreativeTab_6,
 		eSectionInventoryCreativeTab_7,
-		eSectionInventoryCreativeTab_8,		// Hellish Sight: technical items tab
+		// Hellish Sight: second (bottom) row of tabs, drawn by the patched SWFs. Which
+		// tab sits in each slot depends on the current tab page (see IUIScene_CreativeMenu).
+		eSectionInventoryCreativeTab_8,
+		eSectionInventoryCreativeTab_9,
+		eSectionInventoryCreativeTab_10,
+		eSectionInventoryCreativeTab_11,
+		eSectionInventoryCreativeTab_12,
+		eSectionInventoryCreativeTab_13,
+		eSectionInventoryCreativeTab_14,
+		eSectionInventoryCreativeTab_15,
+		eSectionInventoryCreativePageButton,	// Hellish Sight: switches the page of tabs
 		eSectionInventoryCreativeSlider,
 		eSectionInventoryCreativeMax,
 		

@@ -21,8 +21,16 @@ public:
 		eCreativeInventoryTab_Brewing,
 		eCreativeInventoryTab_Misc,
 		eCreativeInventoryTab_Technical,	// Hellish Sight: command blocks and other unobtainable items
-		eCreativeInventoryTab_COUNT,
+		eCreativeInventoryTab_COUNT,		// first per-mod tab (Hellish Sight)
 	};
+
+	// Hellish Sight: every installed mod gets its own creative tab after the vanilla
+	// ones. Tabs are shown 16 per page (8 on top, 8 on a second row below the panel)
+	// or 8 per page when there is no room below (split screen).
+	static const int HS_MAX_MOD_TABS = 48;
+	static const int HS_MAX_TABS = eCreativeInventoryTab_COUNT + HS_MAX_MOD_TABS;
+	static const int HS_TAB_SLOTS = 16;
+	static const int HS_TAB_NONE = -1;
 
 	// 4J Stu - These are logical groupings of items, and be be combined for tabs on-screen
 	enum ECreative_Inventory_Groups
@@ -96,7 +104,20 @@ public:
 	} *itemPickerMenu;
 
 protected:
-	static vector< shared_ptr<ItemInstance> > categoryGroups[eCreativeInventoryGroupsCount];
+	// Hellish Sight: the per-mod groups live after the vanilla ones; they are not part
+	// of the creative registry packet (every client builds them from its own mods).
+	static vector< shared_ptr<ItemInstance> > categoryGroups[eCreativeInventoryGroupsCount + HS_MAX_MOD_TABS];
+	struct HSModTab
+	{
+		std::string modId;
+		wstring name;
+		wstring iconTexture;	// 16x16 png used for the tab icon
+		std::string iconHex;	// cached ARGB pixels (256 x 8 hex digits)
+		bool iconLoaded;
+	};
+	static int s_modTabCount;
+	static HSModTab s_modTabs[HS_MAX_MOD_TABS];
+	static void HS_BuildModTabSpecs();
 	// 4J JEV - Tabs
 	static TabSpec **specs;
 
@@ -111,6 +132,9 @@ public:
 	// Hellish Sight: fills the "Técnico" tab (items that cannot be obtained in survival)
 	static void addTechnicalItems(vector< shared_ptr<ItemInstance> > *list);
 	static LPCWSTR getTabLabel(ECreativeInventoryTabs tab);
+	static int getTabCount();
+	// "T" = technical tab art, "" = none, otherwise 16x16 ARGB pixels as hex
+	static const std::string &getTabIconHex(int tab);
 	IUIScene_CreativeMenu();
 
 	static void loadFromLocal();
@@ -119,8 +143,18 @@ public:
 	static std::shared_ptr<CustomPayloadPacket> createUpdatePacket();
 protected:
 	ECreativeInventoryTabs m_curTab;
-	int m_tabDynamicPos[eCreativeInventoryTab_COUNT];
-	int m_tabPage[eCreativeInventoryTab_COUNT];
+	int m_tabDynamicPos[HS_MAX_TABS];
+	int m_tabPage[HS_MAX_TABS];
+
+	// Hellish Sight: page of tab buttons currently shown
+	int m_tabRowPage;
+	bool m_hsBottomRow;		// second row of tabs fits below the panel
+	int HS_TabsPerPage() const { return m_hsBottomRow ? HS_TAB_SLOTS : 8; }
+	int HS_TabRowPageCount() const;
+	int HS_TabForSlot(int slot) const;
+	void HS_SetTabRowPage(int page);
+	void HS_CycleTab(int dir);
+	virtual void HS_RefreshTabRow() {}
 
 	void switchTab(ECreativeInventoryTabs tab);	
 	void ScrollBar(UIVec2D pointerPos);

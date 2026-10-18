@@ -15,11 +15,17 @@
 #include "../../../Minecraft.World/JavaMath.h"
 
 #include "Host/RubyLauncherHost.h"
+#include "Registry/IDs.h"
+#include "Common/ModPaths.h"
+
+#include <map>
 
 // 4J JEV - Images for each tab.
 IUIScene_CreativeMenu::TabSpec **IUIScene_CreativeMenu::specs = nullptr;
 
-vector< shared_ptr<ItemInstance> > IUIScene_CreativeMenu::categoryGroups[eCreativeInventoryGroupsCount];
+vector< shared_ptr<ItemInstance> > IUIScene_CreativeMenu::categoryGroups[eCreativeInventoryGroupsCount + HS_MAX_MOD_TABS];
+int IUIScene_CreativeMenu::s_modTabCount = 0;
+IUIScene_CreativeMenu::HSModTab IUIScene_CreativeMenu::s_modTabs[HS_MAX_MOD_TABS];
 
 #define ITEM(id) list->push_back( shared_ptr<ItemInstance>(new ItemInstance(id, 1, 0)) );
 #define ITEM_AUX(id, aux) list->push_back( shared_ptr<ItemInstance>(new ItemInstance(id, 1, aux)) );
@@ -861,7 +867,8 @@ void IUIScene_CreativeMenu::staticCtor()
 	appendModItems();	// Ruby Launcher: mod items
 
 	if (specs == nullptr) {
-		specs = new TabSpec * [eCreativeInventoryTab_COUNT];
+		specs = new TabSpec * [HS_MAX_TABS];
+		for (int i = 0; i < HS_MAX_TABS; ++i) specs[i] = nullptr;
 
 		// Top Row
 		ECreative_Inventory_Groups blocksGroup[] = { eCreativeInventory_BuildingBlocks };
@@ -914,39 +921,167 @@ void IUIScene_CreativeMenu::staticCtor()
 		ECreative_Inventory_Groups technicalGroup[] = { eCreativeInventory_Technical };
 		specs[eCreativeInventoryTab_Technical] = new TabSpec(L"Technical", -1, 1, technicalGroup);
 	}
+
+	HS_BuildModTabSpecs();
 }
 
+void IUIScene_CreativeMenu::HS_BuildModTabSpecs()
+{
+	if (specs == nullptr) return;
+	for (int k = 0; k < HS_MAX_MOD_TABS; ++k)
+	{
+		TabSpec *&spec = specs[eCreativeInventoryTab_COUNT + k];
+		if (k >= s_modTabCount)
+		{
+			// keep old specs alive (a scene may still point at them); they are simply unused
+			continue;
+		}
+		if (spec == nullptr)
+		{
+			ECreative_Inventory_Groups group[] = { static_cast<ECreative_Inventory_Groups>(eCreativeInventoryGroupsCount + k) };
+			spec = new TabSpec(L"Mod", -1, 1, group);
+		}
+	}
+}
+
+// Hellish Sight: mod items no longer go into the vanilla tabs; every mod gets its own
+// tab (named after the mod, icon from its manifest's "creativeIcon" or its first item).
 void IUIScene_CreativeMenu::appendModItems()
 {
-	const vector<RubyCreativeEntry> entries = RubyLoader::getCreativeEntries();
+	for (int k = 0; k < HS_MAX_MOD_TABS; ++k) categoryGroups[eCreativeInventoryGroupsCount + k].clear();
 
+	struct ModMeta { wstring name; std::string icon; };
+	std::map<std::string, ModMeta> meta;
+	for (const RubyModInfo &info : RubyLoader::getInstalledMods())
+	{
+		if (info.modId.empty()) continue;
+		ModMeta m;
+		m.name = RubyPaths::toWide(info.name);
+		m.icon = info.creativeIcon;
+		meta[info.modId] = m;
+	}
+
+	// keep the tab order stable across reloads: existing tabs keep their slot
+	std::map<std::string, int> tabOf;
+	for (int k = 0; k < s_modTabCount; ++k) tabOf[s_modTabs[k].modId] = k;
+
+	IDMapping *mapping = IDMapping::get();
+	if (mapping->idToString.empty()) mapping->buildReverseMap();
+
+	const vector<RubyCreativeEntry> entries = RubyLoader::getCreativeEntries();
 	for (const RubyCreativeEntry &entry : entries)
 	{
 		if (entry.id <= 0 || entry.id >= Item::ITEM_NUM_COUNT || Item::items[entry.id] == nullptr) continue;
 
-		ECreative_Inventory_Groups group;
-		switch (entry.group)
+		std::string key = mapping->getByID(entry.id, entry.aux);
+		std::string modId = "mods";
+		const size_t colon = key.find(':');
+		if (colon != std::string::npos && key.compare(0, colon, "minecraft") != 0) modId = key.substr(0, colon);
+
+		int k;
+		auto it = tabOf.find(modId);
+		if (it != tabOf.end())
 		{
-		case RubyCreativeGroup_Food:
-			group = eCreativeInventory_Food;
-			break;
-		case RubyCreativeGroup_Tools:
-			group = eCreativeInventory_ToolsArmourWeapons;
-			break;
-		case RubyCreativeGroup_Decoration:
-			group = eCreativeInventory_Decoration;
-			break;
-		case RubyCreativeGroup_Materials:
-			group = eCreativeInventory_Materials;
-			break;
-		case RubyCreativeGroup_BuildingBlocks:
-		default:
-			group = eCreativeInventory_BuildingBlocks;
-			break;
+			k = it->second;
+		}
+		else
+		{
+			if (s_modTabCount >= HS_MAX_MOD_TABS) k = HS_MAX_MOD_TABS - 1;	// overflow: share the last tab
+			else
+			{
+				k = s_modTabCount++;
+				HSModTab &tab = s_modTabs[k];
+				tab.modId = modId;
+				auto m = meta.find(modId);
+				tab.name = (m != meta.end() && !m->second.name.empty()) ? m->second.name : RubyPaths::toWide(modId);
+				tab.iconTexture.clear();
+				tab.iconHex.clear();
+				tab.iconLoaded = false;
+			}
+			tabOf[modId] = k;
 		}
 
-		categoryGroups[group].push_back( shared_ptr<ItemInstance>(new ItemInstance(entry.id, 1, entry.aux)) );
+		HSModTab &tab = s_modTabs[k];
+		const bool firstItem = categoryGroups[eCreativeInventoryGroupsCount + k].empty();
+		categoryGroups[eCreativeInventoryGroupsCount + k].push_back( shared_ptr<ItemInstance>(new ItemInstance(entry.id, 1, entry.aux)) );
+
+		// icon: manifest "creativeIcon" wins, otherwise the first item of the tab
+		auto m = meta.find(modId);
+		const bool wanted = (m != meta.end() && !m->second.icon.empty() && key == modId + ":" + m->second.icon);
+		if ((firstItem && tab.iconTexture.empty()) || wanted)
+		{
+			const std::string prefix = "mod:" + key;
+			std::string best;
+			int bestScore = -1;
+			for (const RubyModTexture &t : RubyLoader::getModTextures())
+			{
+				if (t.filePath.empty() || t.iconName.compare(0, prefix.size(), prefix) != 0) continue;
+				int score = 0;
+				if (t.iconName.size() == prefix.size()) score = 3;
+				else if (t.iconName[prefix.size()] != '_') continue;
+				else if (t.iconName.find("front", prefix.size()) != std::string::npos && t.iconName.find("active", prefix.size()) == std::string::npos) score = 2;
+				else if (t.iconName.find("side", prefix.size()) != std::string::npos) score = 1;
+				if (score > bestScore) { bestScore = score; best = t.filePath; }
+			}
+			if (!best.empty())
+			{
+				tab.iconTexture = RubyPaths::toWide(best);
+				tab.iconHex.clear();
+				tab.iconLoaded = false;
+			}
+		}
 	}
+
+	HS_BuildModTabSpecs();
+}
+
+int IUIScene_CreativeMenu::getTabCount()
+{
+	return eCreativeInventoryTab_COUNT + s_modTabCount;
+}
+
+const std::string &IUIScene_CreativeMenu::getTabIconHex(int tab)
+{
+	static const std::string technical = "T";
+	static const std::string none;
+	if (tab == eCreativeInventoryTab_Technical) return technical;
+	const int k = tab - eCreativeInventoryTab_COUNT;
+	if (k < 0 || k >= s_modTabCount) return none;
+
+	HSModTab &mt = s_modTabs[k];
+	if (!mt.iconLoaded)
+	{
+		mt.iconLoaded = true;
+		mt.iconHex.clear();
+#if defined(_WINDOWS64)
+		if (!mt.iconTexture.empty())
+		{
+			D3DXIMAGE_INFO info;
+			ZeroMemory(&info, sizeof(info));
+			int *data = nullptr;
+			if (RenderManager.LoadTextureData(wstringtofilename(mt.iconTexture), &info, &data) == ERROR_SUCCESS && data != nullptr)
+			{
+				if (info.Width >= 16 && info.Height >= 16)
+				{
+					// nearest-neighbour down to 16x16 (packs may ship bigger textures)
+					static const char *hex = "0123456789ABCDEF";
+					mt.iconHex.reserve(16 * 16 * 8);
+					for (int y = 0; y < 16; ++y)
+					{
+						for (int x = 0; x < 16; ++x)
+						{
+							const unsigned int sx = x * info.Width / 16, sy = y * info.Height / 16;
+							const unsigned int c = static_cast<unsigned int>(data[sy * info.Width + sx]);
+							for (int sh = 28; sh >= 0; sh -= 4) mt.iconHex.push_back(hex[(c >> sh) & 0xF]);
+						}
+					}
+				}
+				delete[] data;
+			}
+		}
+#endif
+	}
+	return mt.iconHex;
 }
 
 // Hellish Sight: items that cannot be obtained in survival. Entries whose tile/item does
@@ -1008,7 +1143,12 @@ void IUIScene_CreativeMenu::addTechnicalItems(vector< shared_ptr<ItemInstance> >
 LPCWSTR IUIScene_CreativeMenu::getTabLabel(ECreativeInventoryTabs tab)
 {
 	if (tab == eCreativeInventoryTab_Technical) return L"T\u00E9cnico";
-	if (specs == nullptr || specs[tab] == nullptr || specs[tab]->m_descriptionId < 0) return L"";
+	if (tab >= eCreativeInventoryTab_COUNT)
+	{
+		const int k = tab - eCreativeInventoryTab_COUNT;
+		return (k < s_modTabCount) ? s_modTabs[k].name.c_str() : L"";
+	}
+	if (tab < 0 || specs == nullptr || specs[tab] == nullptr || specs[tab]->m_descriptionId < 0) return L"";
 	return app.GetString(specs[tab]->m_descriptionId);
 }
 
@@ -1018,17 +1158,63 @@ IUIScene_CreativeMenu::IUIScene_CreativeMenu()
 	m_creativeSlotX = m_creativeSlotY = m_inventorySlotX = m_inventorySlotY = 0;
 
 	// 4J JEV - Settup Tabs
-	for (int i = 0; i < eCreativeInventoryTab_COUNT; i++)
+	for (int i = 0; i < HS_MAX_TABS; i++)
 	{
 		m_tabDynamicPos[i] = 0;
 		m_tabPage[i] = 0;
 	}
+	m_tabRowPage = 0;
+	m_hsBottomRow = true;
+	m_curTab = static_cast<ECreativeInventoryTabs>(HS_TAB_NONE);
+}
+
+int IUIScene_CreativeMenu::HS_TabRowPageCount() const
+{
+	const int per = HS_TabsPerPage();
+	return (std::max)(1, (getTabCount() + per - 1) / per);
+}
+
+int IUIScene_CreativeMenu::HS_TabForSlot(int slot) const
+{
+	const int per = HS_TabsPerPage();
+	if (slot < 0 || slot >= per) return HS_TAB_NONE;
+	const int tab = m_tabRowPage * per + slot;
+	return (tab < getTabCount()) ? tab : HS_TAB_NONE;
+}
+
+void IUIScene_CreativeMenu::HS_SetTabRowPage(int page)
+{
+	const int count = HS_TabRowPageCount();
+	page %= count;
+	if (page < 0) page += count;
+	if (page == m_tabRowPage) return;
+	m_tabRowPage = page;
+	HS_RefreshTabRow();
+}
+
+void IUIScene_CreativeMenu::HS_CycleTab(int dir)
+{
+	const int count = getTabCount();
+	int tab = (static_cast<int>(m_curTab) + dir) % count;
+	if (tab < 0) tab += count;
+	switchTab(static_cast<ECreativeInventoryTabs>(tab));
+	ui.PlayUISFX(eSFX_Focus);
 }
 
 /* 4J JEV - Switches between tabs.
 */
 void IUIScene_CreativeMenu::switchTab(ECreativeInventoryTabs tab)
 {
+	if (tab < 0 || tab >= getTabCount() || specs[tab] == nullptr) tab = eCreativeInventoryTab_BuildingBlocks;
+
+	// Hellish Sight: show the page of tab buttons that holds this tab
+	const int per = HS_TabsPerPage();
+	if (static_cast<int>(tab) / per != m_tabRowPage)
+	{
+		m_tabRowPage = static_cast<int>(tab) / per;
+		if (tab == m_curTab) HS_RefreshTabRow();
+	}
+
 	// Could just be changing page on the current tab
 	if(tab != m_curTab) updateTabHighlightAndText(tab);
 
@@ -1232,6 +1418,16 @@ void IUIScene_CreativeMenu::TabSpec::populateMenu(AbstractContainerMenu *menu, i
 
 unsigned int IUIScene_CreativeMenu::TabSpec::getPageCount()
 {
+	// Hellish Sight: groups can change after the spec was built (mods, creative
+	// registry from the server), so count them again
+	m_staticItems = 0;
+	for (int i = 0; i < m_staticGroupsCount; ++i) m_staticItems += categoryGroups[m_staticGroupsA[i]].size();
+	m_debugItems = 0;
+	for (int i = 0; i < m_debugGroupsCount; ++i) m_debugItems += categoryGroups[m_debugGroupsA[i]].size();
+	{
+		const int totalRows = (m_staticItems + columns - 1) / columns;
+		m_pages = std::max<int>(1, totalRows - rows + 1);
+	}
 #ifndef _CONTENT_PACKAGE
 	if(app.DebugArtToolsOn())
 	{
@@ -1312,6 +1508,14 @@ IUIScene_AbstractContainerMenu::ESceneSection IUIScene_CreativeMenu::GetSectionA
 	case eSectionInventoryCreativeTab_6:
 	case eSectionInventoryCreativeTab_7:
 	case eSectionInventoryCreativeTab_8:
+	case eSectionInventoryCreativeTab_9:
+	case eSectionInventoryCreativeTab_10:
+	case eSectionInventoryCreativeTab_11:
+	case eSectionInventoryCreativeTab_12:
+	case eSectionInventoryCreativeTab_13:
+	case eSectionInventoryCreativeTab_14:
+	case eSectionInventoryCreativeTab_15:
+	case eSectionInventoryCreativePageButton:
 	case eSectionInventoryCreativeSlider:
 		/* do nothing */
 		break;
@@ -1380,13 +1584,7 @@ void IUIScene_CreativeMenu::handleAdditionalKeyPress(int iAction)
 		dir = -1;
 		// Fall through intentional
 	case ACTION_MENU_RIGHT_SCROLL:
-		{
-			ECreativeInventoryTabs tab = static_cast<ECreativeInventoryTabs>(m_curTab + dir);
-			if (tab < 0) tab = static_cast<ECreativeInventoryTabs>(eCreativeInventoryTab_COUNT - 1);
-			if (tab >= eCreativeInventoryTab_COUNT) tab = eCreativeInventoryTab_BuildingBlocks;
-			switchTab(tab);
-			ui.PlayUISFX(eSFX_Focus);
-		}
+		HS_CycleTab(dir);
 		break;
 	case ACTION_MENU_PAGEUP:
 		// change the potion strength

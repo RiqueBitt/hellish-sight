@@ -469,7 +469,8 @@ S.append('    log("Mekanism: ore generation registered")')
 S.append('end')
 open(os.path.join(OUT, 'module', 'server.lua'), 'w').write('\n'.join(S) + '\n')
 
-json.dump({'name': 'Mekanism', 'version': '26.3-hs1', 'modId': 'mekanism',
+json.dump({'name': 'Mekanism', 'version': '26.3-hs2', 'modId': 'mekanism',
+           'creativeIcon': 'alloy_atomic',
            'clientMain': 'module/client.lua', 'serverMain': 'module/server.lua'},
           open(os.path.join(OUT, 'manifest.json'), 'w'), indent=2)
 shutil.copy(os.path.join(SRC, 'LICENSE'), os.path.join(OUT, 'LICENSE'))

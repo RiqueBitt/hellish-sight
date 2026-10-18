@@ -25,7 +25,7 @@ UIScene_CreativeMenu::UIScene_CreativeMenu(int iPad, void *_initData, UILayer *p
 	itemPickerMenu = new ItemPickerMenu(creativeContainer, initData->player->inventory);
 
 	Initialize( initData->iPad, itemPickerMenu, false, -1, eSectionInventoryCreativeUsing, eSectionInventoryCreativeMax, initData->bNavigateBack);
-	HS_ExtendBoundsForTechTab();
+	HS_SetupTabRows();
 
 	m_labelInventory.setLabel( L"" );
 	m_bFirstCall=true;
@@ -52,7 +52,7 @@ UIScene_CreativeMenu::UIScene_CreativeMenu(int iPad, void *_initData, UILayer *p
 
 	if(initData) delete initData;
 
-	m_curTab = eCreativeInventoryTab_COUNT;
+	m_curTab = static_cast<ECreativeInventoryTabs>(HS_TAB_NONE);
 	switchTab(eCreativeInventoryTab_BuildingBlocks);
 
 #ifdef __PSVITA__
@@ -87,9 +87,18 @@ void UIScene_CreativeMenu::handleTouchInput(unsigned int iPad, S32 x, S32 y, int
 	// perform action on release
 	if(bReleased)
 	{
-		if(iId >= eCreativeInventoryTab_BuildingBlocks && iId <= eCreativeInventoryTab_Technical)
+		int slot = -1;
+		if(iId >= ETouchInput_TouchPanel_0 && iId <= ETouchInput_TouchPanel_7) slot = iId - ETouchInput_TouchPanel_0;
+		else if(iId >= ETouchInput_HSTab_8 && iId <= ETouchInput_HSTab_15) slot = 8 + iId - ETouchInput_HSTab_8;
+		const int tab = HS_TabForSlot(slot);
+		if(tab != HS_TAB_NONE)
 		{
-			switchTab((ECreativeInventoryTabs)iId);
+			switchTab((ECreativeInventoryTabs)tab);
+			ui.PlayUISFX(eSFX_Focus);
+		}
+		else if(iId == ETouchInput_HSPageButton)
+		{
+			HS_SetTabRowPage(m_tabRowPage + 1);
 			ui.PlayUISFX(eSFX_Focus);
 		}
 	}
@@ -134,24 +143,31 @@ void UIScene_CreativeMenu::handleTimerComplete(int id)
 
 void UIScene_CreativeMenu::handleOtherClicked(int iPad, ESceneSection eSection, int buttonNum, bool quickKey)
 {
+	if(eSection >= eSectionInventoryCreativeTab_0 && eSection <= eSectionInventoryCreativeTab_15)
+	{
+		const int tab = HS_TabForSlot(static_cast<int>(eSection) - static_cast<int>(eSectionInventoryCreativeTab_0));
+		if(tab != HS_TAB_NONE && tab != m_curTab)
+		{
+			switchTab(static_cast<ECreativeInventoryTabs>(tab));
+			ui.PlayUISFX(eSFX_Focus);
+		}
+		return;
+	}
+
 	switch(eSection)
 	{
-	case eSectionInventoryCreativeTab_0:
-	case eSectionInventoryCreativeTab_1:
-	case eSectionInventoryCreativeTab_2:
-	case eSectionInventoryCreativeTab_3:
-	case eSectionInventoryCreativeTab_4:
-	case eSectionInventoryCreativeTab_5:
-	case eSectionInventoryCreativeTab_6:
-	case eSectionInventoryCreativeTab_7:
-	case eSectionInventoryCreativeTab_8:
+	case eSectionInventoryCreativePageButton:
 		{
-			ECreativeInventoryTabs tab = static_cast<ECreativeInventoryTabs>((int)eCreativeInventoryTab_BuildingBlocks + (int)eSection - (int)eSectionInventoryCreativeTab_0);
-			if(tab != m_curTab)
+			// left half = previous page, right half = next page
+			UIControl *button = HS_SectionControl(eSection);
+			int dir = 1;
+			if(button != nullptr && button->getWidth() > 0)
 			{
-				switchTab(tab);
-				ui.PlayUISFX(eSFX_Focus);
+				const float mid = static_cast<float>(button->getXPos()) + button->getWidth() * 0.5f;
+				if(m_pointerPos.x < mid) dir = -1;
 			}
+			HS_SetTabRowPage(m_tabRowPage + dir);
+			ui.PlayUISFX(eSFX_Focus);
 		}
 		break;
 	case eSectionInventoryCreativeSlider:
@@ -160,25 +176,134 @@ void UIScene_CreativeMenu::handleOtherClicked(int iPad, ESceneSection eSection, 
 	}
 }
 
-// Hellish Sight: the technical tab hangs below (or beside) the panel; let the pointer
-// reach it and treat it as part of the panel, otherwise it can never be clicked.
-void UIScene_CreativeMenu::HS_ExtendBoundsForTechTab()
+bool UIScene_CreativeMenu::IsVisible( ESceneSection eSection )
 {
-	UIControl &t = m_TouchInput[ETouchInput_TouchPanel_8];
-	t.UpdateControl();
-	if (t.getWidth() <= 0 || t.getHeight() <= 0) return;
-	const float x1 = static_cast<float>(t.getXPos() + t.getWidth());
-	const float y1 = static_cast<float>(t.getYPos() + t.getHeight());
-	if (x1 > m_fPanelMaxX) m_fPanelMaxX = x1;
-	if (y1 > m_fPanelMaxY) m_fPanelMaxY = y1;
+	if(eSection >= eSectionInventoryCreativeTab_0 && eSection <= eSectionInventoryCreativeTab_15)
+	{
+		return HS_TabForSlot(static_cast<int>(eSection) - static_cast<int>(eSectionInventoryCreativeTab_0)) != HS_TAB_NONE;
+	}
+	if(eSection == eSectionInventoryCreativePageButton)
+	{
+		return HS_TabRowPageCount() > 1;
+	}
+	return true;
+}
+
+UIControl *UIScene_CreativeMenu::HS_SectionControl(ESceneSection eSection)
+{
+	if(eSection >= eSectionInventoryCreativeTab_0 && eSection <= eSectionInventoryCreativeTab_7)
+	{
+		return &m_TouchInput[ETouchInput_TouchPanel_0 + (eSection - eSectionInventoryCreativeTab_0)];
+	}
+	if(eSection >= eSectionInventoryCreativeTab_8 && eSection <= eSectionInventoryCreativeTab_15)
+	{
+		return &m_TouchInput[ETouchInput_HSTab_8 + (eSection - eSectionInventoryCreativeTab_8)];
+	}
+	if(eSection == eSectionInventoryCreativePageButton) return &m_TouchInput[ETouchInput_HSPageButton];
+	if(eSection == eSectionInventoryCreativeSlider) return &m_TouchInput[ETouchInput_TouchSlider];
+	return nullptr;
+}
+
+// Hellish Sight: the bottom row of tabs and the page button are created by the SWF's
+// AS3 outside the background panel. Work out whether the bottom row fits (it does
+// not in split screen, then tabs go 8 per page on the top row) and let the pointer
+// reach everything.
+void UIScene_CreativeMenu::HS_SetupTabRows()
+{
+	for(int i = 0; i < HS_TAB_SLOTS; ++i) m_hsSentTab[i] = -2;
+
+	UIControl &top = m_TouchInput[ETouchInput_TouchPanel_0];
+	UIControl &bottom = m_TouchInput[ETouchInput_HSTab_8];
+	top.UpdateControl();
+	bottom.UpdateControl();
+	m_hsBottomRow = bottom.getWidth() > 0 && bottom.getHeight() > 0 && bottom.getYPos() > top.getYPos() + top.getHeight() / 2;
+
+	for(int i = ETouchInput_HSTab_8; i <= ETouchInput_HSPageButton; ++i)
+	{
+		if(i <= ETouchInput_HSTab_15 && !m_hsBottomRow) continue;
+		UIControl &t = m_TouchInput[i];
+		t.UpdateControl();
+		if (t.getWidth() <= 0 || t.getHeight() <= 0) continue;
+		const float x0 = static_cast<float>(t.getXPos());
+		const float y0 = static_cast<float>(t.getYPos());
+		const float x1 = x0 + t.getWidth();
+		const float y1 = y0 + t.getHeight();
+		if (x0 < m_fPanelMinX) m_fPanelMinX = x0;
+		if (y0 < m_fPanelMinY) m_fPanelMinY = y0;
+		if (x1 > m_fPanelMaxX) m_fPanelMaxX = x1;
+		if (y1 > m_fPanelMaxY) m_fPanelMaxY = y1;
+	}
+	if (m_fPointerMinX > m_fPanelMinX - 4.0f) m_fPointerMinX = m_fPanelMinX - 4.0f;
+	if (m_fPointerMinY > m_fPanelMinY - 4.0f && app.GetLocalPlayerCount() <= 1) m_fPointerMinY = m_fPanelMinY - 4.0f;
 	if (m_fPointerMaxX < m_fPanelMaxX + 4.0f) m_fPointerMaxX = m_fPanelMaxX + 4.0f;
 	if (m_fPointerMaxY < m_fPanelMaxY + 4.0f) m_fPointerMaxY = m_fPanelMaxY + 4.0f;
+
+	// the layout may have changed (reload): keep the current tab visible
+	if (m_curTab >= 0) m_tabRowPage = static_cast<int>(m_curTab) / HS_TabsPerPage();
+	if (m_tabRowPage >= HS_TabRowPageCount()) m_tabRowPage = 0;
+}
+
+void UIScene_CreativeMenu::HS_RefreshTabRow()
+{
+	IggyDataValue result;
+	const int pageCount = HS_TabRowPageCount();
+	if (m_tabRowPage >= pageCount) m_tabRowPage = 0;
+	const bool nativeRow = (m_tabRowPage == 0);
+
+	// native vanilla art: active tab frame only when a vanilla tab is active on page 0
+	{
+		IggyDataValue value[1];
+		value[0].type = IGGY_DATATYPE_number;
+		value[0].number = static_cast<F64>((nativeRow && m_curTab >= 0 && m_curTab < 8) ? m_curTab : -1);
+		IggyPlayerCallMethodRS ( getMovie() , &result, IggyPlayerRootPath( getMovie() ) , m_funcSetActiveTab , 1 , value );
+	}
+	{
+		IggyDataValue value[4];
+		value[0].type = IGGY_DATATYPE_number;
+		value[0].number = static_cast<F64>(m_tabRowPage);
+		value[1].type = IGGY_DATATYPE_number;
+		value[1].number = static_cast<F64>(pageCount);
+		value[2].type = IGGY_DATATYPE_boolean;
+		value[2].boolval = nativeRow;
+		value[3].type = IGGY_DATATYPE_boolean;
+		value[3].boolval = m_hsBottomRow;
+		IggyPlayerCallMethodRS ( getMovie() , &result, IggyPlayerRootPath( getMovie() ) , m_funcSetTabPage , 4 , value );
+	}
+
+	for (int slot = 0; slot < HS_TAB_SLOTS; ++slot)
+	{
+		const int tab = HS_TabForSlot(slot);
+		// top-row slots on page 0 are the native vanilla tabs
+		const bool visible = tab != HS_TAB_NONE && !(nativeRow && slot < 8);
+
+		std::wstring icon = L"=";	// keep the icon already drawn
+		if (visible && m_hsSentTab[slot] != tab)
+		{
+			const std::string &hex = getTabIconHex(tab);
+			icon.assign(hex.begin(), hex.end());
+			m_hsSentTab[slot] = tab;
+		}
+
+		IggyDataValue value[4];
+		value[0].type = IGGY_DATATYPE_number;
+		value[0].number = static_cast<F64>(slot);
+		value[1].type = IGGY_DATATYPE_boolean;
+		value[1].boolval = visible;
+		value[2].type = IGGY_DATATYPE_boolean;
+		value[2].boolval = visible && tab == m_curTab;
+		IggyStringUTF16 str;
+		str.string = (IggyUTF16*)icon.c_str();
+		str.length = static_cast<int>(icon.length());
+		value[3].type = IGGY_DATATYPE_string_UTF16;
+		value[3].string16 = str;
+		IggyPlayerCallMethodRS ( getMovie() , &result, IggyPlayerRootPath( getMovie() ) , m_funcSetTabSlot , 4 , value );
+	}
 }
 
 void UIScene_CreativeMenu::handleReload()
 {
 	Initialize( m_iPad, m_menu, false, -1, eSectionInventoryCreativeUsing, eSectionInventoryCreativeMax, m_bNavigateBack );
-	HS_ExtendBoundsForTechTab();
+	HS_SetupTabRows();
 
 	for(unsigned int i = 0; i < TabSpec::MAX_SIZE; ++i)
 	{
@@ -191,7 +316,7 @@ void UIScene_CreativeMenu::handleReload()
 	}
 	
 	ECreativeInventoryTabs lastTab = m_curTab;
-	m_curTab = eCreativeInventoryTab_COUNT;
+	m_curTab = static_cast<ECreativeInventoryTabs>(HS_TAB_NONE);
 	switchTab(lastTab);
 }
 
@@ -210,13 +335,7 @@ void UIScene_CreativeMenu::handleInput(int iPad, int key, bool repeat, bool pres
 		dir = -1;
 		// Fall through intentional
 	case VK_PAD_RSHOULDER:
-		{		
-			ECreativeInventoryTabs tab = static_cast<ECreativeInventoryTabs>(m_curTab + dir);
-			if (tab < 0) tab = static_cast<ECreativeInventoryTabs>(eCreativeInventoryTab_COUNT - 1);
-			if (tab >= eCreativeInventoryTab_COUNT) tab = eCreativeInventoryTab_BuildingBlocks;
-			switchTab(tab);
-			ui.PlayUISFX(eSFX_Focus);
-		}
+		HS_CycleTab(dir);
 		break;
 	case VK_PAD_LTRIGGER:
 		// change the potion strength
@@ -234,14 +353,8 @@ void UIScene_CreativeMenu::handleInput(int iPad, int key, bool repeat, bool pres
 
 void UIScene_CreativeMenu::updateTabHighlightAndText(ECreativeInventoryTabs tab)
 {
-	IggyDataValue result;
-	IggyDataValue value[1];
-
-	value[0].type = IGGY_DATATYPE_number;
-	value[0].number = static_cast<F64>(tab);
-
-	IggyResult out = IggyPlayerCallMethodRS ( getMovie() , &result, IggyPlayerRootPath( getMovie() ) , m_funcSetActiveTab , 1 , value );
-
+	m_curTab = tab;
+	HS_RefreshTabRow();
 	m_labelInventory.setLabel(getTabLabel(tab));
 }
 
@@ -293,47 +406,13 @@ void UIScene_CreativeMenu::GetPositionOfSection( ESceneSection eSection, UIVec2D
 		pPosition->x = m_slotListHotbar.getXPos();
 		pPosition->y = m_slotListHotbar.getYPos();
 		break;
-	case eSectionInventoryCreativeTab_0:
-		pPosition->x = m_TouchInput[ETouchInput_TouchPanel_0].getXPos();
-		pPosition->y = m_TouchInput[ETouchInput_TouchPanel_0].getYPos();
-		break;
-	case eSectionInventoryCreativeTab_1:
-		pPosition->x = m_TouchInput[ETouchInput_TouchPanel_1].getXPos();
-		pPosition->y = m_TouchInput[ETouchInput_TouchPanel_1].getYPos();
-		break;
-	case eSectionInventoryCreativeTab_2:
-		pPosition->x = m_TouchInput[ETouchInput_TouchPanel_2].getXPos();
-		pPosition->y = m_TouchInput[ETouchInput_TouchPanel_2].getYPos();
-		break;
-	case eSectionInventoryCreativeTab_3:
-		pPosition->x = m_TouchInput[ETouchInput_TouchPanel_3].getXPos();
-		pPosition->y = m_TouchInput[ETouchInput_TouchPanel_3].getYPos();
-		break;
-	case eSectionInventoryCreativeTab_4:
-		pPosition->x = m_TouchInput[ETouchInput_TouchPanel_4].getXPos();
-		pPosition->y = m_TouchInput[ETouchInput_TouchPanel_4].getYPos();
-		break;
-	case eSectionInventoryCreativeTab_5:
-		pPosition->x = m_TouchInput[ETouchInput_TouchPanel_5].getXPos();
-		pPosition->y = m_TouchInput[ETouchInput_TouchPanel_5].getYPos();
-		break;
-	case eSectionInventoryCreativeTab_6:
-		pPosition->x = m_TouchInput[ETouchInput_TouchPanel_6].getXPos();
-		pPosition->y = m_TouchInput[ETouchInput_TouchPanel_6].getYPos();
-		break;
-	case eSectionInventoryCreativeTab_7:
-		pPosition->x = m_TouchInput[ETouchInput_TouchPanel_7].getXPos();
-		pPosition->y = m_TouchInput[ETouchInput_TouchPanel_7].getYPos();
-		break;
-	case eSectionInventoryCreativeTab_8:
-		pPosition->x = m_TouchInput[ETouchInput_TouchPanel_8].getXPos();
-		pPosition->y = m_TouchInput[ETouchInput_TouchPanel_8].getYPos();
-		break;
-	case eSectionInventoryCreativeSlider:
-		pPosition->x = m_TouchInput[ETouchInput_TouchSlider].getXPos();
-		pPosition->y = m_TouchInput[ETouchInput_TouchSlider].getYPos();
-		break;
 	default:
+		if(UIControl *c = HS_SectionControl(eSection))
+		{
+			pPosition->x = c->getXPos();
+			pPosition->y = c->getYPos();
+			break;
+		}
 		assert( false );
 		break;
 	}
@@ -353,47 +432,13 @@ void UIScene_CreativeMenu::GetItemScreenData( ESceneSection eSection, int iItemI
 		sectionSize.x = m_slotListHotbar.getWidth();
 		sectionSize.y = m_slotListHotbar.getHeight();
 		break;
-	case eSectionInventoryCreativeTab_0:
-		sectionSize.x = m_TouchInput[ETouchInput_TouchPanel_0].getWidth();
-		sectionSize.y = m_TouchInput[ETouchInput_TouchPanel_0].getHeight();
-		break;
-	case eSectionInventoryCreativeTab_1:
-		sectionSize.x = m_TouchInput[ETouchInput_TouchPanel_1].getWidth();
-		sectionSize.y = m_TouchInput[ETouchInput_TouchPanel_1].getHeight();
-		break;
-	case eSectionInventoryCreativeTab_2:
-		sectionSize.x = m_TouchInput[ETouchInput_TouchPanel_2].getWidth();
-		sectionSize.y = m_TouchInput[ETouchInput_TouchPanel_2].getHeight();
-		break;
-	case eSectionInventoryCreativeTab_3:
-		sectionSize.x = m_TouchInput[ETouchInput_TouchPanel_3].getWidth();
-		sectionSize.y = m_TouchInput[ETouchInput_TouchPanel_3].getHeight();
-		break;
-	case eSectionInventoryCreativeTab_4:
-		sectionSize.x = m_TouchInput[ETouchInput_TouchPanel_4].getWidth();
-		sectionSize.y = m_TouchInput[ETouchInput_TouchPanel_4].getHeight();
-		break;
-	case eSectionInventoryCreativeTab_5:
-		sectionSize.x = m_TouchInput[ETouchInput_TouchPanel_5].getWidth();
-		sectionSize.y = m_TouchInput[ETouchInput_TouchPanel_5].getHeight();
-		break;
-	case eSectionInventoryCreativeTab_6:
-		sectionSize.x = m_TouchInput[ETouchInput_TouchPanel_6].getWidth();
-		sectionSize.y = m_TouchInput[ETouchInput_TouchPanel_6].getHeight();
-		break;
-	case eSectionInventoryCreativeTab_7:
-		sectionSize.x = m_TouchInput[ETouchInput_TouchPanel_7].getWidth();
-		sectionSize.y = m_TouchInput[ETouchInput_TouchPanel_7].getHeight();
-		break;
-	case eSectionInventoryCreativeTab_8:
-		sectionSize.x = m_TouchInput[ETouchInput_TouchPanel_8].getWidth();
-		sectionSize.y = m_TouchInput[ETouchInput_TouchPanel_8].getHeight();
-		break;
-	case eSectionInventoryCreativeSlider:
-		sectionSize.x = m_TouchInput[ETouchInput_TouchSlider].getWidth();
-		sectionSize.y = m_TouchInput[ETouchInput_TouchSlider].getHeight();
-		break;
 	default:
+		if(UIControl *c = HS_SectionControl(eSection))
+		{
+			sectionSize.x = c->getWidth();
+			sectionSize.y = c->getHeight();
+			break;
+		}
 		assert( false );
 		break;
 	}
@@ -454,38 +499,9 @@ UIControl *UIScene_CreativeMenu::getSection(ESceneSection eSection)
 	case eSectionInventoryCreativeUsing:
 		control = &m_slotListHotbar;
 		break;
-	case eSectionInventoryCreativeTab_0:
-		control = &m_TouchInput[ETouchInput_TouchPanel_0];
-		break;
-	case eSectionInventoryCreativeTab_1:
-		control = &m_TouchInput[ETouchInput_TouchPanel_1];
-		break;
-	case eSectionInventoryCreativeTab_2:
-		control = &m_TouchInput[ETouchInput_TouchPanel_2];
-		break;
-	case eSectionInventoryCreativeTab_3:
-		control = &m_TouchInput[ETouchInput_TouchPanel_3];
-		break;
-	case eSectionInventoryCreativeTab_4:
-		control = &m_TouchInput[ETouchInput_TouchPanel_4];
-		break;
-	case eSectionInventoryCreativeTab_5:
-		control = &m_TouchInput[ETouchInput_TouchPanel_5];
-		break;
-	case eSectionInventoryCreativeTab_6:
-		control = &m_TouchInput[ETouchInput_TouchPanel_6];
-		break;
-	case eSectionInventoryCreativeTab_7:
-		control = &m_TouchInput[ETouchInput_TouchPanel_7];
-		break;
-	case eSectionInventoryCreativeTab_8:
-		control = &m_TouchInput[ETouchInput_TouchPanel_8];
-		break;
-	case eSectionInventoryCreativeSlider:
-		control = &m_TouchInput[ETouchInput_TouchSlider];
-		break;
 	default:
-		assert( false );
+		control = HS_SectionControl(eSection);
+		assert( control != nullptr );
 		break;
 	}
 	return control;

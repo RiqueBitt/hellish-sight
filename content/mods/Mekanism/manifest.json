@@ -1,7 +1,8 @@
 {
   "name": "Mekanism",
-  "version": "26.3-hs1",
+  "version": "26.3-hs2",
   "modId": "mekanism",
+  "creativeIcon": "alloy_atomic",
   "clientMain": "module/client.lua",
   "serverMain": "module/server.lua"
 }

@@ -297,6 +297,7 @@ std::vector<RubyModInfo> RubyLoader::getInstalledMods()
 				info.name = json.value("name", info.folderName);
 				info.version = json.value("version", std::string());
 				info.modId = json.value("modId", std::string());
+				info.creativeIcon = json.value("creativeIcon", json.value("icon", std::string()));
 			}
 			catch (const std::exception &e)
 			{

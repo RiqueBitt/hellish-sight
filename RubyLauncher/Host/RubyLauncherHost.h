@@ -9,6 +9,7 @@ struct RubyModInfo
 	std::string name;
 	std::string version;
 	std::string modId;
+	std::string creativeIcon;	// Hellish Sight: item/block id shown on the mod's creative tab
 	bool hasManifest = false;
 	bool loaded = false;
 	std::string error;

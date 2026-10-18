@@ -13,6 +13,7 @@ public:
 protected:
 	UIControl_SlotList m_slotListContainer;
 	IggyName m_funcSetActiveTab, m_funcSetScrollBar;
+	IggyName m_funcSetTabSlot, m_funcSetTabPage;	// Hellish Sight
 
 	enum ETouchInput
 	{
@@ -24,7 +25,16 @@ protected:
 		ETouchInput_TouchPanel_5,
 		ETouchInput_TouchPanel_6,
 		ETouchInput_TouchPanel_7,
-		ETouchInput_TouchPanel_8,	// Hellish Sight: technical tab (created by the SWF's AS3)
+		// Hellish Sight: bottom row of tabs + page button (created by the SWF's AS3)
+		ETouchInput_HSTab_8,
+		ETouchInput_HSTab_9,
+		ETouchInput_HSTab_10,
+		ETouchInput_HSTab_11,
+		ETouchInput_HSTab_12,
+		ETouchInput_HSTab_13,
+		ETouchInput_HSTab_14,
+		ETouchInput_HSTab_15,
+		ETouchInput_HSPageButton,
 		ETouchInput_TouchSlider,
 		
 		ETouchInput_Count,
@@ -48,7 +58,15 @@ protected:
 			UI_MAP_ELEMENT( m_TouchInput[ETouchInput_TouchPanel_5], "TouchPanel_5" )
 			UI_MAP_ELEMENT( m_TouchInput[ETouchInput_TouchPanel_6], "TouchPanel_6" )
 			UI_MAP_ELEMENT( m_TouchInput[ETouchInput_TouchPanel_7], "TouchPanel_7" )
-			UI_MAP_ELEMENT( m_TouchInput[ETouchInput_TouchPanel_8], "TouchPanel_8" )
+			UI_MAP_ELEMENT( m_TouchInput[ETouchInput_HSTab_8], "HS_Tab_8" )
+			UI_MAP_ELEMENT( m_TouchInput[ETouchInput_HSTab_9], "HS_Tab_9" )
+			UI_MAP_ELEMENT( m_TouchInput[ETouchInput_HSTab_10], "HS_Tab_10" )
+			UI_MAP_ELEMENT( m_TouchInput[ETouchInput_HSTab_11], "HS_Tab_11" )
+			UI_MAP_ELEMENT( m_TouchInput[ETouchInput_HSTab_12], "HS_Tab_12" )
+			UI_MAP_ELEMENT( m_TouchInput[ETouchInput_HSTab_13], "HS_Tab_13" )
+			UI_MAP_ELEMENT( m_TouchInput[ETouchInput_HSTab_14], "HS_Tab_14" )
+			UI_MAP_ELEMENT( m_TouchInput[ETouchInput_HSTab_15], "HS_Tab_15" )
+			UI_MAP_ELEMENT( m_TouchInput[ETouchInput_HSPageButton], "HS_PageButton" )
 			UI_MAP_ELEMENT( m_TouchInput[ETouchInput_TouchSlider], "TouchPanel_Slider" )
 
 			UI_MAP_ELEMENT( m_slotListContainer, "containerList")
@@ -56,6 +74,8 @@ protected:
 
 		UI_MAP_NAME(m_funcSetActiveTab, L"SetActiveTab")
 		UI_MAP_NAME(m_funcSetScrollBar, L"SetScrollBar")
+		UI_MAP_NAME(m_funcSetTabSlot, L"HS_SetTabSlot")
+		UI_MAP_NAME(m_funcSetTabPage, L"HS_SetTabPage")
 	UI_END_MAP_ELEMENTS_AND_NAMES()
 
 	virtual wstring getMoviePath();
@@ -71,6 +91,7 @@ protected:
 	virtual UIControl *getSection(ESceneSection eSection);
 
 	virtual void handleOtherClicked(int iPad, ESceneSection eSection, int buttonNum, bool quickKey);
+	virtual bool IsVisible( ESceneSection eSection );
 
 public:
 	// INPUT
@@ -86,7 +107,11 @@ public:
 private:
 	// IUIScene_CreativeMenu
 	void updateTabHighlightAndText(ECreativeInventoryTabs tab);
-	void HS_ExtendBoundsForTechTab();	// Hellish Sight
+	// Hellish Sight: tab rows
+	void HS_SetupTabRows();
+	virtual void HS_RefreshTabRow();
+	UIControl *HS_SectionControl(ESceneSection eSection);
+	int m_hsSentTab[HS_TAB_SLOTS];		// tab whose icon each slot currently shows
 	void updateScrollCurrentPage(int currentPage, int pageCount);
 	bool m_bFirstCall;
 };
