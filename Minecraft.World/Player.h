@@ -369,8 +369,6 @@ private:
 protected:
 	virtual void checkFallDamage(double ya, bool onGround) override;
 	virtual void causeFallDamage(float distance);
-	virtual bool hsCanBreatheUnderwater();	// Hellish Sight: gas mask helmet
-	bool hsJetpackUsable();				// Hellish Sight: wearing a jetpack with fuel left
 
 public:
 	virtual void killed(shared_ptr<LivingEntity> mob);
@@ -460,6 +458,9 @@ public:
 	void setShowOnMaps(bool bVal)															{ m_bShownOnMaps = bVal; }
 	bool canShowOnMaps()																	{ return m_bShownOnMaps && !getPlayerGamePrivilege(ePlayerGamePrivilege_Invisible); }
 
+public:
+	virtual bool hsCanBreatheUnderwater();	// Hellish Sight: gas mask helmet
+	bool hsJetpackUsable();				// Hellish Sight: wearing a jetpack with fuel left
 	virtual void sendMessage(const wstring& message, ChatPacket::EChatPacketMessage type = ChatPacket::e_ChatCustom, int customData = -1, const wstring& additionalMessage = L"") { }
 private:
 	PlayerUID m_xuid;
