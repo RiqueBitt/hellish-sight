@@ -1,4 +1,6 @@
 #include "stdafx.h"
+#include "Client/Rendering/MeshRender.h"	// Hellish Sight: 3D mesh models
+#include "HumanoidModel.h"
 #include "LivingEntityRenderer.h"
 #include "Lighting.h"
 #include "Cube.h"
@@ -205,6 +207,13 @@ void LivingEntityRenderer::render(shared_ptr<Entity> _mob, double x, double y, d
 			}
 		}
 		glDepthMask(true);
+
+		// Hellish Sight: mesh armour (MekaSuit...) on the humanoid bones
+		if (HumanoidModel *hsHumanoid = dynamic_cast<HumanoidModel *>(model))
+		{
+			glEnable(GL_TEXTURE_2D);
+			HSMeshRender::renderWornArmor(mob.get(), hsHumanoid, a);
+		}
 
 		additionalRendering(mob, a);
 		float br = mob->getBrightness(a);

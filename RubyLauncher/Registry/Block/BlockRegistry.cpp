@@ -13,6 +13,7 @@
 #include "Client/ModTile.h"
 #include "Client/ModMachine.h"
 #include "Client/Rendering/ModModels.h"
+#include "Client/Rendering/MeshRender.h"
 #include "HSModel.h"
 #include "Common/ModPaths.h"
 #include "Host/RubyLauncherHost.h"
@@ -332,7 +333,10 @@ int BlockRegistry::registerMachine(const std::wstring& path, const std::string& 
 	def.energyCapacity = table.get_or("energyCapacity", 0);
 	def.energyPerTick = table.get_or("energyPerTick", 0);
 	def.generation = table.get_or("generation", 0);
-	def.generatorType = table.get_or<std::string>("generatorType", "burn") == "solar" ? 1 : 0;
+	{
+		const std::string gt = table.get_or<std::string>("generatorType", "burn");
+		def.generatorType = gt == "solar" ? 1 : (gt == "wind" ? 2 : 0);
+	}
 	def.transfer = table.get_or("transfer", 0);
 	def.tankCapacity = table.get_or("tankCapacity", 10000);
 	def.parallel = (std::max)(1, table.get_or("parallel", 1));
@@ -467,6 +471,31 @@ int BlockRegistry::registerMachine(const std::wstring& path, const std::string& 
 			modelIndex = ModModels::makeConnector(core.empty() ? def.iconSide : core, arm, thickness, coreUV, armU, &ModMachines::connectorConnects);
 		}
 		if (modelIndex >= 0) HSModels::setForTile(tileId, modelIndex);
+
+		// free-form mesh drawn by the tile entity renderer (textures.mesh), parts may spin (definition.spin)
+		sol::optional<std::string> mesh = textures["mesh"];
+		if (mesh && !mesh.value().empty())
+		{
+			const int meshIndex = HSMeshRender::load(folder, mesh.value());
+			if (meshIndex >= 0)
+			{
+				std::string spinPart;
+				int spinAxis = 2;
+				float spinSpeed = 0.0f;
+				bool onlyActive = true;
+				sol::optional<sol::table> spin = table["spin"];
+				if (spin)
+				{
+					spinPart = spin.value().get_or<std::string>("part", "");
+					const std::string axis = spin.value().get_or<std::string>("axis", "z");
+					spinAxis = axis == "x" ? 0 : (axis == "y" ? 1 : 2);
+					spinSpeed = spin.value().get_or("speed", 6.0f);
+					onlyActive = spin.value().get_or("onlyWhenActive", true);
+				}
+				HSMeshRender::registerMachineModel(tileId, meshIndex, spinPart, spinAxis, spinSpeed, onlyActive);
+				HSMeshRender::registerItemModel(tileId, meshIndex);
+			}
+		}
 	}
 
 	const int defIndex = static_cast<int>(ModMachines::defs().size());

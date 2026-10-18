@@ -1,3 +1,6 @@
+#include "Client/Rendering/MeshRender.h"
+#include "HSMesh.h"
+#include <map>
 #include "LuaBindings.h"
 #include "Common/ModNetBus.h"
 #include "Common/ModPaths.h"
@@ -1015,6 +1018,29 @@ void LuaBindings::bindClientFunctions(sol::state& lua) {
         else if (role == "seismic_reader") r = MachineTool_SeismicReader;
         else if (role == "portable_teleporter") r = MachineTool_PortableTeleporter;
         if (r != MachineTool_None) ModMachines::registerTool(qualifyName(modEnv, item), r);
+    });
+    // Hellish Sight: 3D mesh models (see Minecraft.World/HSMesh.h)
+    //   registerItemModel("item", "res/mesh/x.json")            inventory / hand / dropped
+    //   registerArmorModel("item", "res/mesh/x.json", "helmet")  worn (helmet / chest / leggings / boots)
+    lua.set_function("registerItemModel", [qualifyName](sol::this_environment env, const std::string &item, const std::string &file) -> bool {
+        sol::environment &modEnv = env;
+        std::string folder = modEnv["pathName"];
+        const int id = IDMapping::get()->getID(qualifyName(modEnv, item)).id;
+        const int mesh = HSMeshRender::load(folder, file);
+        return id > 0 && HSMeshRender::registerItemModel(id, mesh);
+    });
+    lua.set_function("registerArmorModel", [qualifyName](sol::this_environment env, const std::string &item, const std::string &file, const std::string &slot) -> bool {
+        sol::environment &modEnv = env;
+        std::string folder = modEnv["pathName"];
+        const int id = IDMapping::get()->getID(qualifyName(modEnv, item)).id;
+        static std::map<std::string, int> loaded;	// one mesh shared by the pieces of a suit
+        const std::string key = folder + "|" + file;
+        int mesh;
+        auto it = loaded.find(key);
+        if (it != loaded.end()) mesh = it->second;
+        else mesh = loaded[key] = HSMeshRender::load(folder, file);
+        const int s = slot == "helmet" || slot == "head" ? HSArmor_Head : (slot == "chest" || slot == "bodyarmor" ? HSArmor_Chest : (slot == "leggings" || slot == "legs" || slot == "pants" ? HSArmor_Legs : HSArmor_Feet));
+        return id > 0 && HSMeshRender::registerArmorModel(id, mesh, s);
     });
     lua.set_function("registerItemRole", [qualifyName](sol::this_environment env, const std::string &item, const std::string &role) {
         sol::environment &modEnv = env;

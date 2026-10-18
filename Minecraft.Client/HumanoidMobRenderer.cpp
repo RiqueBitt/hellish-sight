@@ -1,4 +1,5 @@
 #include "stdafx.h"
+#include "Client/Rendering/MeshRender.h"	// Hellish Sight: 3D mesh models
 #include "../Minecraft.World/Icon.h"
 #include "HumanoidMobRenderer.h"
 #include "SkullTileRenderer.h"
@@ -109,6 +110,7 @@ int HumanoidMobRenderer::prepareArmor(shared_ptr<LivingEntity> _mob, int layer, 
 	shared_ptr<LivingEntity> mob = dynamic_pointer_cast<LivingEntity>(_mob);
 
 	shared_ptr<ItemInstance> itemInstance = mob->getArmor(3 - layer);
+	if (itemInstance != nullptr && HSMeshRender::replacesArmorLayer(itemInstance->id)) return -1;	// Hellish Sight: drawn as a mesh
 	if (itemInstance != nullptr)
 	{
 		Item *item = itemInstance->getItem();

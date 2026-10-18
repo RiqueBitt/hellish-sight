@@ -13,6 +13,7 @@
 #include "Mth.h"
 #include "ModMachine.h"
 #include "Rendering/ModModels.h"
+#include "Rendering/MeshRender.h"
 #include "HSModel.h"
 #include "Registry/IDs.h"
 #include "ServerPlayer.h"
@@ -821,7 +822,22 @@ void ModMachineTileEntity::tickEnergyBlock(ModMachineDef *d)
 	if (d->kind == MachineKind_Generator)
 	{
 		const int gen = static_cast<int>(d->generation * (d->multiblock.enabled ? m_mbSpeed : 1.0f));
-		if (d->generatorType == 1)
+		if (d->generatorType == 2)
+		{
+			// wind: open sky, more power the higher it stands (Mekanism: y 24 -> 255)
+			if (level->canSeeSky(x, y + 1, z))
+			{
+				const float h = (std::max)(0.0f, (std::min)(1.0f, (y - 24) / 231.0f));
+				const float weather = level->isThundering() ? 1.5f : (level->isRaining() ? 1.25f : 1.0f);
+				const int windGen = static_cast<int>(gen * h * weather);
+				if (windGen > 0)
+				{
+					m_energy = (std::min)(capacity(), m_energy + windGen);
+					active = true;
+				}
+			}
+		}
+		else if (d->generatorType == 1)
 		{
 			// solar: daylight, open sky, no rain
 			if (level->isDay() && level->canSeeSky(x, y + 1, z) && !level->isRainingAt(x, y + 1, z))
@@ -1906,7 +1922,7 @@ bool ModMachineTile::isCable() const
 
 bool ModMachineTile::isSolidRender(bool isServerLevel)
 {
-	return !isCable() && !HSModels::hasModel(id);	// models are not full cubes: neighbours keep their faces
+	return !isCable() && !HSModels::hasModel(id) && !HSMeshRender::machineHidesBlock(id);	// models are not full cubes: neighbours keep their faces
 }
 
 bool ModMachineTile::isCubeShaped()
@@ -1916,6 +1932,7 @@ bool ModMachineTile::isCubeShaped()
 
 int ModMachineTile::getRenderShape()
 {
+	if (HSMeshRender::machineHidesBlock(id)) return Tile::SHAPE_INVISIBLE;	// drawn by the mesh tile entity renderer
 	return HSModels::hasModel(id) ? Tile::SHAPE_HS_MODEL : BaseEntityTile::getRenderShape();
 }
 

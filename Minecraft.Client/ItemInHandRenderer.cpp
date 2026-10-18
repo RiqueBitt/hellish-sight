@@ -1,4 +1,5 @@
 #include "stdafx.h"
+#include "Client/Rendering/MeshRender.h"	// Hellish Sight: 3D mesh models
 #include "ItemInHandRenderer.h"
 #include "TileRenderer.h"
 #include "Tesselator.h"
@@ -250,8 +251,16 @@ void ItemInHandRenderer::renderItem(shared_ptr<LivingEntity> mob, shared_ptr<Ite
 		return;
 	}*/
 
-	Tile *tile = Tile::tiles[item->id];
-    if ((item->getIconType() == Icon::TYPE_TERRAIN && tile != nullptr && TileRenderer::canRender(tile->getRenderShape())) && item->id != AirTile::barrier_Id)
+	Tile *tile = (item->id >= 0 && item->id < Tile::TILE_NUM_COUNT) ? Tile::tiles[item->id] : nullptr;
+	if (HSMeshRender::hasItemModel(item->id))
+	{	// Hellish Sight: 3D item model (the local player's own hand view is first person)
+		shared_ptr<LocalPlayer> hsLocal = dynamic_pointer_cast<LocalPlayer>(mob);
+		const bool firstPerson = hsLocal != nullptr && hsLocal->ThirdPersonView() == 0 && !EntityRenderDispatcher::instance->isGuiRender;
+		glEnable(GL_RESCALE_NORMAL);
+		HSMeshRender::renderItemAsBlock(item->id, firstPerson ? HSMeshRender::Item_FirstPerson : HSMeshRender::Item_ThirdPerson);
+		glDisable(GL_RESCALE_NORMAL);
+	}
+    else if ((item->getIconType() == Icon::TYPE_TERRAIN && tile != nullptr && TileRenderer::canRender(tile->getRenderShape())) && item->id != AirTile::barrier_Id)
 	{
 		MemSect(31);
         minecraft->textures->bindTexture(minecraft->textures->getTextureLocation(Icon::TYPE_TERRAIN));

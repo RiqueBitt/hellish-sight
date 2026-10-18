@@ -1,4 +1,5 @@
 #include "stdafx.h"
+#include "Client/Rendering/MeshRender.h"	// Hellish Sight: 3D mesh models
 #include "TileEntityRenderDispatcher.h"
 #include "TileEntityRenderer.h"
 #include "../Minecraft.World/net.minecraft.world.level.tile.entity.h"
@@ -45,7 +46,7 @@ TileEntityRenderDispatcher::TileEntityRenderDispatcher()
 	renderers[eTYPE_ENCHANTMENTTABLEENTITY] = new EnchantTableRenderer();
 	renderers[eTYPE_THEENDPORTALTILEENTITY] = new TheEndPortalRenderer();
 	renderers[eTYPE_SKULLTILEENTITY] = new SkullTileRenderer();
-	renderers[eTYPE_FURNACETILEENTITY] = nullptr;
+	renderers[eTYPE_FURNACETILEENTITY] = HSMeshRender::createMachineRenderer();	// Hellish Sight: mod machines with mesh models
 	renderers[eTYPE_BEACONTILEENTITY] = new BeaconRenderer();
 	glDisable(GL_LIGHTING);
 

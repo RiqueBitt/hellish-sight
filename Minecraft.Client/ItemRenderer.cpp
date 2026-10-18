@@ -1,4 +1,5 @@
 #include "stdafx.h"
+#include "Client/Rendering/MeshRender.h"	// Hellish Sight: 3D mesh models
 #include "ItemRenderer.h"
 #include "TileRenderer.h"
 #include "EntityRenderDispatcher.h"
@@ -82,7 +83,19 @@ void ItemRenderer::render(shared_ptr<Entity> _itemEntity, double x, double y, do
 
 	Tile *tile = (item->id >= 0 && item->id < Tile::TILE_NUM_COUNT) ? Tile::tiles[item->id] : nullptr;	// Hellish Sight: mod items have ids >= 4096
 
-	if ((item->getIconType() == Icon::TYPE_TERRAIN && tile != nullptr && TileRenderer::canRender(tile->getRenderShape())) && item->id != Tile::barrier_Id)
+	if (HSMeshRender::hasItemModel(item->id))
+	{	// Hellish Sight: 3D item model, dropped like a block
+		glRotatef(spin, 0, 1, 0);
+		glScalef(0.25f, 0.25f, 0.25f);
+		for (int i = 0; i < count; i++)
+		{
+			glPushMatrix();
+			if (i > 0) glTranslatef((random->nextFloat() * 2 - 1) * 0.8f, (random->nextFloat() * 2 - 1) * 0.8f, (random->nextFloat() * 2 - 1) * 0.8f);
+			HSMeshRender::renderItemAsBlock(item->id, HSMeshRender::Item_Ground);
+			glPopMatrix();
+		}
+	}
+	else if ((item->getIconType() == Icon::TYPE_TERRAIN && tile != nullptr && TileRenderer::canRender(tile->getRenderShape())) && item->id != Tile::barrier_Id)
 	{
         glRotatef(spin, 0, 1, 0);
 
@@ -354,6 +367,8 @@ void ItemRenderer::renderGuiItem(Font *font, Textures *textures, shared_ptr<Item
 	int itemId = item->id;
 	int itemAuxValue = item->getAuxValue();
 	Icon *itemIcon = item->getIcon();
+
+	if (HSMeshRender::renderGuiItem(itemId, x, y, fScaleX, fScaleY, fAlpha)) return;	// Hellish Sight: 3D item models
 
     if ((item->getIconType() == Icon::TYPE_TERRAIN && TileRenderer::canRender(Tile::tiles[itemId]->getRenderShape())) && itemId != Tile::barrier_Id)
 	{

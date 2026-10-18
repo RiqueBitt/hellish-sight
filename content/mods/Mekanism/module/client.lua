@@ -1742,5 +1742,15 @@ function main()
     registerSmeltingRecipe("smelt_dust_gold", "mekanism:dust_gold", "minecraft:gold_ingot", { count = 1, xp = 0.3 })
     registerSmeltingRecipe("smelt_enriched_iron", "mekanism:enriched_iron", "minecraft:iron_ingot", { count = 1, xp = 0.1 })
 
+    -- [hs-meshes begin]
+    -- 3D models: MekaSuit worn on the player, Atomic Disassembler, Wind Generator (spinning blades)
+    registerArmorModel("mekasuit_helmet", "res/mesh/mekasuit.json", "helmet")
+    registerArmorModel("mekasuit_bodyarmor", "res/mesh/mekasuit.json", "chest")
+    registerArmorModel("mekasuit_pants", "res/mesh/mekasuit.json", "leggings")
+    registerArmorModel("mekasuit_boots", "res/mesh/mekasuit.json", "boots")
+    registerItemModel("atomic_disassembler", "res/mesh/atomic_disassembler.json")
+    registerMachine("wind_generator", "Wind Generator", { mesh = "res/mesh/wind_generator.json", side = "res/solar_side.png", top = "res/solar_side.png", bottom = "res/solar_side.png", front = "res/solar_side.png" }, { kind = "generator", generatorType = "wind", generation = 480, transfer = 960, energyCapacity = 200000, spin = { part = "blades", axis = "z", speed = 6 } })
+    registerShapedRecipe("wind_generator", {" O ", "OTO", "ECE"}, { O = "mekanism:ingot_osmium", T = "mekanism:energy_tablet", E = "mekanism:alloy_infused", C = "mekanism:basic_control_circuit" }, "mekanism:wind_generator", { count = 1, group = ERecipeGroup.Mechanism })
+    -- [hs-meshes end]
     log("Mekanism: 49 blocks, 168 items, 9 machines, 12 energy blocks registered")
 end

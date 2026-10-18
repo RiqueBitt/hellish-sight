@@ -1,4 +1,5 @@
 #include "stdafx.h"
+#include "Client/Rendering/MeshRender.h"	// Hellish Sight: 3D mesh models
 #include "../Minecraft.World/Icon.h"
 #include "PlayerRenderer.h"
 #include "SkullTileRenderer.h"
@@ -97,6 +98,7 @@ int PlayerRenderer::prepareArmor(shared_ptr<LivingEntity> _player, int layer, fl
 	}
 
 	shared_ptr<ItemInstance> itemInstance = player->inventory->getArmor(3 - layer);
+	if (itemInstance != nullptr && HSMeshRender::replacesArmorLayer(itemInstance->id)) return -1;	// Hellish Sight: drawn as a mesh
 	if (itemInstance != nullptr)
 	{
 		Item* item = itemInstance->getItem();
