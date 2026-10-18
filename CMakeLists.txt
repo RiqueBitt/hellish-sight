@@ -40,9 +40,14 @@ function(configure_compiler_target target)
   if(CMAKE_CXX_COMPILER_ID STREQUAL "MSVC")
     target_compile_options(${target} PRIVATE
       $<$<AND:$<CONFIG:Release>,$<COMPILE_LANGUAGE:C,CXX>>:/GL>
+      $<$<AND:$<CONFIG:Release>,$<COMPILE_LANGUAGE:C,CXX>>:/Zi>
     )
+    # Hellish Sight: full PDB in Release so crash reports have function names and lines
     target_link_options(${target} PRIVATE
       $<$<CONFIG:Release>:/LTCG:incremental>
+      $<$<CONFIG:Release>:/DEBUG:FULL>
+      $<$<CONFIG:Release>:/OPT:REF>
+      $<$<CONFIG:Release>:/OPT:ICF>
     )
   endif()
 

@@ -80,7 +80,7 @@ jobs:
         Get-ChildItem $out | Select-Object Name, Length | Format-Table -AutoSize
 
     - name: Zip build
-      run: 7z a -r ${{ env.ZIP_NAME }} ./build/windows64/Minecraft.Client/Release/* "-x!*.ipdb" "-x!*.iobj" "-x!*.pdb" "-x!*.lib" "-x!*.exp"
+      run: 7z a -r ${{ env.ZIP_NAME }} ./build/windows64/Minecraft.Client/Release/* "-x!*.ipdb" "-x!*.iobj" "-x!*.lib" "-x!*.exp"  # Minecraft.Client.pdb is kept for crash reports
 
     - name: Upload artifact
       uses: actions/upload-artifact@v6

@@ -1296,6 +1296,160 @@ static Minecraft* InitialiseMinecraftRuntime()
 	return pMinecraft;
 }
 
+// ---------------------------------------------------------------------------
+// Hellish Sight: crash reporter. When the game dies on an unhandled exception
+// (or abort / std::terminate / pure virtual call) it writes, next to the exe:
+//   crash-YYYYMMDD-HHMMSS.txt  exception, module+offset and a symbolized stack
+//   crash-YYYYMMDD-HHMMSS.dmp  minidump for deeper debugging
+// Symbols come from Minecraft.Client.pdb shipped in the release zip.
+// ---------------------------------------------------------------------------
+#include <dbghelp.h>
+#include <csignal>
+#include <exception>
+#pragma comment(lib, "dbghelp.lib")
+
+namespace
+{
+	const DWORD kHsAbortException = 0xE0485301; // "HS" + 1: raised by abort/terminate handlers
+
+	void hsDescribeAddress(FILE *f, HANDLE process, DWORD64 address)
+	{
+		char moduleName[MAX_PATH] = "?";
+		HMODULE module = nullptr;
+		if (GetModuleHandleExA(GET_MODULE_HANDLE_EX_FLAG_FROM_ADDRESS | GET_MODULE_HANDLE_EX_FLAG_UNCHANGED_REFCOUNT,
+				reinterpret_cast<LPCSTR>(address), &module) && module != nullptr)
+		{
+			char full[MAX_PATH] = {};
+			GetModuleFileNameA(module, full, MAX_PATH);
+			const char *slash = strrchr(full, '\\');
+			strncpy_s(moduleName, slash ? slash + 1 : full, _TRUNCATE);
+		}
+
+		char symbolBuffer[sizeof(SYMBOL_INFO) + 512] = {};
+		SYMBOL_INFO *symbol = reinterpret_cast<SYMBOL_INFO *>(symbolBuffer);
+		symbol->SizeOfStruct = sizeof(SYMBOL_INFO);
+		symbol->MaxNameLen = 511;
+		DWORD64 symbolOffset = 0;
+		const bool haveSymbol = SymFromAddr(process, address, &symbolOffset, symbol) != FALSE;
+
+		IMAGEHLP_LINE64 line = {};
+		line.SizeOfStruct = sizeof(line);
+		DWORD lineOffset = 0;
+		const bool haveLine = SymGetLineFromAddr64(process, address, &lineOffset, &line) != FALSE;
+
+		fprintf(f, "  %s+0x%llx", moduleName,
+			static_cast<unsigned long long>(module ? address - reinterpret_cast<DWORD64>(module) : address));
+		if (haveSymbol) fprintf(f, "  %s+0x%llx", symbol->Name, static_cast<unsigned long long>(symbolOffset));
+		if (haveLine)
+		{
+			const char *file = strrchr(line.FileName, '\\');
+			fprintf(f, "  (%s:%lu)", file ? file + 1 : line.FileName, line.LineNumber);
+		}
+		fprintf(f, "\n");
+	}
+
+	LONG WINAPI hsCrashFilter(EXCEPTION_POINTERS *info)
+	{
+		static volatile LONG s_once = 0;
+		if (InterlockedExchange(&s_once, 1) != 0) return EXCEPTION_CONTINUE_SEARCH;
+
+		char dir[MAX_PATH] = {};
+		GetModuleFileNameA(nullptr, dir, MAX_PATH);
+		if (char *slash = strrchr(dir, '\\')) *(slash + 1) = '\0';
+
+		SYSTEMTIME st;
+		GetLocalTime(&st);
+		char base[MAX_PATH];
+		sprintf_s(base, "%scrash-%04d%02d%02d-%02d%02d%02d", dir, st.wYear, st.wMonth, st.wDay, st.wHour, st.wMinute, st.wSecond);
+
+		char path[MAX_PATH];
+		sprintf_s(path, "%s.txt", base);
+		FILE *f = nullptr;
+		fopen_s(&f, path, "w");
+		if (f != nullptr)
+		{
+			const EXCEPTION_RECORD *rec = info->ExceptionRecord;
+			fprintf(f, "Hellish Sight crash report\n");
+			fprintf(f, "Thread: %lu\n", GetCurrentThreadId());
+			fprintf(f, "Exception: 0x%08lX", rec->ExceptionCode);
+			switch (rec->ExceptionCode)
+			{
+			case EXCEPTION_ACCESS_VIOLATION:
+				if (rec->NumberParameters >= 2)
+				{
+					const char *op = rec->ExceptionInformation[0] == 0 ? "read" : (rec->ExceptionInformation[0] == 1 ? "write" : "execute");
+					fprintf(f, " (access violation: %s at 0x%llx)", op, static_cast<unsigned long long>(rec->ExceptionInformation[1]));
+				}
+				break;
+			case EXCEPTION_STACK_OVERFLOW: fprintf(f, " (stack overflow)"); break;
+			case EXCEPTION_INT_DIVIDE_BY_ZERO: fprintf(f, " (integer divide by zero)"); break;
+			case 0xE06D7363: fprintf(f, " (C++ exception)"); break;
+			case kHsAbortException: fprintf(f, " (abort / std::terminate / pure virtual call)"); break;
+			default: break;
+			}
+			fprintf(f, "\n\n");
+
+			HANDLE process = GetCurrentProcess();
+			SymSetOptions(SYMOPT_UNDNAME | SYMOPT_LOAD_LINES | SYMOPT_DEFERRED_LOADS | SYMOPT_FAIL_CRITICAL_ERRORS);
+			SymInitialize(process, dir, TRUE);
+
+			fprintf(f, "Crash address:\n");
+			hsDescribeAddress(f, process, reinterpret_cast<DWORD64>(rec->ExceptionAddress));
+
+			fprintf(f, "\nStack:\n");
+			CONTEXT context = *info->ContextRecord;
+			STACKFRAME64 frame = {};
+			frame.AddrPC.Offset = context.Rip;
+			frame.AddrPC.Mode = AddrModeFlat;
+			frame.AddrFrame.Offset = context.Rbp;
+			frame.AddrFrame.Mode = AddrModeFlat;
+			frame.AddrStack.Offset = context.Rsp;
+			frame.AddrStack.Mode = AddrModeFlat;
+			for (int i = 0; i < 64; ++i)
+			{
+				if (!StackWalk64(IMAGE_FILE_MACHINE_AMD64, process, GetCurrentThread(), &frame, &context,
+						nullptr, SymFunctionTableAccess64, SymGetModuleBase64, nullptr)) break;
+				if (frame.AddrPC.Offset == 0) break;
+				fprintf(f, "%2d", i);
+				hsDescribeAddress(f, process, frame.AddrPC.Offset);
+			}
+			SymCleanup(process);
+			fclose(f);
+		}
+
+		sprintf_s(path, "%s.dmp", base);
+		HANDLE dump = CreateFileA(path, GENERIC_WRITE, 0, nullptr, CREATE_ALWAYS, FILE_ATTRIBUTE_NORMAL, nullptr);
+		if (dump != INVALID_HANDLE_VALUE)
+		{
+			MINIDUMP_EXCEPTION_INFORMATION mei = {};
+			mei.ThreadId = GetCurrentThreadId();
+			mei.ExceptionPointers = info;
+			mei.ClientPointers = FALSE;
+			MiniDumpWriteDump(GetCurrentProcess(), GetCurrentProcessId(), dump,
+				static_cast<MINIDUMP_TYPE>(MiniDumpWithIndirectlyReferencedMemory | MiniDumpWithThreadInfo), &mei, nullptr, nullptr);
+			CloseHandle(dump);
+		}
+
+		return EXCEPTION_EXECUTE_HANDLER;
+	}
+
+	void hsRaiseAbort() { RaiseException(kHsAbortException, EXCEPTION_NONCONTINUABLE, 0, nullptr); }
+	void __cdecl hsSignalHandler(int) { hsRaiseAbort(); }
+	void __cdecl hsPurecallHandler() { hsRaiseAbort(); }
+	void hsTerminateHandler() { hsRaiseAbort(); }
+
+	void hsInstallCrashReporter()
+	{
+		SetUnhandledExceptionFilter(hsCrashFilter);
+		signal(SIGABRT, hsSignalHandler);
+		_set_purecall_handler(hsPurecallHandler);
+		std::set_terminate(hsTerminateHandler);
+		// Keep a little stack for the handler when the crash is a stack overflow.
+		ULONG guarantee = 64 * 1024;
+		SetThreadStackGuarantee(&guarantee);
+	}
+}
+
 int APIENTRY _tWinMain(_In_ HINSTANCE hInstance,
 					   _In_opt_ HINSTANCE hPrevInstance,
 					   _In_ LPTSTR    lpCmdLine,
@@ -1303,6 +1457,8 @@ int APIENTRY _tWinMain(_In_ HINSTANCE hInstance,
 {
 	UNREFERENCED_PARAMETER(hPrevInstance);
 	UNREFERENCED_PARAMETER(lpCmdLine);
+
+	hsInstallCrashReporter();
 
 	// 4J-Win64: set CWD to exe dir so asset paths resolve correctly
 	{
