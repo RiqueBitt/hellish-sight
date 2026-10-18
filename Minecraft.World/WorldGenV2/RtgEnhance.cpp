@@ -49,7 +49,7 @@ namespace WorldGenV2
 			{
 				const int ix = x >> 2, iz = z >> 2, iy = y >> 3;
 				const float fx = (x & 3) * 0.25f, fz = (z & 3) * 0.25f, fy = (y & 7) * 0.125f;
-				const int ix1 = std::min(ix + 1, NX - 1), iz1 = std::min(iz + 1, NZ - 1), iy1 = std::min(iy + 1, NY - 1);
+				const int ix1 = (std::min)(ix + 1, NX - 1), iz1 = (std::min)(iz + 1, NZ - 1), iy1 = (std::min)(iy + 1, NY - 1);
 				const float c000 = v(ix, iy, iz), c100 = v(ix1, iy, iz), c010 = v(ix, iy1, iz), c110 = v(ix1, iy1, iz);
 				const float c001 = v(ix, iy, iz1), c101 = v(ix1, iy, iz1), c011 = v(ix, iy1, iz1), c111 = v(ix1, iy1, iz1);
 				const float c00 = lerp(c000, c100, fx), c10 = lerp(c010, c110, fx);
@@ -138,8 +138,8 @@ namespace WorldGenV2
 		{
 			for (int z = 0; z < 16; z++)
 			{
-				const int x0 = std::max(x - 1, 0), x1 = std::min(x + 1, 15);
-				const int z0 = std::max(z - 1, 0), z1 = std::min(z + 1, 15);
+				const int x0 = (std::max)(x - 1, 0), x1 = (std::min)(x + 1, 15);
+				const int z0 = (std::max)(z - 1, 0), z1 = (std::min)(z + 1, 15);
 				const float dx = (height[x1 * 16 + z] - height[x0 * 16 + z]) / static_cast<float>(x1 - x0);
 				const float dz = (height[x * 16 + z1] - height[x * 16 + z0]) / static_cast<float>(z1 - z0);
 				slope[x * 16 + z] = std::sqrt(dx * dx + dz * dz);
@@ -206,7 +206,7 @@ namespace WorldGenV2
 				// keep a solid lid under water and near shores so caves never drain oceans/rivers/lakes
 				const bool wet = h < seaLevel + 3;
 				const int ceiling = wet ? static_cast<int>(h) - 7 : static_cast<int>(h) + 2;
-				const int maxY = std::min(ceiling, 250);
+				const int maxY = (std::min)(ceiling, 250);
 				for (int y = 6; y <= maxY; y++)
 				{
 					const int id = primer.getBlock(x, y, z);
