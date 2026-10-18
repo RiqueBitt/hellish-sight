@@ -70,4 +70,7 @@ public:
 
 	// INPUT
 	virtual void handleInput(int iPad, int key, bool repeat, bool pressed, bool released, bool &handled);
+
+	// Hellish Sight: item in the slot under the pointer (nullptr when not over a slot)
+	shared_ptr<ItemInstance> HS_HoveredItem();
 };

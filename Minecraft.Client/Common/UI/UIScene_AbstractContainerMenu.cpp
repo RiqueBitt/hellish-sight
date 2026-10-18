@@ -6,8 +6,10 @@
 #include "../../../Minecraft.World/net.minecraft.world.inventory.h"
 #include "../../../Minecraft.World/net.minecraft.world.item.h"
 #include "../../MultiPlayerLocalPlayer.h"
+#include "../../MultiPlayerGameMode.h"
 #ifdef _WINDOWS64
 #include "../../Windows64/KeyboardMouseInput.h"
+#include "Client/RecipeViewer/RecipeViewer.h"	// Hellish Sight: JEI-style recipe viewer
 #endif
 
 UIScene_AbstractContainerMenu::UIScene_AbstractContainerMenu(int iPad, UILayer *parentLayer) : UIScene(iPad, parentLayer)
@@ -43,6 +45,7 @@ void UIScene_AbstractContainerMenu::handleDestroy()
 #ifdef _WINDOWS64
 	g_KBMInput.SetScreenCursorHidden(false);
 	g_KBMInput.SetCursorHiddenForUI(false);
+	HSRecipeViewer::sceneClosed(m_iPad);
 #endif
 
 	Minecraft *pMinecraft = Minecraft::GetInstance();
@@ -208,7 +211,45 @@ void UIScene_AbstractContainerMenu::tick()
 {
 	UIScene::tick();
 
+#ifdef _WINDOWS64
+	// Hellish Sight: the recipe viewer lives around the panel, so the pointer may go anywhere
+	const bool hsViewer = HSRecipeViewer::enabledFor(m_iPad) && m_parentLayer->getViewport() == C4JRender::VIEWPORT_TYPE_FULLSCREEN;
+	if (hsViewer && HSRecipeViewer::wantsFreePointer())
+	{
+		m_fPointerMinX = 0.0f;
+		m_fPointerMinY = 0.0f;
+		m_fPointerMaxX = static_cast<float>(m_movieWidth);
+		m_fPointerMaxY = static_cast<float>(m_movieHeight);
+	}
+#endif
+
 	onMouseTick();
+
+#ifdef _WINDOWS64
+	if (hsViewer && m_movieWidth > 0 && m_movieHeight > 0)
+	{
+		S32 rw, rh;
+		m_parentLayer->getRenderDimensions(rw, rh);
+		const float sx = static_cast<float>(rw) / m_movieWidth, sy = static_cast<float>(rh) / m_movieHeight;
+
+		HSRecipeViewer::SceneInfo info;
+		info.pad = m_iPad;
+		info.screenW = rw;
+		info.screenH = rh;
+		info.panelX0 = m_fPanelMinX * sx;
+		info.panelX1 = m_fPanelMaxX * sx;
+		info.panelY0 = m_fPanelMinY * sy;
+		info.panelY1 = m_fPanelMaxY * sy;
+		info.pointerX = (m_pointerPos.x + m_fPointerImageOffsetX) * sx;
+		info.pointerY = (m_pointerPos.y + m_fPointerImageOffsetY) * sy;
+		info.hovered = HS_HoveredItem();
+		if (getSceneType() == eUIScene_ClassicCraftingMenu) info.craftGrid = 3;
+		else if (getSceneType() == eUIScene_InventoryMenu && app.GetGameSettings(m_iPad, eGameSetting_ClassicCrafting)) info.craftGrid = 2;
+		Minecraft *mc = Minecraft::GetInstance();
+		info.creative = mc->localgameModes[m_iPad] != nullptr && mc->localgameModes[m_iPad]->hasInfiniteItems();
+		HSRecipeViewer::updateScene(info);
+	}
+#endif
 
 	IggyEvent mouseEvent;
 	S32 width, height;
@@ -312,6 +353,15 @@ void UIScene_AbstractContainerMenu::handleInput(int iPad, int key, bool repeat, 
 {
 	if(m_bIgnoreInput) return;
 
+#ifdef _WINDOWS64
+	// Hellish Sight: clicks / keys over the recipe viewer belong to it
+	if (HSRecipeViewer::handleAction(iPad, key, pressed, released, repeat))
+	{
+		handled = true;
+		return;
+	}
+#endif
+
 	//app.DebugPrintf("UIScene_InventoryMenu handling input for pad %d, key %d, down- %s, pressed- %s, released- %s\n", iPad, key, down?"TRUE":"FALSE", pressed?"TRUE":"FALSE", released?"TRUE":"FALSE");
 	ui.AnimateKeyPress(m_iPad, key, repeat, pressed, released);
 
@@ -377,4 +427,20 @@ bool UIScene_AbstractContainerMenu::isSlotEmpty(ESceneSection eSection, int iSlo
 void UIScene_AbstractContainerMenu::adjustPointerForSafeZone()
 {
 	// Handled by AS
+}
+
+// Hellish Sight: the container item under the pointer (for the recipe viewer's R / U keys)
+shared_ptr<ItemInstance> UIScene_AbstractContainerMenu::HS_HoveredItem()
+{
+	if (m_eCurrSection == eSectionNone || !IsSectionSlotList(m_eCurrSection)) return nullptr;
+	const int index = getCurrentIndex(m_eCurrSection) - getSectionStartOffset(m_eCurrSection);
+	if (index < 0) return nullptr;
+
+	UIVec2D sectionPos, itemPos, itemSize;
+	GetPositionOfSection(m_eCurrSection, &sectionPos);
+	GetItemScreenData(m_eCurrSection, index, &itemPos, &itemSize);
+	itemPos += sectionPos;
+	const float px = m_pointerPos.x + m_fPointerImageOffsetX, py = m_pointerPos.y + m_fPointerImageOffsetY;
+	if (px < itemPos.x || py < itemPos.y || px > itemPos.x + itemSize.x || py > itemPos.y + itemSize.y) return nullptr;
+	return getSlotItem(m_eCurrSection, index);
 }

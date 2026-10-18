@@ -16,6 +16,7 @@
 
 #include "Host/RubyLauncherHost.h"
 #include "Registry/IDs.h"
+#include "Client/RecipeViewer/RecipeViewer.h"
 #include "Common/ModPaths.h"
 
 #include <map>
@@ -1863,4 +1864,42 @@ void IUIScene_CreativeMenu::BuildFirework(vector<shared_ptr<ItemInstance> > *lis
 	}
 
 	list->push_back(firework);
+}
+// Hellish Sight: item list of the recipe viewer - the vanilla groups in tab order, then the mod tabs
+void IUIScene_CreativeMenu::HS_CollectAll(vector< shared_ptr<ItemInstance> > &out)
+{
+	if (specs != nullptr)
+	{
+		for (int tab = 0; tab < eCreativeInventoryTab_COUNT; ++tab)
+		{
+			TabSpec *spec = specs[tab];
+			if (spec == nullptr) continue;
+			for (int g = 0; g < spec->m_staticGroupsCount; ++g)
+			{
+				const int group = spec->m_staticGroupsA[g];
+				if (group < 0 || group >= eCreativeInventoryGroupsCount) continue;
+				out.insert(out.end(), categoryGroups[group].begin(), categoryGroups[group].end());
+			}
+			for (int g = 0; g < spec->m_dynamicGroupsCount; ++g)
+			{
+				const int group = spec->m_dynamicGroupsA[g];
+				if (group < 0 || group >= eCreativeInventoryGroupsCount) continue;
+				out.insert(out.end(), categoryGroups[group].begin(), categoryGroups[group].end());
+			}
+		}
+	}
+	else
+	{
+		for (int g = 0; g < eCreativeInventoryGroupsCount; ++g) out.insert(out.end(), categoryGroups[g].begin(), categoryGroups[g].end());
+	}
+	for (int k = 0; k < s_modTabCount; ++k)
+	{
+		const vector< shared_ptr<ItemInstance> > &list = categoryGroups[eCreativeInventoryGroupsCount + k];
+		out.insert(out.end(), list.begin(), list.end());
+	}
+}
+
+void HS_CreativeCollectAll(std::vector<std::shared_ptr<ItemInstance> > &out)
+{
+	IUIScene_CreativeMenu::HS_CollectAll(out);
 }

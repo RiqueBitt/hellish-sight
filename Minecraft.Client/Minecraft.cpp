@@ -1,5 +1,8 @@
 #include "stdafx.h"
 #include "Minecraft.h"
+#ifdef _WINDOWS64
+#include "Client/RecipeViewer/RecipeViewer.h"
+#endif
 #include "Common/UI/UIScene.h"
 #include "GameMode.h"
 #include "Timer.h"
@@ -1508,7 +1511,7 @@ void Minecraft::run_middle()
 					// Keyboard/mouse button presses for player 0
 					if (i == 0)
 					{
-						if (g_KBMInput.IsKBMActive())
+						if (g_KBMInput.IsKBMActive() && !HSRecipeViewer::capturesKeyboard())	// Hellish Sight: typing in the recipe search
 						{
 							if(g_KBMInput.IsMouseButtonPressed(KeyboardMouseInput::MOUSE_LEFT))
 								localplayers[i]->ullButtonsPressed|=1LL<<MINECRAFT_ACTION_ACTION;
@@ -1544,7 +1547,7 @@ void Minecraft::run_middle()
 							if(g_KBMInput.IsKeyPressed(KeyboardMouseInput::KEY_DROP))
 								localplayers[i]->ullButtonsPressed|=1LL<<MINECRAFT_ACTION_DROP;
 
-							if(g_KBMInput.IsKeyPressed(KeyboardMouseInput::KEY_CRAFTING) || g_KBMInput.IsKeyPressed(KeyboardMouseInput::KEY_CRAFTING_ALT))
+							if(g_KBMInput.IsKeyPressed(KeyboardMouseInput::KEY_CRAFTING) || (g_KBMInput.IsKeyPressed(KeyboardMouseInput::KEY_CRAFTING_ALT) && !HSRecipeViewer::reservesKey('R')))
 							{
 								if ((ui.IsSceneInStack(i, eUIScene_Crafting2x2Menu) || ui.IsSceneInStack(i, eUIScene_Crafting3x3Menu) || ui.IsSceneInStack(i, eUIScene_CreativeMenu) || ui.IsSceneInStack(i, eUIScene_ClassicCraftingMenu) || isClosableByEitherKey) && !isEditing)
 							{

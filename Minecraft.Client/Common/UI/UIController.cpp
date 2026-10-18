@@ -1,6 +1,9 @@
 #include "stdafx.h"
 #include "Host\RubyLauncherHost.h"
 #include "UIController.h"
+#ifdef _WINDOWS64
+#include "Client/RecipeViewer/RecipeViewer.h"
+#endif
 #include <ChatScreen.h>
 #include "UI.h"
 #include "UIScene.h"
@@ -1472,6 +1475,8 @@ void UIController::handleKeyPress(unsigned int iPad, unsigned int key)
 		case ACTION_MENU_PAGEUP:   vk = VK_PRIOR; break;
 		case ACTION_MENU_PAGEDOWN: vk = VK_NEXT;  break;
 		}
+		// Hellish Sight: the recipe viewer's search box takes the keyboard, and R is its "show recipes" key
+		if (HSRecipeViewer::capturesKeyboard() || HSRecipeViewer::reservesKey(vk)) vk = 0;
 		if (vk != 0)
 		{
 			if (g_KBMInput.IsKeyPressed(vk))  { pressed = true; down = true; }

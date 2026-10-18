@@ -129,6 +129,8 @@ protected:
 public:
 	static void staticCtor();
 	static void appendModItems();
+	// Hellish Sight: every item of every tab, in tab order (recipe viewer item list)
+	static void HS_CollectAll(vector< shared_ptr<ItemInstance> > &out);
 	// Hellish Sight: fills the "Técnico" tab (items that cannot be obtained in survival)
 	static void addTechnicalItems(vector< shared_ptr<ItemInstance> > *list);
 	static LPCWSTR getTabLabel(ECreativeInventoryTabs tab);
