@@ -39,6 +39,7 @@
 #include "../Minecraft.World/ConsoleSaveFileSplit.h"
 #endif
 #include "../Minecraft.World/ConsoleSaveFileOriginal.h"
+#include "../Minecraft.World/ConsoleSaveFileRegionDisk.h"
 #include "../Minecraft.World/Socket.h"
 #include "../Minecraft.World/net.minecraft.world.entity.h"
 #include "ProgressRenderer.h"
@@ -922,7 +923,8 @@ bool MinecraftServer::loadLevel(LevelStorageSource *storageSource, const wstring
 
 		//ConsoleSaveFile* pSave = new ConsoleSaveFileSplit( initData->saveData->saveName, initData->saveData->data, initData->saveData->fileSize, false, initData->savePlatform );
 #else
-		ConsoleSaveFile* pSave = new ConsoleSaveFileOriginal( initData->saveData->saveName, initData->saveData->data, initData->saveData->fileSize, false, initData->savePlatform );
+		// Hellish Sight: region files live on disk (no 2 GB in-memory save limit).
+		ConsoleSaveFile* pSave = ConsoleSaveFileRegionDisk::wrap( new ConsoleSaveFileOriginal( initData->saveData->saveName, initData->saveData->data, initData->saveData->fileSize, false, initData->savePlatform ) );
 #endif
 		if(pSave->isSaveEndianDifferent())
 			levelChunksNeedConverted = true;
@@ -955,7 +957,8 @@ bool MinecraftServer::loadLevel(LevelStorageSource *storageSource, const wstring
 
 		storage = shared_ptr<McRegionLevelStorage>(new McRegionLevelStorage(newFormatSave, File(L"."), name, true));
 #else
-		ConsoleSaveFileOriginal* pSave = new ConsoleSaveFileOriginal(L"");
+		// Hellish Sight: region files live on disk (no 2 GB in-memory save limit).
+		ConsoleSaveFile* pSave = ConsoleSaveFileRegionDisk::wrap( new ConsoleSaveFileOriginal(L"") );
 
 		pSave->ConvertToLocalPlatform();
 		storage = std::make_shared<McRegionLevelStorage>(pSave, File(L"."), name, true);
