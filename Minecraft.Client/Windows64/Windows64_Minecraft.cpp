@@ -27,6 +27,7 @@
 #include "../Minecraft.h"
 #include "../ChatScreen.h"
 #include "KeyboardMouseInput.h"
+#include "../Common/ShaderPack.h"
 #include "../User.h"
 #include "../../Minecraft.World/Socket.h"
 #include "../../Minecraft.World/ThreadName.h"
@@ -2245,6 +2246,15 @@ int APIENTRY _tWinMain(_In_ HINSTANCE hInstance,
 			const unsigned char displayHud = app.GetGameSettings(primaryPad, eGameSetting_DisplayHUD);
 			app.SetGameSettings(primaryPad, eGameSetting_DisplayHUD, displayHud ? 0 : 1);
 			app.SetGameSettings(primaryPad, eGameSetting_DisplayHand, displayHud ? 0 : 1);
+		}
+
+		// Hellish Sight: F7 toggles the shaders (MakeUp Ultra Fast port)
+		if (g_KBMInput.IsKeyPressed(KeyboardMouseInput::KEY_TOGGLE_SHADERS))
+		{
+			ShaderPack::GetInstance().Toggle();
+			const int primaryPad = ProfileManager.GetPrimaryPad();
+			if (pMinecraft->gui && app.GetGameStarted())
+				pMinecraft->gui->addMessage(ShaderPack::GetInstance().IsEnabled() ? L"Shaders: ligados" : L"Shaders: desligados", primaryPad);
 		}
 
 		// F3 toggles onscreen debug info

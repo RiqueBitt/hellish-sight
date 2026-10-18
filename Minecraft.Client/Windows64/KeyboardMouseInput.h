@@ -35,6 +35,7 @@ public:
     static const int KEY_CONTROL = VK_CONTROL;
 	static const int KEY_THIRD_PERSON = VK_F5;
 	static const int KEY_DEBUG_CONSOLE = VK_F6;
+	static const int KEY_TOGGLE_SHADERS = VK_F7;	// Hellish Sight
 	static const int KEY_HOST_SETTINGS = VK_TAB;
 	static const int KEY_FULLSCREEN = VK_F11;
 	static const int KEY_SCREENSHOT = VK_F2;

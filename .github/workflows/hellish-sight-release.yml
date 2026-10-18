@@ -79,6 +79,10 @@ jobs:
         if (-not (Test-Path "$out/Minecraft.Client.exe")) { throw "Minecraft.Client.exe was not produced" }
         Get-ChildItem $out | Select-Object Name, Length | Format-Table -AutoSize
 
+    - name: Add licence notices
+      shell: pwsh
+      run: Copy-Item Minecraft.Client/Windows64/ShaderPack_MakeUp_LICENSE.txt ./build/windows64/Minecraft.Client/Release/
+
     - name: Zip build
       run: 7z a -r ${{ env.ZIP_NAME }} ./build/windows64/Minecraft.Client/Release/* "-x!*.ipdb" "-x!*.iobj" "-x!*.lib" "-x!*.exp"  # Minecraft.Client.pdb is kept for crash reports
 

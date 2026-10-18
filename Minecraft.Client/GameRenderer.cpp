@@ -54,6 +54,7 @@
 #include "TexturePack.h"
 #include "TextureAtlas.h"
 #include "Common/PostProcesser.h"
+#include "Common/ShaderPack.h"
 
 bool GameRenderer::anaglyph3d = false;
 int GameRenderer::anaglyphPass = 0;
@@ -1464,6 +1465,84 @@ void GameRenderer::DisableUpdateThread()
 #endif
 }
 
+#if defined(_WINDOWS64) && !defined(MINECRAFT_SERVER_BUILD)
+// Hellish Sight shaders: the uniforms MakeUp computes in shaders.properties / composite_vertex.glsl
+void GameRenderer::buildShaderParams(float a, ShaderFrameParams &out)
+{
+	memset(&out, 0, sizeof(out));
+	Level *lvl = mc->level;
+	shared_ptr<LivingEntity> cam = mc->cameraTargetPlayer;
+	if (lvl == nullptr || cam == nullptr) return;
+
+	const float PI_F = 3.14159265358979f;
+	const int64_t worldTime = ((lvl->getDayTime() % 24000) + 24000) % 24000;
+	const float dayMoment = static_cast<float>(worldTime) / 24000.0f;
+
+	float aux = dayMoment - 0.25f;
+	const float dayMixer = Mth::clamp(-aux * aux * 20.0f + 1.25f, 0.0f, 1.0f);
+	aux = dayMoment - 0.75f;
+	const float nightMixer = Mth::clamp(-aux * aux * 50.0f + 3.125f, 0.0f, 1.0f);
+	aux = dayMoment * 4.0f - 1.0f;
+	const float dayVol = Mth::clamp((-(aux * aux * aux * aux) + 1.0f) * 7.0f + 1.0f, 1.0f, 8.0f);
+	aux = dayMoment * 4.0f - 3.0f;
+	const float nightVol = Mth::clamp((-(aux * aux * aux * aux) + 1.0f) * 7.0f + 1.0f, 1.0f, 8.0f);
+	out.volumetricDayMixer = dayVol > nightVol ? dayVol : nightVol;
+
+	float dayNightMix;
+	if ((worldTime >= 0 && worldTime < 12485) || worldTime >= 23515) dayNightMix = 1.0f;
+	else if (worldTime >= 12485 && worldTime < 13085) dayNightMix = 1.0f - (worldTime - 12485) * 0.0016666666666666668f;
+	else if (worldTime >= 22915 && worldTime < 23515) dayNightMix = (worldTime - 22915) * 0.0016666666666666668f;
+	else dayNightMix = 0.0f;
+	out.lightIntensity = fabsf(dayNightMix * 2.0f - 1.0f);
+
+	// COLOR_SCHEME 1 ("New shoka") light colours, dayBlend()
+	const float sunset[3] = { 1.0f, 0.588f, 0.3555f };
+	const float day[3] = { 0.90f, 0.84f, 0.79f };
+	const float night[3] = { 0.04786874f * 0.6f, 0.05175001f * 0.6f, 0.06112969f * 0.6f };
+
+	const float eyeX = static_cast<float>(cam->xo + (cam->x - cam->xo) * a);
+	const float eyeY = static_cast<float>(cam->yo + (cam->y - cam->yo) * a) + cam->getHeadHeight();
+	const float eyeZ = static_cast<float>(cam->zo + (cam->z - cam->zo) * a);
+	const int skyLight = lvl->getBrightness(LightLayer::Sky, Mth::floor(eyeX), Mth::floor(eyeY), Mth::floor(eyeZ));
+	out.eyeBrightness = static_cast<float>(skyLight * 16);
+
+	out.isEyeInWater = cam->isUnderLiquid(Material::water) ? 1 : (cam->isUnderLiquid(Material::lava) ? 2 : 0);
+	const float volAttenuation = out.isEyeInWater == 0 ? 1.0f : 0.1f + out.eyeBrightness * 0.002f;
+	for (int c = 0; c < 3; c++)
+	{
+		const float dayColor = sunset[c] + (day[c] - sunset[c]) * dayMixer;
+		const float nightColor = sunset[c] + (night[c] - sunset[c]) * nightMixer;
+		const float blend = dayMoment >= 0.5f ? nightColor : dayColor;
+		out.volumetricColor[c] = blend * 1.2f * volAttenuation;
+	}
+	out.rainStrength = lvl->getRainLevel(a);
+
+	// sun direction (sky rendering: rotate -90 around Y, then timeOfDay * 360 around X)
+	const float angle = lvl->getTimeOfDay(a) * 2.0f * PI_F;
+	float lx = -sinf(angle), ly = cosf(angle), lz = 0.0f;
+	if (dayNightMix < 0.5f) { lx = -lx; ly = -ly; }	// the moon
+
+	// camera basis (glRotate(xRot, 1,0,0); glRotate(yRot + 180, 0,1,0))
+	float yaw = cam->yRotO + (cam->yRot - cam->yRotO) * a;
+	float pitch = cam->xRotO + (cam->xRot - cam->xRotO) * a;
+	if (mc->player != nullptr && mc->player->ThirdPersonView() == 2)
+	{
+		yaw += 180.0f;
+		pitch = -pitch;
+	}
+	const float yr = yaw * PI_F / 180.0f, pr = pitch * PI_F / 180.0f;
+	const float fx = -sinf(yr) * cosf(pr), fy = -sinf(pr), fz = cosf(yr) * cosf(pr);
+	const float rx = -cosf(yr), ry = 0.0f, rz = -sinf(yr);
+	const float ux = ry * fz - rz * fy, uy = rz * fx - rx * fz, uz = rx * fy - ry * fx;
+	out.lightDirView[0] = lx * rx + ly * ry + lz * rz;
+	out.lightDirView[1] = lx * ux + ly * uy + lz * uz;
+	out.lightDirView[2] = lx * fx + ly * fy + lz * fz;
+
+	out.godrays = lvl->dimension != nullptr && lvl->dimension->id == 0;
+	out.frameTime = 0.0f;	// measured by ShaderPack
+}
+#endif
+
 void GameRenderer::renderLevel(float a, int64_t until)
 {
 	//	if (updateLightTexture) updateLightTexture();	// 4J - TODO - Java 1.0.1 has this line enabled, should check why - don't want to put it in now in case it breaks split-screen
@@ -1504,6 +1583,9 @@ void GameRenderer::renderLevel(float a, int64_t until)
 		glEnable(GL_CULL_FACE);
 
 		setupCamera(a, i);
+#if defined(_WINDOWS64) && !defined(MINECRAFT_SERVER_BUILD)
+		ShaderPack::GetInstance().CaptureProjection(RenderManager.MatrixGet(GL_PROJECTION));	// Hellish Sight shaders
+#endif
 		Camera::prepare(mc->player, mc->player->ThirdPersonView() == 2);
 
 		Frustum::getFrustum();
@@ -1722,12 +1804,25 @@ void GameRenderer::renderLevel(float a, int64_t until)
 		glDisable(GL_FOG);
 
 
+#if defined(_WINDOWS64) && !defined(MINECRAFT_SERVER_BUILD)
+		// Hellish Sight shaders: keep the world depth before it is cleared for the hand
+		ShaderPack::GetInstance().CaptureWorldDepth();
+#endif
+
 		if (zoom == 1)
 		{
 			glClear(GL_DEPTH_BUFFER_BIT);
 			renderItemInHand(a, i);
 		}
 
+#if defined(_WINDOWS64) && !defined(MINECRAFT_SERVER_BUILD)
+		if (ShaderPack::GetInstance().IsEnabled() && !mc->options->anaglyph3d)
+		{
+			ShaderFrameParams params;
+			buildShaderParams(a, params);
+			ShaderPack::GetInstance().Apply(params);
+		}
+#endif
 
 		if (!mc->options->anaglyph3d)
 		{

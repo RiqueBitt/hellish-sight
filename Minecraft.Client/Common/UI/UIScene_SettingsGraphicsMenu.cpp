@@ -4,6 +4,7 @@
 #include "../../Minecraft.h"
 #include "../../Options.h"
 #include "../../GameRenderer.h"
+#include "../ShaderPack.h"
 
 #ifdef _WINDOWS64
 extern bool g_bVSync;
@@ -69,6 +70,10 @@ UIScene_SettingsGraphicsMenu::UIScene_SettingsGraphicsMenu(int iPad, void *initD
 	m_checkboxCustomSkinAnim.init(app.GetString(IDS_CHECKBOX_CUSTOM_SKIN_ANIM),eControl_CustomSkinAnim,(app.GetGameSettings(m_iPad,eGameSetting_CustomSkinAnim)!=0));
 	m_checkboxVSync.init(L"VSync",eControl_VSync,(app.GetGameSettings(m_iPad,eGameSetting_VSync)!=0));
 	m_checkboxExclusiveFullscreen.init(L"Fullscreen",eControl_ExclusiveFullscreen,(app.GetGameSettings(m_iPad,eGameSetting_ExclusiveFullscreen)!=0));
+#ifdef _WINDOWS64
+	// Hellish Sight: MakeUp Ultra Fast shaders (F7 toggles in game)
+	m_checkboxShaders.init(L"Shaders (MakeUp)",eControl_Shaders,ShaderPack::GetInstance().IsEnabled());
+#endif
 
 
 	WCHAR TempString[256];
@@ -93,6 +98,7 @@ UIScene_SettingsGraphicsMenu::UIScene_SettingsGraphicsMenu(int iPad, void *initD
 	// VSync and Exclusive Fullscreen are only available on PC
 	removeControl(&m_checkboxVSync, true);
 	removeControl(&m_checkboxExclusiveFullscreen, true);
+	removeControl(&m_checkboxShaders, true);
 #else
 	// The SWF's original focus chain skips VSync, Fullscreen, and RenderDistance
 	// (CustomSkinAnim -> Gamma). Rewire the navigation so all controls are reachable:
@@ -107,9 +113,13 @@ UIScene_SettingsGraphicsMenu::UIScene_SettingsGraphicsMenu(int iPad, void *initD
 		IggyValueSetStringUTF8RS(m_checkboxVSync.getIggyValuePath(), navDown, nullptr, "ExclusiveFullscreen", -1);
 
 		IggyValueSetStringUTF8RS(m_checkboxExclusiveFullscreen.getIggyValuePath(), navUp, nullptr, "VSync", -1);
-		IggyValueSetStringUTF8RS(m_checkboxExclusiveFullscreen.getIggyValuePath(), navDown, nullptr, "RenderDistance", -1);
+		IggyValueSetStringUTF8RS(m_checkboxExclusiveFullscreen.getIggyValuePath(), navDown, nullptr, "Shaders", -1);
 
-		IggyValueSetStringUTF8RS(m_sliderRenderDistance.getIggyValuePath(), navUp, nullptr, "ExclusiveFullscreen", -1);
+		// Hellish Sight: Fullscreen -> Shaders -> RenderDistance
+		IggyValueSetStringUTF8RS(m_checkboxShaders.getIggyValuePath(), navUp, nullptr, "ExclusiveFullscreen", -1);
+		IggyValueSetStringUTF8RS(m_checkboxShaders.getIggyValuePath(), navDown, nullptr, "RenderDistance", -1);
+
+		IggyValueSetStringUTF8RS(m_sliderRenderDistance.getIggyValuePath(), navUp, nullptr, "Shaders", -1);
 	}
 #endif
 
@@ -199,6 +209,7 @@ void UIScene_SettingsGraphicsMenu::handleInput(int iPad, int key, bool repeat, b
 #ifdef _WINDOWS64
 			g_bVSync = m_checkboxVSync.IsChecked();
 			SetExclusiveFullscreen(m_checkboxExclusiveFullscreen.IsChecked());
+			ShaderPack::GetInstance().SetEnabled(m_checkboxShaders.IsChecked());
 #endif
 
 			navigateBack();
@@ -271,4 +282,15 @@ void UIScene_SettingsGraphicsMenu::handleSliderMove(F64 sliderId, F64 currentVal
 
 		break;
 	}
+}
+
+void UIScene_SettingsGraphicsMenu::handleCheckboxToggled(F64 controlId, bool selected)
+{
+#ifdef _WINDOWS64
+	// Hellish Sight: shaders switch on/off immediately (also in the middle of a world)
+	if (static_cast<int>(controlId) == eControl_Shaders)
+	{
+		ShaderPack::GetInstance().SetEnabled(selected);
+	}
+#endif
 }

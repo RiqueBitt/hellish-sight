@@ -13,6 +13,7 @@ set(_MINECRAFT_CLIENT_COMMON_COMMON
   "${BASE_DIR}/Consoles_App.cpp"
   "${BASE_DIR}/Consoles_App.h"
   "${BASE_DIR}/PostProcesser.h"
+  "${BASE_DIR}/ShaderPack.h"
   "${BASE_DIR}/Potion_Macros.h"
   "${BASE_DIR}/ConsoleGameMode.cpp"
   "${BASE_DIR}/ConsoleGameMode.h"

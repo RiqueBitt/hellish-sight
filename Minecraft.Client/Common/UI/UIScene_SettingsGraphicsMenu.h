@@ -17,10 +17,11 @@ private:
 		eControl_RenderDistance,
 		eControl_Gamma,
 		eControl_FOV,
-		eControl_InterfaceOpacity
+		eControl_InterfaceOpacity,
+		eControl_Shaders		// Hellish Sight
 	};
 
-	UIControl_CheckBox m_checkboxClouds, m_checkboxBedrockFog, m_checkboxCustomSkinAnim, m_checkboxVSync, m_checkboxExclusiveFullscreen; // Checkboxes
+	UIControl_CheckBox m_checkboxClouds, m_checkboxBedrockFog, m_checkboxCustomSkinAnim, m_checkboxVSync, m_checkboxExclusiveFullscreen, m_checkboxShaders; // Checkboxes
 	UIControl_Slider m_sliderRenderDistance, m_sliderGamma, m_sliderFOV, m_sliderInterfaceOpacity; // Sliders
 	UI_BEGIN_MAP_ELEMENTS_AND_NAMES(UIScene)
 		UI_MAP_ELEMENT( m_checkboxClouds, "Clouds")
@@ -32,6 +33,7 @@ private:
 		UI_MAP_ELEMENT( m_sliderGamma, "Gamma")
 		UI_MAP_ELEMENT(m_sliderFOV, "FOV")
 		UI_MAP_ELEMENT( m_sliderInterfaceOpacity, "InterfaceOpacity")
+		UI_MAP_ELEMENT( m_checkboxShaders, "Shaders")
 	UI_END_MAP_ELEMENTS_AND_NAMES()
 
 	bool m_bNotInGame;
@@ -53,6 +55,7 @@ public:
 	virtual void handleInput(int iPad, int key, bool repeat, bool pressed, bool released, bool &handled);
 
 	virtual void handleSliderMove(F64 sliderId, F64 currentValue);
+	virtual void handleCheckboxToggled(F64 controlId, bool selected);
 
 	static int LevelToDistance(int dist);
 

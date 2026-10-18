@@ -1,4 +1,5 @@
 #pragma once
+struct ShaderFrameParams;	// Hellish Sight shaders
 
 #ifdef _WIN64
 #include <d3d11.h>
@@ -90,6 +91,9 @@ private:
     void CachePlayerGammas();
 public:
     void ApplyGammaPostProcess() const;
+#if defined(_WINDOWS64) && !defined(MINECRAFT_SERVER_BUILD)
+    void buildShaderParams(float a, ShaderFrameParams &out);	// Hellish Sight shaders
+#endif
 private:
     bool ComputeViewportForPlayer(int j, D3D11_VIEWPORT& outViewport) const;
     uint32_t BuildPlayerViewports(D3D11_VIEWPORT* outViewports, float* outGammas, UINT maxCount) const;
