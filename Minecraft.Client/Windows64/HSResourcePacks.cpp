@@ -338,7 +338,8 @@ namespace
 				if (mc && mc->textures)
 				{
 					mc->textures->stitch();
-					if (mc->levelRenderer) mc->levelRenderer->allChanged();
+					// only rebuild chunks when a world is open (allChanged needs a player)
+					if (mc->levelRenderer && mc->level && mc->player) mc->levelRenderer->allChanged();
 				}
 			}
 			break;

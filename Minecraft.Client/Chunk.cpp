@@ -237,6 +237,7 @@ void Chunk::rebuild()
 	level->getChunkAt(x,z)->getBlockData(tileArray);		// 4J - TODO - now our data has been re-arranged, we could just extra the vertical slice of this chunk rather than the whole thing
 
 	LevelSource *region = new Region(level, x0 - r, y0 - r, z0 - r, x1 + r, y1 + r, z1 + r, r);
+	static_cast<Region *>(region)->m_hsSolidMissing = true;	// Hellish Sight
 	TileRenderer *tileRenderer = new TileRenderer(region, this->x, this->y, this->z, tileIds);
 
 	// AP - added a caching system for Chunk::rebuild to take advantage of
@@ -681,6 +682,7 @@ void Chunk::rebuild_SPU()
 	int r = 1;
 
 	Region region(level, x0 - r, y0 - r, z0 - r, x1 + r, y1 + r, z1 + r, r);
+	region.m_hsSolidMissing = true;	// Hellish Sight
 	TileRenderer tileRenderer(&region);
 
 	int lists = levelRenderer->getGlobalIndexForChunk(this->x,this->y,this->z,level) * LevelRenderer::CHUNK_RENDER_LAYERS;

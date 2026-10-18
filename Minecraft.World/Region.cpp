@@ -111,7 +111,8 @@ int Region::getTile(int x, int y, int z)
 	}
 
 	LevelChunk *lc = (*chunks)[xc]->data[zc];
-	if (lc == nullptr) return 0;
+	if (lc == nullptr) return m_hsSolidMissing ? Tile::stone_Id : 0;
+	if (m_hsSolidMissing && lc->isEmpty()) return Tile::stone_Id;
 
 	return lc->getTile(x & 15, y, z & 15);
 }

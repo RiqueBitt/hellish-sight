@@ -19,6 +19,10 @@ private:
 	unsigned char *CachedTiles;
 
 public:
+	// Hellish Sight: chunk rebuilds treat chunks that are not loaded as solid, so the
+	// sides of the loaded area are not drawn as black walls (visible with distant terrain)
+	bool m_hsSolidMissing = false;
+
 	Region(Level *level, int x1, int y1, int z1, int x2, int y2, int z2, int r);
 	virtual ~Region();
 	bool isAllEmpty();

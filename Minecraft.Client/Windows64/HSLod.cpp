@@ -118,12 +118,14 @@ namespace
 	}
 
 	// Region file: magic, count, then count * (u16 slot, ChunkLod)
-	void loadRegion(Region &r, int rx, int rz)
+	// Reads a region file into r (only slots r does not have yet). Does NOT need g_storeLock
+	// when r is a private temporary.
+	void loadRegionFile(Region &r, const std::string &path)
 	{
 		r.loadedFromDisk = true;
-		if (g_worldDir.empty()) return;
+		if (path.empty()) return;
 		FILE *f = nullptr;
-		if (fopen_s(&f, regionPath(rx, rz).c_str(), "rb") != 0 || !f) return;
+		if (fopen_s(&f, path.c_str(), "rb") != 0 || !f) return;
 		uint32_t magic = 0, count = 0;
 		if (fread(&magic, 4, 1, f) == 1 && magic == FILE_MAGIC && fread(&count, 4, 1, f) == 1 && count <= REGION_SLOTS)
 		{
@@ -165,23 +167,49 @@ namespace
 		MoveFileExA(tmp.c_str(), path.c_str(), MOVEFILE_REPLACE_EXISTING);
 	}
 
-	// caller holds g_storeLock
+	// caller holds g_storeLock. Never touches the disk: a new region starts empty and the
+	// worker merges the saved file into it (ensureRegionLoaded), so the main thread never stalls.
 	Region &regionFor(int rx, int rz)
 	{
 		std::unique_ptr<Region> &slot = g_regions[key2(rx, rz)];
-		if (!slot)
-		{
-			slot.reset(new Region());
-			loadRegion(*slot, rx, rz);
-		}
+		if (!slot) slot.reset(new Region());
 		return *slot;
+	}
+
+	// worker thread, g_storeLock NOT held: loads the region file outside the lock, then merges
+	void ensureRegionLoaded(int rx, int rz)
+	{
+		std::string path;
+		{
+			std::lock_guard<std::mutex> guard(g_storeLock);
+			auto it = g_regions.find(key2(rx, rz));
+			if (it != g_regions.end() && it->second->loadedFromDisk) return;
+			if (g_worldDir.empty()) return;
+			path = regionPath(rx, rz);
+		}
+		std::unique_ptr<Region> tmp(new Region());
+		loadRegionFile(*tmp, path);
+		std::lock_guard<std::mutex> guard(g_storeLock);
+		Region &r = regionFor(rx, rz);
+		if (r.loadedFromDisk) return;
+		for (int i = 0; i < REGION_SLOTS; i++)
+		{
+			if (tmp->present[i] && !r.present[i])
+			{
+				r.chunks[i] = tmp->chunks[i];
+				r.present[i] = true;
+			}
+		}
+		r.loadedFromDisk = true;
 	}
 
 	// caller holds g_storeLock; returns nullptr when the chunk was never seen
 	const ChunkLod *chunkFor(int cx, int cz)
 	{
 		const int rx = floorDiv(cx, REGION_CHUNKS), rz = floorDiv(cz, REGION_CHUNKS);
-		Region &r = regionFor(rx, rz);
+		auto it = g_regions.find(key2(rx, rz));
+		if (it == g_regions.end()) return nullptr;
+		const Region &r = *it->second;
 		const int slot = (cz - rz * REGION_CHUNKS) * REGION_CHUNKS + (cx - rx * REGION_CHUNKS);
 		return r.present[slot] ? &r.chunks[slot] : nullptr;
 	}
@@ -190,7 +218,7 @@ namespace
 	{
 		for (auto &kv : g_regions)
 		{
-			if (!kv.second->dirty) continue;
+			if (!kv.second->dirty || !kv.second->loadedFromDisk) continue;
 			const int rx = static_cast<int>(kv.first >> 32);
 			const int rz = static_cast<int>(static_cast<uint32_t>(kv.first));
 			saveRegion(*kv.second, rx, rz);
@@ -546,6 +574,7 @@ namespace
 		struct BuiltInfo { int level; uint32_t version; int originId; };
 		std::unordered_map<int64_t, BuiltInfo> built;
 		auto lastSave = GetTickCount64();
+		SetThreadPriority(GetCurrentThread(), THREAD_PRIORITY_BELOW_NORMAL);	// never steal time from the render thread
 
 		while (g_running.load())
 		{
@@ -561,6 +590,13 @@ namespace
 			if (GetTickCount64() - lastSave > 20000)
 			{
 				lastSave = GetTickCount64();
+				// regions created by the main thread still need their file merged before saving
+				std::vector<int64_t> pending;
+				{
+					std::lock_guard<std::mutex> guard(g_storeLock);
+					for (auto &kv : g_regions) if (!kv.second->loadedFromDisk) pending.push_back(kv.first);
+				}
+				for (int64_t k : pending) ensureRegionLoaded(static_cast<int>(k >> 32), static_cast<int>(static_cast<uint32_t>(k)));
 				std::lock_guard<std::mutex> guard(g_storeLock);
 				saveDirtyLocked();
 				// drop regions far away from the player
@@ -617,6 +653,14 @@ namespace
 						m->level = level;
 						m->version = version;
 						m->originId = v.originId;
+						// make sure the saved terrain around this section is in memory (disk IO off the lock)
+						{
+							const int rx0 = floorDiv(sx * SECTION_CHUNKS - 1, REGION_CHUNKS), rx1 = floorDiv(sx * SECTION_CHUNKS + SECTION_CHUNKS, REGION_CHUNKS);
+							const int rz0 = floorDiv(sz * SECTION_CHUNKS - 1, REGION_CHUNKS), rz1 = floorDiv(sz * SECTION_CHUNKS + SECTION_CHUNKS, REGION_CHUNKS);
+							for (int rz = rz0; rz <= rz1; rz++)
+								for (int rx = rx0; rx <= rx1; rx++)
+									ensureRegionLoaded(rx, rz);
+						}
 						buildSection(*m, v.originX, v.originZ);
 						built[key] = { level, version, v.originId };
 						{
@@ -808,7 +852,7 @@ float4 PSMain(VSOut i) : SV_Target
 		std::deque<std::unique_ptr<BuiltMesh>> results;
 		{
 			std::lock_guard<std::mutex> guard(g_resultLock);
-			const size_t n = (std::min)(g_results.size(), static_cast<size_t>(24));	// per frame budget
+			const size_t n = (std::min)(g_results.size(), static_cast<size_t>(6));	// per frame budget (keeps frame times even)
 			for (size_t i = 0; i < n; i++)
 			{
 				results.push_back(std::move(g_results.front()));
@@ -903,7 +947,9 @@ float4 PSMain(VSOut i) : SV_Target
 			ChunkLod lod;
 			if (!sampleChunk(level, chunk, lod)) continue;
 
-			std::lock_guard<std::mutex> guard(g_storeLock);
+			// never wait for the worker: if it is busy, try this chunk again on the next sweep
+			std::unique_lock<std::mutex> guard(g_storeLock, std::try_to_lock);
+			if (!guard.owns_lock()) continue;
 			const int rx = floorDiv(cx, REGION_CHUNKS), rz = floorDiv(cz, REGION_CHUNKS);
 			Region &reg = regionFor(rx, rz);
 			const int slot = (cz - rz * REGION_CHUNKS) * REGION_CHUNKS + (cx - rx * REGION_CHUNKS);
@@ -961,7 +1007,7 @@ float ActiveDistanceBlocks(Minecraft *mc)
 void Tick(Minecraft *mc)
 {
 	if (!mc || !mc->player) return;
-	ingest(mc, 12);
+	ingest(mc, 4);
 }
 
 void Render(Minecraft *mc, double camX, double camY, double camZ, float a)
