@@ -6,6 +6,7 @@
 #include "../../GameRenderer.h"
 #include "../ShaderPack.h"
 #include "../HSSettings.h"
+#include "../HSLod.h"
 #include "../../MinecraftServer.h"
 #include "../../PlayerList.h"
 #include "../../../Minecraft.World/Level.h"
@@ -61,6 +62,13 @@ int UIScene_SettingsGraphicsMenu::DistanceToLevel(int dist)
     return 3;
 }
 
+// Hellish Sight: label for the distant terrain slider (0 = off)
+static void FormatLodLabel(WCHAR *out, int chunks)
+{
+	if (chunks <= 0) swprintf(out, 256, L"Terreno distante: desligado");
+	else swprintf(out, 256, L"Terreno distante: %d chunks", chunks);
+}
+
 // Hellish Sight: label for the FPS limit slider (0 = unlimited)
 static void FormatFpsLabel(WCHAR *out, int fps)
 {
@@ -105,6 +113,11 @@ UIScene_SettingsGraphicsMenu::UIScene_SettingsGraphicsMenu(int iPad, void *initD
 		const int fps = HSSettings::getFpsLimit();
 		FormatFpsLabel(TempString, fps);
 		m_sliderFpsLimit.init(TempString,eControl_FpsLimit,1,HSSettings::kFpsUnlimitedSlider,fps <= 0 ? HSSettings::kFpsUnlimitedSlider : fps);
+
+		// Hellish Sight: distant terrain (LOD), 0 = off, in steps of 8 chunks
+		const int lod = HSLod::GetDistanceChunks();
+		FormatLodLabel(TempString, lod);
+		m_sliderLodDistance.init(TempString,eControl_LodDistance,0,HSLod::kMaxDistanceChunks / HSLod::kSliderStep,lod / HSLod::kSliderStep);
 	}
 	
 	swprintf( TempString, 256, L"%ls: %d%%", app.GetString( IDS_SLIDER_GAMMA ),app.GetGameSettings(m_iPad,eGameSetting_Gamma));	
@@ -152,8 +165,10 @@ UIScene_SettingsGraphicsMenu::UIScene_SettingsGraphicsMenu(int iPad, void *initD
 		IggyValueSetStringUTF8RS(m_sliderSimulationDistance.getIggyValuePath(), navUp, nullptr, "RenderDistance", -1);
 		IggyValueSetStringUTF8RS(m_sliderSimulationDistance.getIggyValuePath(), navDown, nullptr, "FpsLimit", -1);
 		IggyValueSetStringUTF8RS(m_sliderFpsLimit.getIggyValuePath(), navUp, nullptr, "SimulationDistance", -1);
-		IggyValueSetStringUTF8RS(m_sliderFpsLimit.getIggyValuePath(), navDown, nullptr, "Gamma", -1);
-		IggyValueSetStringUTF8RS(m_sliderGamma.getIggyValuePath(), navUp, nullptr, "FpsLimit", -1);
+		IggyValueSetStringUTF8RS(m_sliderFpsLimit.getIggyValuePath(), navDown, nullptr, "LodDistance", -1);
+		IggyValueSetStringUTF8RS(m_sliderLodDistance.getIggyValuePath(), navUp, nullptr, "FpsLimit", -1);
+		IggyValueSetStringUTF8RS(m_sliderLodDistance.getIggyValuePath(), navDown, nullptr, "Gamma", -1);
+		IggyValueSetStringUTF8RS(m_sliderGamma.getIggyValuePath(), navUp, nullptr, "LodDistance", -1);
 	}
 #endif
 
@@ -292,6 +307,16 @@ void UIScene_SettingsGraphicsMenu::handleSliderMove(F64 sliderId, F64 currentVal
 			HSSettings::setInt("simulationDistance", sim);
 			swprintf(TempString,256,L"Dist\u00E2ncia de simula\u00E7\u00E3o: %d chunks",sim);
 			m_sliderSimulationDistance.setLabel(TempString);
+		}
+		break;
+
+	case eControl_LodDistance:
+		{
+			m_sliderLodDistance.handleSliderMove(value);
+			const int lod = value * HSLod::kSliderStep;
+			HSLod::SetDistanceChunks(lod);
+			FormatLodLabel(TempString, lod);
+			m_sliderLodDistance.setLabel(TempString);
 		}
 		break;
 

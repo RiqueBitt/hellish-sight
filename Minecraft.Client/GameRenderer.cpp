@@ -1,4 +1,5 @@
 #include "stdafx.h"
+#include "Common/HSLod.h"
 #include "GameRenderer.h"
 #include "ItemInHandRenderer.h"
 #include "LevelRenderer.h"
@@ -738,7 +739,11 @@ void GameRenderer::setupCamera(float a, int eye)
 		glTranslatef(static_cast<float>(zoom_x), static_cast<float>(-zoom_y), 0);
 		glScaled(zoom, zoom, 1);
 	}
+#if defined(_WINDOWS64) && !defined(MINECRAFT_SERVER_BUILD)
+	gluPerspective(fov, aspect, 0.05f, (std::max)(renderDistance * 2, HSLod::ActiveDistanceBlocks(mc) * 1.1f));	// Hellish Sight: LOD needs a farther far plane
+#else
 	gluPerspective(fov, aspect, 0.05f, renderDistance * 2);
+#endif
 
 	if (mc->gameMode->isCutScene())
 	{
@@ -1646,6 +1651,9 @@ void GameRenderer::renderLevel(float a, int64_t until)
 		mc->textures->bindTexture(&TextureAtlas::LOCATION_BLOCKS);	// 4J was L"/terrain.png"
 		MemSect(0);
 		Lighting::turnOff();
+#if defined(_WINDOWS64) && !defined(MINECRAFT_SERVER_BUILD)
+		HSLod::Render(mc, xOff, yOff, zOff, a);	// Hellish Sight: distant terrain, before the real chunks
+#endif
 		PIXBeginNamedEvent(0,"Level render");
 		levelRenderer->render(cameraEntity, 0, a, updateChunks);
 		PIXEndNamedEvent();
@@ -2389,6 +2397,10 @@ void GameRenderer::setupFog(int i, float alpha)
 	else
 	{
 		float distance = renderDistance;
+#if defined(_WINDOWS64) && !defined(MINECRAFT_SERVER_BUILD)
+		// Hellish Sight: with distant terrain the fog moves out to the LOD edge
+		distance = (std::max)(distance, HSLod::ActiveDistanceBlocks(mc));
+#endif
 		if (!mc->level->dimension->hasCeiling)
 		{
 			// 4J - test for doing bedrockfog brought forward from 1.2.3

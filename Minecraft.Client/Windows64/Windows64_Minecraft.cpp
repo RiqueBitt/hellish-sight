@@ -3,6 +3,7 @@
 
 #include "stdafx.h"
 #include "../Common/HSSettings.h"
+#include "../Common/HSLod.h"
 
 #include <dxgi1_4.h>  // IDXGISwapChain3 for SetColorSpace1
 
@@ -2319,6 +2320,15 @@ int APIENTRY _tWinMain(_In_ HINSTANCE hInstance,
 			const int primaryPad = ProfileManager.GetPrimaryPad();
 			if (pMinecraft->gui && app.GetGameStarted())
 				pMinecraft->gui->addMessage(ShaderPack::GetInstance().IsEnabled() ? L"Shaders: ligados" : L"Shaders: desligados", primaryPad);
+		}
+
+		// Hellish Sight: F8 toggles the distant terrain (LOD)
+		if (g_KBMInput.IsKeyPressed(KeyboardMouseInput::KEY_TOGGLE_LOD))
+		{
+			HSLod::Toggle();
+			const int primaryPad = ProfileManager.GetPrimaryPad();
+			if (pMinecraft->gui && app.GetGameStarted())
+				pMinecraft->gui->addMessage(HSLod::IsEnabled() ? L"Terreno distante: ligado" : L"Terreno distante: desligado", primaryPad);
 		}
 
 		// F3 toggles onscreen debug info
