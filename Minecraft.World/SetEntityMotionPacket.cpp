@@ -49,8 +49,18 @@ SetEntityMotionPacket::SetEntityMotionPacket(int id, double xd, double yd, doubl
 
 void SetEntityMotionPacket::read(DataInputStream *dis) //throws IOException 
 {
-	useBytes = dis->readBoolean();
-	id = dis->readInt();
+	if (s_legacyWire)
+	{
+		// protocol 78: short id with the "bytes" flag in bit 11
+		const short idAndFlag = dis->readShort();
+		id = idAndFlag & 0x07ff;
+		useBytes = (idAndFlag & 0x0800) != 0;
+	}
+	else
+	{
+		useBytes = dis->readBoolean();
+		id = dis->readInt();
+	}
 	if(useBytes)
 	{
 		xa = static_cast<int>(dis->readByte());

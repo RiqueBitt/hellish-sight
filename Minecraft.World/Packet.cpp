@@ -12,6 +12,8 @@
 #include "../Minecraft.Client/Gui.h"
 #endif
 
+bool Packet::s_legacyWire = false;
+
 void Packet::staticCtor()
 {
 	//nextPrint = 0;

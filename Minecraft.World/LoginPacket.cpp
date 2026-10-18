@@ -129,7 +129,15 @@ void LoginPacket::read(DataInputStream *dis) //throws IOException
 	m_newSeaLevel = dis->readBoolean();
 	m_uiGamePrivileges = dis->readInt();
 #ifdef _LARGE_WORLDS
-	m_xzSize = dis->readInt();	// Hellish Sight: was readShort (infinite worlds need 22 bits)
+	if (s_legacyWire)
+	{
+		dis->readShort();				// protocol 78; the proxy world is endless
+		m_xzSize = LEVEL_ABSOLUTE_MAX_WIDTH;
+	}
+	else
+	{
+		m_xzSize = dis->readInt();	// Hellish Sight: was readShort (infinite worlds need 22 bits)
+	}
 	m_hellScale = dis->read();
 #endif
 	app.DebugPrintf("LoginPacket::read - Difficulty = %d\n",difficulty);
@@ -166,7 +174,8 @@ void LoginPacket::write(DataOutputStream *dos) //throws IOException
 	dos->writeBoolean(m_newSeaLevel);
 	dos->writeInt(m_uiGamePrivileges);
 #ifdef _LARGE_WORLDS
-	dos->writeInt(m_xzSize);
+	if (s_legacyWire) dos->writeShort(static_cast<short>(m_xzSize > 32767 ? 32767 : m_xzSize));
+	else dos->writeInt(m_xzSize);
 	dos->write(m_hellScale);
 #endif
 }

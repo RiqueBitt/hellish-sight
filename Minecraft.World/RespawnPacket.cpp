@@ -4,6 +4,7 @@
 #include "PacketListener.h"
 #include "RespawnPacket.h"
 #include "LevelType.h"
+#include "ChunkSource.h"
 
 RespawnPacket::RespawnPacket()
 {
@@ -58,11 +59,24 @@ void RespawnPacket::read(DataInputStream *dis) //throws IOException
 	mapSeed = dis->readLong();
 	difficulty = dis->readByte();
 	m_newSeaLevel = dis->readBoolean();
+	if (s_legacyWire)
+	{
+		// protocol 78 (Java server proxy): short id and world size; the proxy world is endless
+		m_newEntityId = dis->readShort();
+#ifdef _LARGE_WORLDS
+		dis->readShort();
+		m_xzSize = LEVEL_ABSOLUTE_MAX_WIDTH;
+		m_hellScale = dis->read();
+#endif
+	}
+	else
+	{
 	m_newEntityId = dis->readInt();
 #ifdef _LARGE_WORLDS
 	m_xzSize = dis->readInt();	// Hellish Sight: was readShort (infinite worlds need 22 bits)
 	m_hellScale = dis->read();
 #endif
+	}
 	app.DebugPrintf("RespawnPacket::read - Difficulty = %d\n",difficulty);
 
 }

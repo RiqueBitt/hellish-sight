@@ -8,6 +8,7 @@
 #include "DispenserBootstrap.h"
 #include "EntityTracker.h"
 #include "MinecraftServer.h"
+#include "../Minecraft.World/Packet.h"
 #include "Options.h"
 #include "PlayerList.h"
 #include "ServerChunkCache.h"
@@ -613,6 +614,7 @@ MinecraftServer::~MinecraftServer()
 
 bool MinecraftServer::initServer(int64_t seed, NetworkGameInitData *initData, DWORD initSettings, bool findSeed)
 {
+	Packet::s_legacyWire = false;	// Hellish Sight: hosting always uses our own protocol
 	// 4J - removed
 #if 0
 	commands = new ConsoleCommands(this);

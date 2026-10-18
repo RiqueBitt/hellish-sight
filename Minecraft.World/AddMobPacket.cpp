@@ -66,7 +66,7 @@ AddMobPacket::AddMobPacket(shared_ptr<LivingEntity> mob, int yRotp, int xRotp, i
 
 void AddMobPacket::read(DataInputStream *dis) //throws IOException
 {
-	id = dis->readInt();
+	id = s_legacyWire ? dis->readShort() : dis->readInt();
 	type = dis->readByte() & 0xff;
 #ifdef _LARGE_WORLDS
 	x = dis->readInt();

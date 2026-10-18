@@ -39,7 +39,7 @@ TeleportEntityPacket::TeleportEntityPacket(int id, int x, int y, int z, byte yRo
 
 void TeleportEntityPacket::read(DataInputStream *dis) //throws IOException
 {
-	id = dis->readInt();
+	id = s_legacyWire ? dis->readShort() : dis->readInt();
 #ifdef _LARGE_WORLDS
 	x = dis->readInt();
 	y = dis->readInt();

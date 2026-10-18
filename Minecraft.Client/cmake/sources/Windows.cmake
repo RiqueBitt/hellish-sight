@@ -367,6 +367,8 @@ set(_MINECRAFT_CLIENT_WINDOWS_WINDOWS64
   "${BASE_DIR}/PostProcesser.cpp"
   "${BASE_DIR}/ShaderPack.cpp"
   "${BASE_DIR}/HSLod.cpp"
+  "${BASE_DIR}/HSJavaServer.cpp"
+  "${BASE_DIR}/HSResourcePacks.cpp"
   "${BASE_DIR}/Windows64_Minecraft.cpp"
 )
 source_group("Windows64" FILES ${_MINECRAFT_CLIENT_WINDOWS_WINDOWS64})

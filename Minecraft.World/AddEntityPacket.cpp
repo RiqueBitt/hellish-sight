@@ -54,7 +54,7 @@ AddEntityPacket::AddEntityPacket(shared_ptr<Entity> e, int type, int data, int y
 
 void AddEntityPacket::read(DataInputStream *dis) // throws IOException  TODO 4J JEV add throws statement
 {
-	id = dis->readInt();
+	id = s_legacyWire ? dis->readShort() : dis->readInt();
 	type = dis->readByte();
 #ifdef _LARGE_WORLDS
 	x = dis->readInt();

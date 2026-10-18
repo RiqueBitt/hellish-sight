@@ -37,6 +37,11 @@ MoveEntityPacketSmall::MoveEntityPacketSmall(int id)
 
 void MoveEntityPacketSmall::read(DataInputStream *dis) //throws IOException 
 {
+	if (s_legacyWire)
+	{
+		id = dis->readShort();
+		return;
+	}
 	id = dis->readInt();
 }
 
@@ -88,6 +93,17 @@ MoveEntityPacketSmall::PosRot::PosRot(int id, char xa, char ya, char za, char yR
 
 void MoveEntityPacketSmall::PosRot::read(DataInputStream *dis) //throws IOException 
 {
+	if (s_legacyWire)
+	{
+		const int idAndRot = dis->readShort();
+		this->id = idAndRot & 0x07ff;
+		this->yRot = idAndRot >> 11;
+		const int xAndYAndZ = (int)dis->readShort();
+		this->xa = xAndYAndZ >> 11;
+		this->ya = (xAndYAndZ << 21) >> 26;
+		this->za = (xAndYAndZ << 27) >> 27;
+		return;
+	}
 	this->id = dis->readInt();
 	this->yRot = dis->readChar();
 	int XandYandZ = (int)dis->readShort();
@@ -127,6 +143,16 @@ MoveEntityPacketSmall::Pos::Pos(int id, char xa, char ya, char za) : MoveEntityP
 
 void MoveEntityPacketSmall::Pos::read(DataInputStream *dis) //throws IOException 
 {
+	if (s_legacyWire)
+	{
+		const int idAndY = dis->readShort();
+		this->id = idAndY & 0x07ff;
+		this->ya = idAndY >> 11;
+		const int XandZ = (int)static_cast<signed char>(dis->readByte());
+		xa = XandZ >> 4;
+		za = (XandZ << 28) >> 28;
+		return;
+	}
 	this->id = dis->readInt();
 	this->ya = dis->readChar();
 	int XandZ = (int)static_cast<signed char>(dis->readByte());
@@ -167,6 +193,13 @@ MoveEntityPacketSmall::Rot::Rot(int id, char yRot, char xRot) : MoveEntityPacket
 
 void MoveEntityPacketSmall::Rot::read(DataInputStream *dis) //throws IOException 
 {
+	if (s_legacyWire)
+	{
+		const int idAndRot = (int)dis->readShort();
+		this->id = idAndRot & 0x07ff;
+		this->yRot = idAndRot >> 11;
+		return;
+	}
 	this->id = dis->readInt();
 	this->yRot = dis->readChar();
 }

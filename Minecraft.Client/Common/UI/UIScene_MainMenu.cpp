@@ -6,6 +6,10 @@
 #include "../../MinecraftServer.h"
 #include "UI.h"
 #include "UIScene_MainMenu.h"
+#if defined(_WINDOWS64) && !defined(MINECRAFT_SERVER_BUILD)
+#include "../../Windows64/HSJavaServer.h"
+#include "../../Windows64/HSResourcePacks.h"
+#endif
 #ifdef __ORBIS__
 #include <error_dialog.h>
 #endif
@@ -35,6 +39,8 @@ UIScene_MainMenu::UIScene_MainMenu(int iPad, void *initData, UILayer *parentLaye
 
 	m_buttons[static_cast<int>(eControl_PlayGame)].init(IDS_PLAY_GAME,eControl_PlayGame);
 	m_buttons[(int)eControl_MiniGames].init(L"Mini Games",eControl_MiniGames);
+	m_buttons[(int)eControl_JavaServers].init(L"Servidores Java",eControl_JavaServers);	// Hellish Sight
+	m_buttons[(int)eControl_TexturePacks].init(L"Texturas (Java 1.8)",eControl_TexturePacks);	// Hellish Sight
 
 #ifdef _XBOX_ONE
 	if(!ProfileManager.IsFullVersion()) m_buttons[(int)eControl_PlayGame].setLabel(IDS_PLAY_TRIAL_GAME);
@@ -378,6 +384,16 @@ void UIScene_MainMenu::handlePress(F64 controlId, F64 childId)
 		m_eAction=eAction_RunUnlockOrDLC;
 		signInReturnedFunc = &UIScene_MainMenu::UnlockFullGame_SignInReturned;
 		break;
+#if defined(_WINDOWS64) && !defined(MINECRAFT_SERVER_BUILD)
+	case eControl_JavaServers:
+		ui.PlayUISFX(eSFX_Press);
+		HSJavaServer::ShowConnectDialog(primaryPad);
+		break;
+	case eControl_TexturePacks:
+		ui.PlayUISFX(eSFX_Press);
+		HSResourcePacks::ShowMenu(primaryPad);
+		break;
+#endif
 	case eControl_Exit:
 		//CD - Added for audio
 		ui.PlayUISFX(eSFX_Press);

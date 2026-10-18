@@ -43,6 +43,7 @@ private:
 
 	void loadUVs();
 	void allocateModTextureCells();
+	void blitResourcePack(BufferedImage *image);	// Hellish Sight (Windows client only)
 	void blitModTextures(BufferedImage *image);
 	void registerModTextureFallback(const wstring &name, const wstring &fallbackName);
 public:

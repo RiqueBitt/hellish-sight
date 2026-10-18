@@ -46,6 +46,11 @@ public:
 	// 4J JEV, replaces the static blocks.
 	static void staticCtor();
 
+	// Hellish Sight: true while connected through the embedded Java-server proxy
+	// (Reunion), which speaks the original console protocol 78 (short entity ids,
+	// short world size and chunk coords).
+	static bool s_legacyWire;
+
 public:
 	static unordered_map<int, packetCreateFn> idToCreateMap; // IntHashMap in 1.8.2 ... needed? // Made public in 1.0.1
 

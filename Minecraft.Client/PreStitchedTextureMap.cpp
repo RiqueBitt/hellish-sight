@@ -1,4 +1,7 @@
 #include "stdafx.h"
+#if defined(_WINDOWS64) && !defined(MINECRAFT_SERVER_BUILD)
+#include "Windows64/HSResourcePacks.h"
+#endif
 #include "../Minecraft.World/net.minecraft.world.h"
 #include "../Minecraft.World/net.minecraft.world.level.tile.h"
 #include "../Minecraft.World/net.minecraft.world.item.h"
@@ -190,6 +193,11 @@ void PreStitchedTextureMap::stitch()
 
 	// Ruby Launcher - draw mod textures into their reserved atlas cells
 	blitModTextures(image);
+
+#if defined(_WINDOWS64) && !defined(MINECRAFT_SERVER_BUILD)
+	// Hellish Sight - Java 1.8 resource pack textures over the built-in cells
+	blitResourcePack(image);
+#endif
 
 	if(stitchResult != nullptr)
 	{
@@ -443,6 +451,52 @@ void PreStitchedTextureMap::allocateModTextureCells()
 		registerModTextureFallback(name, RubyPaths::toWide(request.fallback));
 	}
 }
+
+#if defined(_WINDOWS64) && !defined(MINECRAFT_SERVER_BUILD)
+void PreStitchedTextureMap::blitResourcePack(BufferedImage *image)
+{
+	if (image == nullptr) return;
+	if (HSResourcePacks::GetSelected().empty()) return;
+	const int atlasWidth = image->getWidth();
+	const int atlasHeight = image->getHeight();
+	const int cellPx = atlasWidth / ATLAS_COLUMNS;
+	if (cellPx <= 0) return;
+	const bool terrain = (iconType == Icon::TYPE_TERRAIN);
+	int replaced = 0;
+
+	for (auto &it : texturesByName)
+	{
+		StitchedTexture *icon = static_cast<StitchedTexture *>(it.second);
+		if (icon == nullptr) continue;
+		const int x = static_cast<int>(icon->getU0() * atlasWidth + 0.5f);
+		const int y = static_cast<int>(icon->getV0() * atlasHeight + 0.5f);
+		const int w = static_cast<int>(icon->getU1() * atlasWidth + 0.5f) - x;
+		const int h = static_cast<int>(icon->getV1() * atlasHeight + 0.5f) - y;
+		if (w != cellPx || h != cellPx || x < 0 || y < 0 || x + w > atlasWidth || y + h > atlasHeight) continue;	// single cells only
+
+		vector<int> level;
+		if (!HSResourcePacks::LoadIcon(terrain, it.first, cellPx, level)) continue;
+
+		int size = cellPx;
+		for (int l = 0; l < 10 && size > 0; ++l)
+		{
+			int *dst = image->getData(l);
+			const int levelWidth = atlasWidth >> l;
+			if (dst == nullptr || levelWidth <= 0) break;
+			const int lx = x >> l, ly = y >> l;
+			for (int row = 0; row < size; ++row)
+			{
+				memcpy(dst + (ly + row) * levelWidth + lx, level.data() + row * size, size * sizeof(int));
+			}
+			if (size <= 1) break;
+			level = downscaleHalf(level, size);
+			size /= 2;
+		}
+		replaced++;
+	}
+	app.DebugPrintf("Hellish Sight: resource pack replaced %d %s textures\n", replaced, terrain ? "block" : "item");
+}
+#endif
 
 void PreStitchedTextureMap::blitModTextures(BufferedImage *image)
 {	// Render the mod textures in the base atlases with the cells they get

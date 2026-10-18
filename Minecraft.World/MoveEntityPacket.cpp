@@ -30,7 +30,7 @@ MoveEntityPacket::MoveEntityPacket(int id)
 
 void MoveEntityPacket::read(DataInputStream *dis) //throws IOException 
 {
-	id = dis->readInt();
+	id = s_legacyWire ? dis->readShort() : dis->readInt();
 }
 
 void MoveEntityPacket::write(DataOutputStream *dos) //throws IOException

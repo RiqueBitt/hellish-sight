@@ -4,6 +4,7 @@
 #include "stdafx.h"
 #include "../Common/HSSettings.h"
 #include "../Common/HSLod.h"
+#include "HSJavaServer.h"
 
 #include <dxgi1_4.h>  // IDXGISwapChain3 for SetColorSpace1
 
@@ -1094,6 +1095,9 @@ static bool ResizeD3D(int newW, int newH)
 	while (!RenderManager.Suspended()) { Sleep(1); }
 
 	PostProcesser::GetInstance().Cleanup();
+#ifndef MINECRAFT_SERVER_BUILD
+	HSJavaServer::Shutdown();
+#endif
 
 	g_pImmediateContext->ClearState();
 	g_pImmediateContext->Flush();
@@ -2266,6 +2270,9 @@ int APIENTRY _tWinMain(_In_ HINSTANCE hInstance,
 
 		// Hellish Sight: user FPS limit (Settings > Graphics), 0 = unlimited
 		HS_LimitFrameRate();
+#ifndef MINECRAFT_SERVER_BUILD
+		HSJavaServer::Tick();	// Hellish Sight: Java servers through the embedded proxy
+#endif
 
 		ui.CheckMenuDisplayed();
 

@@ -13,6 +13,8 @@ private:
 		eControl_HelpAndOptions,
 		eControl_UnlockOrDLC,
 		eControl_MiniGames,
+		eControl_JavaServers,	// Hellish Sight
+		eControl_TexturePacks,	// Hellish Sight
 #ifndef _DURANGO
 		eControl_Exit,
 #else
@@ -40,6 +42,8 @@ private:
 		UI_MAP_ELEMENT( m_buttons[(int)eControl_UnlockOrDLC], "Button5")
 #ifndef _DURANGO
 		UI_MAP_ELEMENT( m_buttons[(int)eControl_MiniGames], "Button7")
+		UI_MAP_ELEMENT( m_buttons[(int)eControl_JavaServers], "Button8")
+		UI_MAP_ELEMENT( m_buttons[(int)eControl_TexturePacks], "Button9")
 		UI_MAP_ELEMENT( m_buttons[(int)eControl_Exit], "Button6")
 		
 #else

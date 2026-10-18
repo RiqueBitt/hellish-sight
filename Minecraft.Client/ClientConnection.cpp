@@ -2533,7 +2533,7 @@ void ClientConnection::handlePreLogin(shared_ptr<PreLoginPacket> packet)
 		}
 		BOOL allAllowed, friendsAllowed;
 		ProfileManager.AllowedPlayerCreatedContent(m_userIndex,true,&allAllowed,&friendsAllowed);
-		send(std::make_shared<LoginPacket>(minecraft->user->name, SharedConstants::NETWORK_PROTOCOL_VERSION, offlineXUID, onlineXUID, (allAllowed != TRUE && friendsAllowed == TRUE),
+		send(std::make_shared<LoginPacket>(minecraft->user->name, Packet::s_legacyWire ? 78 : SharedConstants::NETWORK_PROTOCOL_VERSION, offlineXUID, onlineXUID, (allAllowed != TRUE && friendsAllowed == TRUE),
                                            packet->m_ugcPlayersVersion, app.GetPlayerSkinId(m_userIndex), app.GetPlayerCapeId(m_userIndex), ProfileManager.IsGuest(m_userIndex)));
 
 		if(!g_NetworkManager.IsHost() )

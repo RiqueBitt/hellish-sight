@@ -53,8 +53,16 @@ void ChunkTilesUpdatePacket::read(DataInputStream *dis) //throws IOException
 	// 4J - changed format. See comments in write method.
 #ifdef _LARGE_WORLDS
 	// Hellish Sight: full ints, chunk coords reach +/-1,874,999 in infinite worlds
-	xc = dis->readInt();
-	zc = dis->readInt();
+	if (s_legacyWire)
+	{
+		xc = static_cast<short>(dis->readShort());
+		zc = static_cast<short>(dis->readShort());
+	}
+	else
+	{
+		xc = dis->readInt();
+		zc = dis->readInt();
+	}
 #else
 	xc = dis->read();
 	zc = dis->read();
