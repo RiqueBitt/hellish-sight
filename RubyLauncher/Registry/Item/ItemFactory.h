@@ -210,6 +210,7 @@ struct ItemDefinition {
 
     bool fireImmune = false;
     bool blastImmune = false;
+    int maxDamage = 0;      // Hellish Sight: durability bar for plain items (energy tablets, fuel...)
 
     ItemDefinition(sol::table items) {
         type = items["base"].get<EBaseItem>();
@@ -241,6 +242,8 @@ struct ItemDefinition {
         if (customArmor) armorMaterialIndex = customArmor.value();
         if (fireImmuneValue) fireImmune = fireImmuneValue.value();
         if (blastImmuneValue) blastImmune = blastImmuneValue.value();
+        sol::optional<int> maxDamageValue = items["maxDamage"];
+        if (maxDamageValue) maxDamage = maxDamageValue.value();
 
         if (items["armorMaterial"].is<int>()) {
             armorMaterial = items["armorMaterial"].get<EArmorMaterial>();

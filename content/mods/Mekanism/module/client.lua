@@ -25,6 +25,36 @@ function main()
     registerBlock("block_salt", "Salt Block", "res/block_salt.png", BlockDefinition.new({ hardness = 3.0, resistance = 15.0, tool = EBlockTool.Pickaxe, sound = 'stone' }))
     registerBlock("block_copper", "Block of Copper", "res/block_copper.png", BlockDefinition.new({ hardness = 5.0, resistance = 30.0, tool = EBlockTool.Pickaxe, sound = 'metal' }))
     registerBlock("steel_casing", "Steel Casing", "res/steel_casing.png", BlockDefinition.new({ hardness = 5.0, resistance = 30.0, tool = EBlockTool.Pickaxe, sound = 'metal' }))
+    registerBlock("structural_glass", "Structural Glass", "res/structural_glass.png", BlockDefinition.new({ hardness = 5.0, resistance = 30.0, tool = EBlockTool.Pickaxe, sound = 'metal' }))
+    registerBlock("dynamic_tank", "Dynamic Tank", "res/dynamic_tank.png", BlockDefinition.new({ hardness = 5.0, resistance = 30.0, tool = EBlockTool.Pickaxe, sound = 'metal' }))
+    registerBlock("induction_casing", "Induction Casing", "res/induction_casing.png", BlockDefinition.new({ hardness = 5.0, resistance = 30.0, tool = EBlockTool.Pickaxe, sound = 'metal' }))
+    registerBlock("thermal_evaporation_block", "Thermal Evaporation Block", "res/thermal_evaporation_block.png", BlockDefinition.new({ hardness = 5.0, resistance = 30.0, tool = EBlockTool.Pickaxe, sound = 'metal' }))
+    registerBlock("thermal_evaporation_valve", "Thermal Evaporation Valve", "res/thermal_evaporation_valve.png", BlockDefinition.new({ hardness = 5.0, resistance = 30.0, tool = EBlockTool.Pickaxe, sound = 'metal' }))
+    registerBlock("boiler_casing", "Boiler Casing", "res/boiler_casing.png", BlockDefinition.new({ hardness = 5.0, resistance = 30.0, tool = EBlockTool.Pickaxe, sound = 'metal' }))
+    registerBlock("boiler_valve", "Boiler Valve", "res/boiler_valve.png", BlockDefinition.new({ hardness = 5.0, resistance = 30.0, tool = EBlockTool.Pickaxe, sound = 'metal' }))
+    registerBlock("superheating_element", "Superheating Element", "res/superheating_element.png", BlockDefinition.new({ hardness = 5.0, resistance = 30.0, tool = EBlockTool.Pickaxe, sound = 'metal' }))
+    registerBlock("pressure_disperser", "Pressure Disperser", "res/pressure_disperser.png", BlockDefinition.new({ hardness = 5.0, resistance = 30.0, tool = EBlockTool.Pickaxe, sound = 'metal' }))
+    registerBlock("sps_casing", "SPS Casing", "res/sps_casing.png", BlockDefinition.new({ hardness = 5.0, resistance = 30.0, tool = EBlockTool.Pickaxe, sound = 'metal' }))
+    registerBlock("teleporter_frame", "Teleporter Frame", "res/teleporter_frame.png", BlockDefinition.new({ hardness = 5.0, resistance = 30.0, tool = EBlockTool.Pickaxe, sound = 'metal' }))
+    registerBlock("turbine_casing", "Turbine Casing", "res/turbine_casing.png", BlockDefinition.new({ hardness = 5.0, resistance = 30.0, tool = EBlockTool.Pickaxe, sound = 'metal' }))
+    registerBlock("turbine_vent", "Turbine Vent", "res/turbine_vent.png", BlockDefinition.new({ hardness = 5.0, resistance = 30.0, tool = EBlockTool.Pickaxe, sound = 'metal' }))
+    registerBlock("turbine_rotor", "Turbine Rotor", "res/turbine_rotor.png", BlockDefinition.new({ hardness = 5.0, resistance = 30.0, tool = EBlockTool.Pickaxe, sound = 'metal' }))
+    registerBlock("electromagnetic_coil", "Electromagnetic Coil", "res/electromagnetic_coil.png", BlockDefinition.new({ hardness = 5.0, resistance = 30.0, tool = EBlockTool.Pickaxe, sound = 'metal' }))
+    registerBlock("saturating_condenser", "Saturating Condenser", "res/saturating_condenser.png", BlockDefinition.new({ hardness = 5.0, resistance = 30.0, tool = EBlockTool.Pickaxe, sound = 'metal' }))
+    registerBlock("fission_reactor_casing", "Fission Reactor Casing", "res/fission_reactor_casing.png", BlockDefinition.new({ hardness = 5.0, resistance = 30.0, tool = EBlockTool.Pickaxe, sound = 'metal' }))
+    registerBlock("fission_reactor_port", "Fission Reactor Port", "res/fission_reactor_port.png", BlockDefinition.new({ hardness = 5.0, resistance = 30.0, tool = EBlockTool.Pickaxe, sound = 'metal' }))
+    registerBlock("reactor_glass", "Reactor Glass", "res/reactor_glass.png", BlockDefinition.new({ hardness = 5.0, resistance = 30.0, tool = EBlockTool.Pickaxe, sound = 'metal' }))
+    registerBlock("fission_fuel_assembly", "Fission Fuel Assembly", "res/fission_fuel_assembly.png", BlockDefinition.new({ hardness = 5.0, resistance = 30.0, tool = EBlockTool.Pickaxe, sound = 'metal' }))
+    registerBlock("reactor_frame", "Fusion Reactor Frame", "res/reactor_frame.png", BlockDefinition.new({ hardness = 5.0, resistance = 30.0, tool = EBlockTool.Pickaxe, sound = 'metal' }))
+    registerBlock("reactor_port", "Fusion Reactor Port", "res/reactor_port.png", BlockDefinition.new({ hardness = 5.0, resistance = 30.0, tool = EBlockTool.Pickaxe, sound = 'metal' }))
+    registerBlock("basic_induction_cell", "Basic Induction Cell", "res/basic_induction_cell.png", BlockDefinition.new({ hardness = 5.0, resistance = 30.0, tool = EBlockTool.Pickaxe, sound = 'metal' }))
+    registerBlock("basic_induction_provider", "Basic Induction Provider", "res/basic_induction_provider.png", BlockDefinition.new({ hardness = 5.0, resistance = 30.0, tool = EBlockTool.Pickaxe, sound = 'metal' }))
+    registerBlock("advanced_induction_cell", "Advanced Induction Cell", "res/advanced_induction_cell.png", BlockDefinition.new({ hardness = 5.0, resistance = 30.0, tool = EBlockTool.Pickaxe, sound = 'metal' }))
+    registerBlock("advanced_induction_provider", "Advanced Induction Provider", "res/advanced_induction_provider.png", BlockDefinition.new({ hardness = 5.0, resistance = 30.0, tool = EBlockTool.Pickaxe, sound = 'metal' }))
+    registerBlock("elite_induction_cell", "Elite Induction Cell", "res/elite_induction_cell.png", BlockDefinition.new({ hardness = 5.0, resistance = 30.0, tool = EBlockTool.Pickaxe, sound = 'metal' }))
+    registerBlock("elite_induction_provider", "Elite Induction Provider", "res/elite_induction_provider.png", BlockDefinition.new({ hardness = 5.0, resistance = 30.0, tool = EBlockTool.Pickaxe, sound = 'metal' }))
+    registerBlock("ultimate_induction_cell", "Ultimate Induction Cell", "res/ultimate_induction_cell.png", BlockDefinition.new({ hardness = 5.0, resistance = 30.0, tool = EBlockTool.Pickaxe, sound = 'metal' }))
+    registerBlock("ultimate_induction_provider", "Ultimate Induction Provider", "res/ultimate_induction_provider.png", BlockDefinition.new({ hardness = 5.0, resistance = 30.0, tool = EBlockTool.Pickaxe, sound = 'metal' }))
 
     -- items
     registerItem("ingot_osmium", "Osmium Ingot", "res/ingot_osmium.png", ItemDefinition.new({ base = EBaseItem.Ingot }))
@@ -105,7 +135,23 @@ function main()
     registerItem("sawdust", "Sawdust", "res/sawdust.png", ItemDefinition.new({ base = EBaseItem.Default }))
     registerItem("fluorite_gem", "Fluorite", "res/fluorite_gem.png", ItemDefinition.new({ base = EBaseItem.Default }))
     registerItem("substrate", "Substrate", "res/substrate.png", ItemDefinition.new({ base = EBaseItem.Default }))
-    registerItem("energy_tablet", "Energy Tablet", "res/energy_tablet.png", ItemDefinition.new({ base = EBaseItem.Default }))
+    registerItem("crystal_iron", "Iron Crystal", "res/crystal_iron.png", ItemDefinition.new({ base = EBaseItem.Default }))
+    registerItem("crystal_gold", "Gold Crystal", "res/crystal_gold.png", ItemDefinition.new({ base = EBaseItem.Default }))
+    registerItem("crystal_osmium", "Osmium Crystal", "res/crystal_osmium.png", ItemDefinition.new({ base = EBaseItem.Default }))
+    registerItem("crystal_tin", "Tin Crystal", "res/crystal_tin.png", ItemDefinition.new({ base = EBaseItem.Default }))
+    registerItem("crystal_copper", "Copper Crystal", "res/crystal_copper.png", ItemDefinition.new({ base = EBaseItem.Default }))
+    registerItem("crystal_lead", "Lead Crystal", "res/crystal_lead.png", ItemDefinition.new({ base = EBaseItem.Default }))
+    registerItem("crystal_uranium", "Uranium Crystal", "res/crystal_uranium.png", ItemDefinition.new({ base = EBaseItem.Default }))
+    registerItem("yellow_cake_uranium", "Yellow Cake Uranium", "res/yellow_cake_uranium.png", ItemDefinition.new({ base = EBaseItem.Default }))
+    registerItem("pellet_plutonium", "Plutonium Pellet", "res/pellet_plutonium.png", ItemDefinition.new({ base = EBaseItem.Default }))
+    registerItem("pellet_polonium", "Polonium Pellet", "res/pellet_polonium.png", ItemDefinition.new({ base = EBaseItem.Default }))
+    registerItem("pellet_antimatter", "Antimatter Pellet", "res/pellet_antimatter.png", ItemDefinition.new({ base = EBaseItem.Default }))
+    registerItem("teleportation_core", "Teleportation Core", "res/teleportation_core.png", ItemDefinition.new({ base = EBaseItem.Default }))
+    registerItem("upgrade_speed", "Speed Upgrade", "res/speed.png", ItemDefinition.new({ base = EBaseItem.Default }))
+    registerItem("upgrade_energy", "Energy Upgrade", "res/energy.png", ItemDefinition.new({ base = EBaseItem.Default }))
+    registerItem("upgrade_muffling", "Muffling Upgrade", "res/muffling.png", ItemDefinition.new({ base = EBaseItem.Default }))
+    registerItem("configurator", "Configurator", "res/configurator.png", ItemDefinition.new({ base = EBaseItem.Default, maxStacksize = 1 }))
+    registerItem("energy_tablet", "Energy Tablet", "res/energy_tablet.png", ItemDefinition.new({ base = EBaseItem.Default, maxDamage = 1000 }))
 
     -- tools and armour (Mekanism Tools)
     local osmiumTier = registerItemTier("osmium", { level = 2, uses = 1024, speed = 4, damage = 4, ench = 14 })
@@ -175,6 +221,80 @@ function main()
     registerItem("lapis_lazuli_leggings", "Lapis Lazuli Leggings", "res/lapis_lazuli_leggings.png", ItemDefinition.new({ base = EBaseItem.Leggings, armorSet = "mek_lapis_lazuli", customArmorMaterial = lapis_lazuliArmor, maxStacksize = 1 }))
     registerItem("lapis_lazuli_boots", "Lapis Lazuli Boots", "res/lapis_lazuli_boots.png", ItemDefinition.new({ base = EBaseItem.Boots, armorSet = "mek_lapis_lazuli", customArmorMaterial = lapis_lazuliArmor, maxStacksize = 1 }))
 
+    -- wearables and electric tools
+    local jetpackMat = registerArmorMaterial("jetpack", { durabilityMultiplier = 50, head = 1, torso = 3, legs = 2, feet = 1, ench = 0 })
+    local runnerMat = registerArmorMaterial("free_runners", { durabilityMultiplier = 40, head = 1, torso = 3, legs = 2, feet = 2, ench = 0 })
+    local scubaMat = registerArmorMaterial("scuba", { durabilityMultiplier = 30, head = 2, torso = 3, legs = 2, feet = 1, ench = 0 })
+    local mekaMat = registerArmorMaterial("mekasuit", { durabilityMultiplier = 80, head = 5, torso = 10, legs = 8, feet = 5, ench = 15 })
+    registerItem("jetpack", "Jetpack", "res/jetpack.png", ItemDefinition.new({ base = EBaseItem.Chestplate, armorSet = "mek_steel", customArmorMaterial = jetpackMat, maxStacksize = 1 }))
+    registerItem("free_runners", "Free Runners", "res/free_runners.png", ItemDefinition.new({ base = EBaseItem.Boots, armorSet = "mek_steel", customArmorMaterial = runnerMat, maxStacksize = 1 }))
+    registerItem("scuba_mask", "Scuba Mask", "res/scuba_mask.png", ItemDefinition.new({ base = EBaseItem.Helmet, armorSet = "mek_steel", customArmorMaterial = scubaMat, maxStacksize = 1 }))
+    registerItem("mekasuit_helmet", "MekaSuit Helmet", "res/mekasuit_helmet.png", ItemDefinition.new({ base = EBaseItem.Helmet, armorSet = "mek_refined_obsidian", customArmorMaterial = mekaMat, maxStacksize = 1 }))
+    registerItem("mekasuit_bodyarmor", "MekaSuit Body Armor", "res/mekasuit_bodyarmor.png", ItemDefinition.new({ base = EBaseItem.Chestplate, armorSet = "mek_refined_obsidian", customArmorMaterial = mekaMat, maxStacksize = 1 }))
+    registerItem("mekasuit_pants", "MekaSuit Pants", "res/mekasuit_pants.png", ItemDefinition.new({ base = EBaseItem.Leggings, armorSet = "mek_refined_obsidian", customArmorMaterial = mekaMat, maxStacksize = 1 }))
+    registerItem("mekasuit_boots", "MekaSuit Boots", "res/mekasuit_boots.png", ItemDefinition.new({ base = EBaseItem.Boots, armorSet = "mek_refined_obsidian", customArmorMaterial = mekaMat, maxStacksize = 1 }))
+    local atomicTier = registerItemTier("atomic", { level = 3, uses = 4000, speed = 18, damage = 12, ench = 0 })
+    registerItem("atomic_disassembler", "Atomic Disassembler", "res/atomic_disassembler.png", ItemDefinition.new({ base = EBaseItem.Pickaxe, customTier = atomicTier, maxStacksize = 1 }))
+    registerItemRole("jetpack", "jetpack")
+    registerItemRole("free_runners", "free_runners")
+    registerItemRole("scuba_mask", "gas_mask")
+    registerItemRole("mekasuit_helmet", "gas_mask")
+    registerItemRole("mekasuit_bodyarmor", "jetpack")
+    registerItemRole("mekasuit_boots", "free_runners")
+    registerItemRefill("jetpack", "hydrogen", 10)
+    registerItemRefill("mekasuit_helmet", "energy", 200)
+    registerItemRefill("mekasuit_bodyarmor", "energy", 200)
+    registerItemRefill("mekasuit_pants", "energy", 200)
+    registerItemRefill("mekasuit_boots", "energy", 200)
+    registerItemRefill("free_runners", "energy", 50)
+    registerItemRefill("atomic_disassembler", "energy", 50)
+    registerItemRefill("scuba_mask", "oxygen", 10)
+
+    -- chemicals, machine tools and rechargeable items
+    registerChemical("hydrogen", { name = "Hidrogênio", color = 0xFFFFFF, gas = true })
+    registerChemical("oxygen", { name = "Oxigênio", color = 0x6CE2FF, gas = true })
+    registerChemical("chlorine", { name = "Cloro", color = 0xCFE800, gas = true })
+    registerChemical("sodium", { name = "Sódio", color = 0xE9FEF4, gas = true })
+    registerChemical("steam", { name = "Vapor", color = 0xC1C1C1, gas = true })
+    registerChemical("hydrogen_chloride", { name = "Cloreto de Hidrogênio", color = 0xA8F1E9, gas = true })
+    registerChemical("sulfur_dioxide", { name = "Dióxido de Enxofre", color = 0xA99D90, gas = true })
+    registerChemical("sulfur_trioxide", { name = "Trióxido de Enxofre", color = 0xCE6C6C, gas = true })
+    registerChemical("sulfuric_acid", { name = "Ácido Sulfúrico", color = 0x82802B, gas = true })
+    registerChemical("hydrofluoric_acid", { name = "Ácido Fluorídrico", color = 0xC6C29C, gas = true })
+    registerChemical("ethylene", { name = "Etileno", color = 0xEACCF9, gas = true })
+    registerChemical("brine", { name = "Salmoura", color = 0xFEEF9C, gas = false })
+    registerChemical("lithium", { name = "Lítio", color = 0xEBA400, gas = false })
+    registerChemical("heavy_water", { name = "Água Pesada", color = 0x0D0D80, gas = false })
+    registerChemical("deuterium", { name = "Deutério", color = 0xFF3232, gas = true })
+    registerChemical("tritium", { name = "Trítio", color = 0x64FF70, gas = true })
+    registerChemical("dt_fuel", { name = "Combustível D-T", color = 0xC8A0C8, gas = true })
+    registerChemical("uranium_oxide", { name = "Óxido de Urânio", color = 0xE1F573, gas = true })
+    registerChemical("uranium_hexafluoride", { name = "Hexafluoreto de Urânio", color = 0x809960, gas = true })
+    registerChemical("fissile_fuel", { name = "Combustível Físsil", color = 0x2E332F, gas = true })
+    registerChemical("nuclear_waste", { name = "Resíduo Nuclear", color = 0x4F412A, gas = true })
+    registerChemical("plutonium", { name = "Plutônio", color = 0x1F919C, gas = true })
+    registerChemical("polonium", { name = "Polônio", color = 0x1B1B19, gas = true })
+    registerChemical("antimatter", { name = "Antimatéria", color = 0xA464B3, gas = true })
+    registerChemical("dirty_iron_slurry", { name = "Polpa Suja de Iron", color = 0x6B5A40, gas = false })
+    registerChemical("clean_iron_slurry", { name = "Polpa Limpa de Iron", color = 0xB0A080, gas = false })
+    registerChemical("dirty_gold_slurry", { name = "Polpa Suja de Gold", color = 0x6B5A40, gas = false })
+    registerChemical("clean_gold_slurry", { name = "Polpa Limpa de Gold", color = 0xB0A080, gas = false })
+    registerChemical("dirty_osmium_slurry", { name = "Polpa Suja de Osmium", color = 0x6B5A40, gas = false })
+    registerChemical("clean_osmium_slurry", { name = "Polpa Limpa de Osmium", color = 0xB0A080, gas = false })
+    registerChemical("dirty_tin_slurry", { name = "Polpa Suja de Tin", color = 0x6B5A40, gas = false })
+    registerChemical("clean_tin_slurry", { name = "Polpa Limpa de Tin", color = 0xB0A080, gas = false })
+    registerChemical("dirty_copper_slurry", { name = "Polpa Suja de Copper", color = 0x6B5A40, gas = false })
+    registerChemical("clean_copper_slurry", { name = "Polpa Limpa de Copper", color = 0xB0A080, gas = false })
+    registerChemical("dirty_lead_slurry", { name = "Polpa Suja de Lead", color = 0x6B5A40, gas = false })
+    registerChemical("clean_lead_slurry", { name = "Polpa Limpa de Lead", color = 0xB0A080, gas = false })
+    registerChemical("dirty_uranium_slurry", { name = "Polpa Suja de Uranium", color = 0x6B5A40, gas = false })
+    registerChemical("clean_uranium_slurry", { name = "Polpa Limpa de Uranium", color = 0xB0A080, gas = false })
+    registerMachineTool("upgrade_speed", "upgrade_speed")
+    registerMachineTool("upgrade_energy", "upgrade_energy")
+    registerMachineTool("upgrade_muffling", "upgrade_muffling")
+    registerMachineTool("configurator", "configurator")
+    registerItemRefill("energy_tablet", "energy", 100)
+
     -- machines: input slot (top), power / infusion slot (bottom), output (right)
     registerMachine("enrichment_chamber", "Enrichment Chamber", { front = "res/enrichment_chamber_front.png", frontActive = "res/enrichment_chamber_frontActive.png", side = "res/enrichment_chamber_side.png", top = "res/enrichment_chamber_top.png", bottom = "res/enrichment_chamber_bottom.png" }, {
         hardness = 3.5,
@@ -222,7 +342,8 @@ function main()
             { "mekanism:dust_quartz", "minecraft:quartz", 1 },
             { "mekanism:dust_coal", "minecraft:coal", 1 },
             { "mekanism:dust_charcoal", "minecraft:charcoal", 1 },
-            { "mekanism:dust_fluorite", "mekanism:fluorite_gem", 1 }
+            { "mekanism:dust_fluorite", "mekanism:fluorite_gem", 1 },
+            { "mekanism:dust_uranium", "mekanism:yellow_cake_uranium", 2 }
         }
     })
     registerMachine("crusher", "Crusher", { front = "res/crusher_front.png", frontActive = "res/crusher_frontActive.png", side = "res/crusher_side.png", top = "res/crusher_top.png", bottom = "res/crusher_bottom.png" }, {
@@ -271,7 +392,8 @@ function main()
             { "mekanism:clump_tin", "mekanism:dirty_dust_tin", 1 },
             { "mekanism:clump_copper", "mekanism:dirty_dust_copper", 1 },
             { "mekanism:clump_lead", "mekanism:dirty_dust_lead", 1 },
-            { "mekanism:clump_uranium", "mekanism:dirty_dust_uranium", 1 }
+            { "mekanism:clump_uranium", "mekanism:dirty_dust_uranium", 1 },
+            { "minecraft:gunpowder", "mekanism:dust_sulfur", 1 }
         }
     })
     registerMachine("energized_smelter", "Energized Smelter", { front = "res/energized_smelter_front.png", frontActive = "res/energized_smelter_frontActive.png", side = "res/energized_smelter_side.png", top = "res/energized_smelter_top.png", bottom = "res/energized_smelter_bottom.png" }, {
@@ -302,7 +424,21 @@ function main()
             { "mekanism:shard_tin", "mekanism:clump_tin", 1 },
             { "mekanism:shard_copper", "mekanism:clump_copper", 1 },
             { "mekanism:shard_lead", "mekanism:clump_lead", 1 },
-            { "mekanism:shard_uranium", "mekanism:clump_uranium", 1 }
+            { "mekanism:shard_uranium", "mekanism:clump_uranium", 1 },
+            { "minecraft:iron_ore", "mekanism:clump_iron", 3, chemIn = { "mekanism:oxygen", 40 } },
+            { "minecraft:gold_ore", "mekanism:clump_gold", 3, chemIn = { "mekanism:oxygen", 40 } },
+            { "mekanism:osmium_ore", "mekanism:clump_osmium", 3, chemIn = { "mekanism:oxygen", 40 } },
+            { "mekanism:tin_ore", "mekanism:clump_tin", 3, chemIn = { "mekanism:oxygen", 40 } },
+            { "mekanism:copper_ore", "mekanism:clump_copper", 3, chemIn = { "mekanism:oxygen", 40 } },
+            { "mekanism:lead_ore", "mekanism:clump_lead", 3, chemIn = { "mekanism:oxygen", 40 } },
+            { "mekanism:uranium_ore", "mekanism:clump_uranium", 3, chemIn = { "mekanism:oxygen", 40 } },
+            { "mekanism:shard_iron", "mekanism:clump_iron", 1, chemIn = { "mekanism:oxygen", 20 } },
+            { "mekanism:shard_gold", "mekanism:clump_gold", 1, chemIn = { "mekanism:oxygen", 20 } },
+            { "mekanism:shard_osmium", "mekanism:clump_osmium", 1, chemIn = { "mekanism:oxygen", 20 } },
+            { "mekanism:shard_tin", "mekanism:clump_tin", 1, chemIn = { "mekanism:oxygen", 20 } },
+            { "mekanism:shard_copper", "mekanism:clump_copper", 1, chemIn = { "mekanism:oxygen", 20 } },
+            { "mekanism:shard_lead", "mekanism:clump_lead", 1, chemIn = { "mekanism:oxygen", 20 } },
+            { "mekanism:shard_uranium", "mekanism:clump_uranium", 1, chemIn = { "mekanism:oxygen", 20 } }
         }
     })
     registerMachine("chemical_injection_chamber", "Chemical Injection Chamber", { front = "res/chemical_injection_chamber_front.png", frontActive = "res/chemical_injection_chamber_frontActive.png", side = "res/chemical_injection_chamber_side.png", top = "res/chemical_injection_chamber_top.png", bottom = "res/chemical_injection_chamber_bottom.png" }, {
@@ -318,7 +454,21 @@ function main()
             { "mekanism:lead_ore", "mekanism:shard_lead", 4, extra = "mekanism:salt" },
             { "mekanism:uranium_ore", "mekanism:shard_uranium", 4, extra = "mekanism:salt" },
             { "minecraft:iron_ore", "mekanism:shard_iron", 4, extra = "mekanism:salt" },
-            { "minecraft:gold_ore", "mekanism:shard_gold", 4, extra = "mekanism:salt" }
+            { "minecraft:gold_ore", "mekanism:shard_gold", 4, extra = "mekanism:salt" },
+            { "minecraft:iron_ore", "mekanism:shard_iron", 4, chemIn = { "mekanism:hydrogen_chloride", 40 } },
+            { "minecraft:gold_ore", "mekanism:shard_gold", 4, chemIn = { "mekanism:hydrogen_chloride", 40 } },
+            { "mekanism:osmium_ore", "mekanism:shard_osmium", 4, chemIn = { "mekanism:hydrogen_chloride", 40 } },
+            { "mekanism:tin_ore", "mekanism:shard_tin", 4, chemIn = { "mekanism:hydrogen_chloride", 40 } },
+            { "mekanism:copper_ore", "mekanism:shard_copper", 4, chemIn = { "mekanism:hydrogen_chloride", 40 } },
+            { "mekanism:lead_ore", "mekanism:shard_lead", 4, chemIn = { "mekanism:hydrogen_chloride", 40 } },
+            { "mekanism:uranium_ore", "mekanism:shard_uranium", 4, chemIn = { "mekanism:hydrogen_chloride", 40 } },
+            { "mekanism:crystal_iron", "mekanism:shard_iron", 1, chemIn = { "mekanism:hydrogen_chloride", 20 } },
+            { "mekanism:crystal_gold", "mekanism:shard_gold", 1, chemIn = { "mekanism:hydrogen_chloride", 20 } },
+            { "mekanism:crystal_osmium", "mekanism:shard_osmium", 1, chemIn = { "mekanism:hydrogen_chloride", 20 } },
+            { "mekanism:crystal_tin", "mekanism:shard_tin", 1, chemIn = { "mekanism:hydrogen_chloride", 20 } },
+            { "mekanism:crystal_copper", "mekanism:shard_copper", 1, chemIn = { "mekanism:hydrogen_chloride", 20 } },
+            { "mekanism:crystal_lead", "mekanism:shard_lead", 1, chemIn = { "mekanism:hydrogen_chloride", 20 } },
+            { "mekanism:crystal_uranium", "mekanism:shard_uranium", 1, chemIn = { "mekanism:hydrogen_chloride", 20 } }
         }
     })
     registerMachine("metallurgic_infuser", "Metallurgic Infuser", { front = "res/metallurgic_infuser_front.png", frontActive = "res/metallurgic_infuser_frontActive.png", side = "res/metallurgic_infuser_side.png", top = "res/metallurgic_infuser_top.png", bottom = "res/metallurgic_infuser_bottom.png" }, {
@@ -387,8 +537,8 @@ function main()
         energyCapacity = 40000,
         energyPerTick = 50,
         recipes = {
-            { "minecraft:oak_log", "minecraft:oak_planks", 6 },
-            { "minecraft:oak_planks", "minecraft:stick", 6 },
+            { "minecraft:oak_log", "minecraft:oak_planks", 6, secondary = { "mekanism:sawdust", chance = 0.25 } },
+            { "minecraft:oak_planks", "minecraft:stick", 6, secondary = { "mekanism:sawdust", chance = 0.25 } },
             { "minecraft:bookshelf", "minecraft:oak_planks", 6 },
             { "minecraft:crafting_table", "minecraft:oak_planks", 4 },
             { "minecraft:chest", "minecraft:oak_planks", 8 },
@@ -410,6 +560,824 @@ function main()
     registerMachine("advanced_universal_cable", "Advanced Universal Cable", { side = "res/advanced_universal_cable.png" }, { kind = "cable", transfer = 128000, hardness = 1.0 })
     registerMachine("elite_universal_cable", "Elite Universal Cable", { side = "res/elite_universal_cable.png" }, { kind = "cable", transfer = 1024000, hardness = 1.0 })
     registerMachine("ultimate_universal_cable", "Ultimate Universal Cable", { side = "res/ultimate_universal_cable.png" }, { kind = "cable", transfer = 8192000, hardness = 1.0 })
+
+    -- chemical machines, tanks, pipes, transporters, pump, miner, teleporter, multiblocks
+    registerMachine("electrolytic_separator", "Electrolytic Separator", { side = "res/electrolytic_separator_side.png", front = "res/electrolytic_separator_front.png", frontActive = "res/electrolytic_separator_front_on.png", top = "res/electrolytic_separator_top.png", bottom = "res/mek_steel_side.png" }, {
+        hardness = 3.5, energyCapacity = 80000, power = POWER, energyPerTick = 200, processTicks = 10, recipes = {
+            { "", "", 1, chemIn = { "minecraft:water", 100 }, chemOut = { "mekanism:hydrogen", 200 }, chemOut2 = { "mekanism:oxygen", 100 } },
+            { "", "", 1, chemIn = { "mekanism:brine", 100 }, chemOut = { "mekanism:sodium", 100 }, chemOut2 = { "mekanism:chlorine", 100 } },
+            { "", "", 1, chemIn = { "mekanism:heavy_water", 100 }, chemOut = { "mekanism:deuterium", 200 }, chemOut2 = { "mekanism:oxygen", 100 } }
+        }
+    })
+    registerMachine("chemical_oxidizer", "Chemical Oxidizer", { side = "res/chemical_oxidizer_side.png", front = "res/chemical_oxidizer_front.png", frontActive = "res/chemical_oxidizer_front_on.png", top = "res/chemical_oxidizer_top.png", bottom = "res/mek_steel_side.png" }, {
+        hardness = 3.5, energyCapacity = 80000, power = POWER, energyPerTick = 100, processTicks = 40, recipes = {
+            { "mekanism:dust_sulfur", "", 1, chemOut = { "mekanism:sulfur_dioxide", 100 } },
+            { "mekanism:yellow_cake_uranium", "", 1, chemOut = { "mekanism:uranium_oxide", 250 } },
+            { "mekanism:dust_lithium", "", 1, chemOut = { "mekanism:lithium", 100 } },
+            { "mekanism:salt", "", 1, chemOut = { "mekanism:brine", 15 } },
+            { "mekanism:pellet_plutonium", "", 1, chemOut = { "mekanism:plutonium", 1000 } },
+            { "mekanism:pellet_polonium", "", 1, chemOut = { "mekanism:polonium", 1000 } }
+        }
+    })
+    registerMachine("chemical_infuser", "Chemical Infuser", { side = "res/chemical_infuser_side.png", front = "res/chemical_infuser_front.png", frontActive = "res/chemical_infuser_front_on.png", top = "res/chemical_infuser_top.png", bottom = "res/mek_steel_side.png" }, {
+        hardness = 3.5, energyCapacity = 80000, power = POWER, energyPerTick = 100, processTicks = 20, recipes = {
+            { "", "", 1, chemIn = { "mekanism:hydrogen", 100 }, chemIn2 = { "mekanism:chlorine", 100 }, chemOut = { "mekanism:hydrogen_chloride", 100 } },
+            { "", "", 1, chemIn = { "mekanism:sulfur_dioxide", 100 }, chemIn2 = { "mekanism:oxygen", 50 }, chemOut = { "mekanism:sulfur_trioxide", 100 } },
+            { "", "", 1, chemIn = { "mekanism:sulfur_trioxide", 100 }, chemIn2 = { "minecraft:water", 100 }, chemOut = { "mekanism:sulfuric_acid", 100 } },
+            { "", "", 1, chemIn = { "mekanism:deuterium", 100 }, chemIn2 = { "mekanism:tritium", 100 }, chemOut = { "mekanism:dt_fuel", 200 } },
+            { "", "", 1, chemIn = { "mekanism:uranium_oxide", 100 }, chemIn2 = { "mekanism:hydrofluoric_acid", 100 }, chemOut = { "mekanism:uranium_hexafluoride", 100 } }
+        }
+    })
+    registerMachine("chemical_dissolution_chamber", "Chemical Dissolution Chamber", { side = "res/chemical_dissolution_chamber_side.png", front = "res/chemical_dissolution_chamber_front.png", frontActive = "res/chemical_dissolution_chamber_front_on.png", top = "res/chemical_dissolution_chamber_top.png", bottom = "res/mek_steel_side.png" }, {
+        hardness = 3.5, energyCapacity = 80000, power = POWER, energyPerTick = 150, processTicks = 100, recipes = {
+            { "minecraft:iron_ore", "", 1, chemIn = { "mekanism:sulfuric_acid", 100 }, chemOut = { "mekanism:dirty_iron_slurry", 1000 } },
+            { "minecraft:gold_ore", "", 1, chemIn = { "mekanism:sulfuric_acid", 100 }, chemOut = { "mekanism:dirty_gold_slurry", 1000 } },
+            { "mekanism:osmium_ore", "", 1, chemIn = { "mekanism:sulfuric_acid", 100 }, chemOut = { "mekanism:dirty_osmium_slurry", 1000 } },
+            { "mekanism:tin_ore", "", 1, chemIn = { "mekanism:sulfuric_acid", 100 }, chemOut = { "mekanism:dirty_tin_slurry", 1000 } },
+            { "mekanism:copper_ore", "", 1, chemIn = { "mekanism:sulfuric_acid", 100 }, chemOut = { "mekanism:dirty_copper_slurry", 1000 } },
+            { "mekanism:lead_ore", "", 1, chemIn = { "mekanism:sulfuric_acid", 100 }, chemOut = { "mekanism:dirty_lead_slurry", 1000 } },
+            { "mekanism:uranium_ore", "", 1, chemIn = { "mekanism:sulfuric_acid", 100 }, chemOut = { "mekanism:dirty_uranium_slurry", 1000 } },
+            { "mekanism:fluorite_gem", "", 1, chemIn = { "mekanism:sulfuric_acid", 50 }, chemOut = { "mekanism:hydrofluoric_acid", 1000 } }
+        }
+    })
+    registerMachine("chemical_washer", "Chemical Washer", { side = "res/chemical_washer_side.png", front = "res/chemical_washer_front.png", frontActive = "res/chemical_washer_front_on.png", top = "res/chemical_washer_top.png", bottom = "res/mek_steel_side.png" }, {
+        hardness = 3.5, energyCapacity = 80000, power = POWER, energyPerTick = 100, processTicks = 10, recipes = {
+            { "", "", 1, chemIn = { "mekanism:dirty_iron_slurry", 200 }, chemIn2 = { "minecraft:water", 200 }, chemOut = { "mekanism:clean_iron_slurry", 200 } },
+            { "", "", 1, chemIn = { "mekanism:dirty_gold_slurry", 200 }, chemIn2 = { "minecraft:water", 200 }, chemOut = { "mekanism:clean_gold_slurry", 200 } },
+            { "", "", 1, chemIn = { "mekanism:dirty_osmium_slurry", 200 }, chemIn2 = { "minecraft:water", 200 }, chemOut = { "mekanism:clean_osmium_slurry", 200 } },
+            { "", "", 1, chemIn = { "mekanism:dirty_tin_slurry", 200 }, chemIn2 = { "minecraft:water", 200 }, chemOut = { "mekanism:clean_tin_slurry", 200 } },
+            { "", "", 1, chemIn = { "mekanism:dirty_copper_slurry", 200 }, chemIn2 = { "minecraft:water", 200 }, chemOut = { "mekanism:clean_copper_slurry", 200 } },
+            { "", "", 1, chemIn = { "mekanism:dirty_lead_slurry", 200 }, chemIn2 = { "minecraft:water", 200 }, chemOut = { "mekanism:clean_lead_slurry", 200 } },
+            { "", "", 1, chemIn = { "mekanism:dirty_uranium_slurry", 200 }, chemIn2 = { "minecraft:water", 200 }, chemOut = { "mekanism:clean_uranium_slurry", 200 } }
+        }
+    })
+    registerMachine("chemical_crystallizer", "Chemical Crystallizer", { side = "res/chemical_crystallizer_side.png", front = "res/chemical_crystallizer_front.png", frontActive = "res/chemical_crystallizer_front_on.png", top = "res/chemical_crystallizer_top.png", bottom = "res/mek_steel_side.png" }, {
+        hardness = 3.5, energyCapacity = 80000, power = POWER, energyPerTick = 100, processTicks = 40, recipes = {
+            { "", "mekanism:crystal_iron", 1, chemIn = { "mekanism:clean_iron_slurry", 200 } },
+            { "", "mekanism:crystal_gold", 1, chemIn = { "mekanism:clean_gold_slurry", 200 } },
+            { "", "mekanism:crystal_osmium", 1, chemIn = { "mekanism:clean_osmium_slurry", 200 } },
+            { "", "mekanism:crystal_tin", 1, chemIn = { "mekanism:clean_tin_slurry", 200 } },
+            { "", "mekanism:crystal_copper", 1, chemIn = { "mekanism:clean_copper_slurry", 200 } },
+            { "", "mekanism:crystal_lead", 1, chemIn = { "mekanism:clean_lead_slurry", 200 } },
+            { "", "mekanism:crystal_uranium", 1, chemIn = { "mekanism:clean_uranium_slurry", 200 } },
+            { "", "mekanism:salt", 1, chemIn = { "mekanism:brine", 150 } },
+            { "", "mekanism:dust_lithium", 1, chemIn = { "mekanism:lithium", 100 } },
+            { "", "mekanism:pellet_plutonium", 1, chemIn = { "mekanism:plutonium", 1000 } },
+            { "", "mekanism:pellet_polonium", 1, chemIn = { "mekanism:polonium", 1000 } },
+            { "", "mekanism:pellet_antimatter", 1, chemIn = { "mekanism:antimatter", 1000 } }
+        }
+    })
+    registerMachine("pressurized_reaction_chamber", "Pressurized Reaction Chamber", { side = "res/pressurized_reaction_chamber_side.png", front = "res/pressurized_reaction_chamber_front.png", frontActive = "res/pressurized_reaction_chamber_front_on.png", top = "res/pressurized_reaction_chamber_top.png", bottom = "res/mek_steel_side.png" }, {
+        hardness = 3.5, energyCapacity = 80000, power = POWER, energyPerTick = 100, processTicks = 100, recipes = {
+            { "mekanism:bio_fuel", "mekanism:substrate", 1, inCount = 2, chemIn = { "minecraft:water", 10 }, chemIn2 = { "mekanism:hydrogen", 100 }, chemOut = { "mekanism:ethylene", 100 } },
+            { "minecraft:coal", "mekanism:enriched_carbon", 2, chemIn = { "minecraft:water", 50 }, chemIn2 = { "mekanism:oxygen", 50 }, chemOut = { "mekanism:hydrogen", 50 } }
+        }
+    })
+    registerMachine("isotopic_centrifuge", "Isotopic Centrifuge", { side = "res/isotopic_centrifuge_side.png", front = "res/isotopic_centrifuge_front.png", frontActive = "res/isotopic_centrifuge_front_on.png", top = "res/isotopic_centrifuge_top.png", bottom = "res/mek_steel_side.png" }, {
+        hardness = 3.5, energyCapacity = 80000, power = POWER, energyPerTick = 200, processTicks = 20, recipes = {
+            { "", "", 1, chemIn = { "mekanism:uranium_hexafluoride", 200 }, chemOut = { "mekanism:fissile_fuel", 100 } },
+            { "", "", 1, chemIn = { "mekanism:nuclear_waste", 100 }, chemOut = { "mekanism:plutonium", 10 } },
+            { "", "", 1, chemIn = { "minecraft:water", 1000 }, chemOut = { "mekanism:heavy_water", 10 } }
+        }
+    })
+    registerMachine("solar_neutron_activator", "Solar Neutron Activator", { side = "res/solar_neutron_activator_side.png", front = "res/solar_neutron_activator_front.png", frontActive = "res/solar_neutron_activator_front_on.png", top = "res/solar_neutron_activator_top.png", bottom = "res/mek_steel_side.png" }, {
+        hardness = 3.5, energyCapacity = 80000, power = POWER, energyPerTick = 60, processTicks = 20, recipes = {
+            { "", "", 1, chemIn = { "mekanism:lithium", 100 }, chemOut = { "mekanism:tritium", 100 } },
+            { "", "", 1, chemIn = { "mekanism:nuclear_waste", 100 }, chemOut = { "mekanism:polonium", 10 } }
+        }
+    })
+    registerMachine("antiprotonic_nucleosynthesizer", "Antiprotonic Nucleosynthesizer", { side = "res/antiprotonic_nucleosynthesizer_side.png", front = "res/antiprotonic_nucleosynthesizer_front.png", frontActive = "res/antiprotonic_nucleosynthesizer_front_on.png", top = "res/antiprotonic_nucleosynthesizer_top.png", bottom = "res/mek_steel_side.png" }, {
+        hardness = 3.5, energyCapacity = 80000, power = POWER, energyPerTick = 2000, processTicks = 200, recipes = {
+            { "minecraft:coal", "minecraft:diamond", 1, chemIn = { "mekanism:antimatter", 10 } },
+            { "minecraft:iron_ingot", "minecraft:gold_ingot", 1, chemIn = { "mekanism:antimatter", 5 } },
+            { "minecraft:diamond", "minecraft:nether_star", 1, chemIn = { "mekanism:antimatter", 100 } }
+        }
+    })
+    registerMachine("basic_fluid_tank", "Basic Fluid Tank", { side = "res/basic_fluid_tank.png", front = "res/basic_fluid_tank.png", top = "res/basic_fluid_tank.png", bottom = "res/basic_fluid_tank.png" }, {
+        kind = "tank", tankCapacity = 32000, transfer = 1000, hardness = 2.0
+    })
+    registerMachine("basic_chemical_tank", "Basic Chemical Tank", { side = "res/basic_chemical_tank_side.png", front = "res/basic_chemical_tank_front.png", frontActive = "res/basic_chemical_tank_front_on.png", top = "res/basic_chemical_tank_top.png", bottom = "res/mek_steel_side.png" }, {
+        kind = "tank", tankCapacity = 64000, transfer = 1000, hardness = 2.0
+    })
+    registerMachine("advanced_fluid_tank", "Advanced Fluid Tank", { side = "res/advanced_fluid_tank.png", front = "res/advanced_fluid_tank.png", top = "res/advanced_fluid_tank.png", bottom = "res/advanced_fluid_tank.png" }, {
+        kind = "tank", tankCapacity = 128000, transfer = 4000, hardness = 2.0
+    })
+    registerMachine("advanced_chemical_tank", "Advanced Chemical Tank", { side = "res/advanced_chemical_tank_side.png", front = "res/advanced_chemical_tank_front.png", frontActive = "res/advanced_chemical_tank_front_on.png", top = "res/advanced_chemical_tank_top.png", bottom = "res/mek_steel_side.png" }, {
+        kind = "tank", tankCapacity = 256000, transfer = 4000, hardness = 2.0
+    })
+    registerMachine("elite_fluid_tank", "Elite Fluid Tank", { side = "res/elite_fluid_tank.png", front = "res/elite_fluid_tank.png", top = "res/elite_fluid_tank.png", bottom = "res/elite_fluid_tank.png" }, {
+        kind = "tank", tankCapacity = 512000, transfer = 16000, hardness = 2.0
+    })
+    registerMachine("elite_chemical_tank", "Elite Chemical Tank", { side = "res/elite_chemical_tank_side.png", front = "res/elite_chemical_tank_front.png", frontActive = "res/elite_chemical_tank_front_on.png", top = "res/elite_chemical_tank_top.png", bottom = "res/mek_steel_side.png" }, {
+        kind = "tank", tankCapacity = 1024000, transfer = 16000, hardness = 2.0
+    })
+    registerMachine("ultimate_fluid_tank", "Ultimate Fluid Tank", { side = "res/ultimate_fluid_tank.png", front = "res/ultimate_fluid_tank.png", top = "res/ultimate_fluid_tank.png", bottom = "res/ultimate_fluid_tank.png" }, {
+        kind = "tank", tankCapacity = 2048000, transfer = 64000, hardness = 2.0
+    })
+    registerMachine("ultimate_chemical_tank", "Ultimate Chemical Tank", { side = "res/ultimate_chemical_tank_side.png", front = "res/ultimate_chemical_tank_front.png", frontActive = "res/ultimate_chemical_tank_front_on.png", top = "res/ultimate_chemical_tank_top.png", bottom = "res/mek_steel_side.png" }, {
+        kind = "tank", tankCapacity = 4096000, transfer = 64000, hardness = 2.0
+    })
+    registerMachine("basic_mechanical_pipe", "Basic Mechanical Pipe", { side = "res/basic_mechanical_pipe.png" }, {
+        kind = "pipe", transfer = 2000, hardness = 1.0, upgrades = false
+    })
+    registerMachine("basic_pressurized_tube", "Basic Pressurized Tube", { side = "res/basic_pressurized_tube.png" }, {
+        kind = "pipe", transfer = 4000, hardness = 1.0, upgrades = false
+    })
+    registerMachine("basic_logistical_transporter", "Basic Logistical Transporter", { side = "res/basic_logistical_transporter.png" }, {
+        kind = "transporter", transfer = 8, hardness = 1.0, upgrades = false
+    })
+    registerMachine("advanced_mechanical_pipe", "Advanced Mechanical Pipe", { side = "res/advanced_mechanical_pipe.png" }, {
+        kind = "pipe", transfer = 8000, hardness = 1.0, upgrades = false
+    })
+    registerMachine("advanced_pressurized_tube", "Advanced Pressurized Tube", { side = "res/advanced_pressurized_tube.png" }, {
+        kind = "pipe", transfer = 16000, hardness = 1.0, upgrades = false
+    })
+    registerMachine("advanced_logistical_transporter", "Advanced Logistical Transporter", { side = "res/advanced_logistical_transporter.png" }, {
+        kind = "transporter", transfer = 16, hardness = 1.0, upgrades = false
+    })
+    registerMachine("elite_mechanical_pipe", "Elite Mechanical Pipe", { side = "res/elite_mechanical_pipe.png" }, {
+        kind = "pipe", transfer = 32000, hardness = 1.0, upgrades = false
+    })
+    registerMachine("elite_pressurized_tube", "Elite Pressurized Tube", { side = "res/elite_pressurized_tube.png" }, {
+        kind = "pipe", transfer = 64000, hardness = 1.0, upgrades = false
+    })
+    registerMachine("elite_logistical_transporter", "Elite Logistical Transporter", { side = "res/elite_logistical_transporter.png" }, {
+        kind = "transporter", transfer = 32, hardness = 1.0, upgrades = false
+    })
+    registerMachine("ultimate_mechanical_pipe", "Ultimate Mechanical Pipe", { side = "res/ultimate_mechanical_pipe.png" }, {
+        kind = "pipe", transfer = 128000, hardness = 1.0, upgrades = false
+    })
+    registerMachine("ultimate_pressurized_tube", "Ultimate Pressurized Tube", { side = "res/ultimate_pressurized_tube.png" }, {
+        kind = "pipe", transfer = 256000, hardness = 1.0, upgrades = false
+    })
+    registerMachine("ultimate_logistical_transporter", "Ultimate Logistical Transporter", { side = "res/ultimate_logistical_transporter.png" }, {
+        kind = "transporter", transfer = 64, hardness = 1.0, upgrades = false
+    })
+    registerMachine("electric_pump", "Electric Pump", { side = "res/electric_pump_side.png", front = "res/electric_pump_front.png", frontActive = "res/electric_pump_front_on.png", top = "res/electric_pump_top.png", bottom = "res/mek_steel_side.png" }, {
+        kind = "pump", energyCapacity = 20000, energyPerTick = 50, processTicks = 20, tankCapacity = 16000, radius = 16, power = POWER
+    })
+    registerMachine("digital_miner", "Digital Miner", { side = "res/digital_miner_side.png", front = "res/digital_miner_front.png", frontActive = "res/digital_miner_front_on.png", top = "res/digital_miner_top.png", bottom = "res/mek_steel_side.png" }, {
+        kind = "miner", energyCapacity = 100000, energyPerTick = 200, processTicks = 20, radius = 16, power = POWER
+    })
+    registerMachine("teleporter", "Teleporter", { side = "res/teleporter.png", front = "res/teleporter.png", top = "res/teleporter.png", bottom = "res/teleporter.png" }, {
+        kind = "teleporter", energyCapacity = 5000000, energyPerTick = 1000, power = POWER
+    })
+    registerMachine("gas_burning_generator", "Gas-Burning Generator", { side = "res/gas_burning_generator_side.png", front = "res/gas_burning_generator_front.png", frontActive = "res/gas_burning_generator_front_on.png", top = "res/gas_burning_generator_top.png", bottom = "res/mek_steel_side.png" }, {
+        kind = "generator", fuelChem = { "mekanism:ethylene", 1 }, generation = 480, transfer = 960, energyCapacity = 400000
+    })
+    registerMachine("chargepad", "Chargepad", { side = "res/chargepad_side.png", front = "res/chargepad_front.png", frontActive = "res/chargepad_front_on.png", top = "res/chargepad_top.png", bottom = "res/mek_steel_side.png" }, {
+        kind = "storage", energyCapacity = 200000, transfer = 2000, power = POWER
+    })
+    registerMachine("induction_port", "Induction Port", { side = "res/induction_port.png", front = "res/induction_port.png", top = "res/induction_port.png", bottom = "res/induction_port.png" }, {
+        kind = "storage", energyCapacity = 0, transfer = 0, multiblock = { frame = { "induction_casing", "structural_glass" }, inner = { ["basic_induction_cell"] = { capacity = 50000000 }, ["basic_induction_provider"] = { transfer = 64000 }, ["advanced_induction_cell"] = { capacity = 200000000 }, ["advanced_induction_provider"] = { transfer = 512000 }, ["elite_induction_cell"] = { capacity = 800000000 }, ["elite_induction_provider"] = { transfer = 4096000 }, ["ultimate_induction_cell"] = { capacity = 2000000000 }, ["ultimate_induction_provider"] = { transfer = 32768000 } }, interiorAir = true, min = 3, max = 18 }
+    })
+    registerMachine("dynamic_valve", "Dynamic Valve", { side = "res/dynamic_valve.png", front = "res/dynamic_valve.png", top = "res/dynamic_valve.png", bottom = "res/dynamic_valve.png" }, {
+        kind = "tank", tankCapacity = 0, transfer = 16000, multiblock = { frame = { "dynamic_tank", "structural_glass" }, interiorAir = true, min = 3, max = 18, tankPerVolume = 16000 }
+    })
+    registerMachine("thermal_evaporation_controller", "Thermal Evaporation Controller", { side = "res/thermal_evaporation_controller.png", front = "res/thermal_evaporation_controller.png", top = "res/thermal_evaporation_controller.png", bottom = "res/thermal_evaporation_controller.png" }, {
+        energyCapacity = 0, needsPower = false, processTicks = 20, tankCapacity = 64000, multiblock = { frame = { "thermal_evaporation_block", "thermal_evaporation_valve", "structural_glass" }, interiorAir = true, min = 3, max = 18, speedPerHeight = 0.5 }, recipes = {
+            { "", "", 1, chemIn = { "minecraft:water", 100 }, chemOut = { "mekanism:brine", 10 } },
+            { "", "", 1, chemIn = { "mekanism:brine", 100 }, chemOut = { "mekanism:lithium", 10 } }
+        }
+    })
+    registerMachine("thermoelectric_boiler", "Thermoelectric Boiler Controller", { side = "res/boiler_controller.png", front = "res/boiler_controller.png", top = "res/boiler_controller.png", bottom = "res/boiler_controller.png" }, {
+        energyCapacity = 2000000, energyPerTick = 400, processTicks = 4, tankCapacity = 256000, multiblock = { frame = { "boiler_casing", "boiler_valve", "structural_glass" }, inner = { ["superheating_element"] = { speed = 1.0 }, ["pressure_disperser"] = { speed = 0.2 } }, interiorAir = true, min = 3, max = 18, speedPerVolume = 0.02 }, recipes = {
+            { "", "", 1, chemIn = { "minecraft:water", 100 }, chemOut = { "mekanism:steam", 100 } }
+        }
+    })
+    registerMachine("turbine_valve", "Industrial Turbine Valve", { side = "res/turbine_valve.png", front = "res/turbine_valve.png", top = "res/turbine_valve.png", bottom = "res/turbine_valve.png" }, {
+        kind = "generator", fuelChem = { "mekanism:steam", 100 }, exhaustChem = { "minecraft:water", 90 }, generation = 400, transfer = 0, energyCapacity = 4000000, tankCapacity = 256000, multiblock = { frame = { "turbine_casing", "turbine_vent", "structural_glass" }, inner = { ["turbine_rotor"] = { speed = 0.5, transfer = 4000 }, ["electromagnetic_coil"] = { speed = 0.5, transfer = 8000 }, ["pressure_disperser"] = { speed = 0.1 }, ["saturating_condenser"] = { speed = 0.2 } }, interiorAir = true, min = 3, max = 18 }
+    })
+    registerMachine("fission_reactor_controller", "Fission Reactor Controller", { side = "res/fission_reactor_controller.png", front = "res/fission_reactor_controller.png", top = "res/fission_reactor_controller.png", bottom = "res/fission_reactor_controller.png" }, {
+        energyCapacity = 0, needsPower = false, processTicks = 20, tankCapacity = 512000, multiblock = { frame = { "fission_reactor_casing", "fission_reactor_port", "reactor_glass" }, inner = { ["fission_fuel_assembly"] = { speed = 1.0 } }, interiorAir = true, min = 3, max = 18 }, recipes = {
+            { "", "", 1, chemIn = { "mekanism:fissile_fuel", 10 }, chemIn2 = { "minecraft:water", 1000 }, chemOut = { "mekanism:steam", 1000 }, chemOut2 = { "mekanism:nuclear_waste", 10 } }
+        }
+    })
+    registerMachine("fusion_reactor_controller", "Fusion Reactor Controller", { side = "res/fusion_reactor_controller.png", front = "res/fusion_reactor_controller.png", top = "res/fusion_reactor_controller.png", bottom = "res/fusion_reactor_controller.png" }, {
+        kind = "generator", fuelChem = { "mekanism:dt_fuel", 2 }, generation = 40000, transfer = 80000, energyCapacity = 100000000, tankCapacity = 64000, multiblock = { frame = { "reactor_frame", "reactor_port", "reactor_glass" }, interiorAir = true, min = 5, max = 9 }
+    })
+    registerMachine("sps_port", "SPS Port (Supercritical Phase Shifter)", { side = "res/sps_port.png", front = "res/sps_port.png", top = "res/sps_port.png", bottom = "res/sps_port.png" }, {
+        energyCapacity = 10000000, energyPerTick = 20000, processTicks = 100, tankCapacity = 64000, multiblock = { frame = { "sps_casing", "structural_glass" }, interiorAir = true, min = 5, max = 5 }, recipes = {
+            { "", "", 1, chemIn = { "mekanism:polonium", 2000 }, chemOut = { "mekanism:antimatter", 1 } }
+        }
+    })
+
+    -- factories (process several items at once)
+    registerMachine("basic_smelting_factory", "Basic Smelting Factory", { front = "res/smelting_factory_front.png", frontActive = "res/smelting_factory_front_active.png", side = "res/smelting_factory_side.png", top = "res/smelting_factory_top.png", bottom = "res/smelting_factory_bottom.png" }, {
+        hardness = 3.5, energyCapacity = 120000, energyPerTick = 150, parallel = 3, power = POWER, furnaceRecipes = true, processTicks = 100
+    })
+    registerMachine("advanced_smelting_factory", "Advanced Smelting Factory", { front = "res/smelting_factory_front.png", frontActive = "res/smelting_factory_front_active.png", side = "res/smelting_factory_side.png", top = "res/smelting_factory_top.png", bottom = "res/smelting_factory_bottom.png" }, {
+        hardness = 3.5, energyCapacity = 200000, energyPerTick = 250, parallel = 5, power = POWER, furnaceRecipes = true, processTicks = 100
+    })
+    registerMachine("elite_smelting_factory", "Elite Smelting Factory", { front = "res/smelting_factory_front.png", frontActive = "res/smelting_factory_front_active.png", side = "res/smelting_factory_side.png", top = "res/smelting_factory_top.png", bottom = "res/smelting_factory_bottom.png" }, {
+        hardness = 3.5, energyCapacity = 280000, energyPerTick = 350, parallel = 7, power = POWER, furnaceRecipes = true, processTicks = 100
+    })
+    registerMachine("basic_enriching_factory", "Basic Enriching Factory", { front = "res/enriching_factory_front.png", frontActive = "res/enriching_factory_front_active.png", side = "res/enriching_factory_side.png", top = "res/enriching_factory_top.png", bottom = "res/enriching_factory_bottom.png" }, {
+        hardness = 3.5, energyCapacity = 120000, energyPerTick = 150, processTicks = 200, parallel = 3, power = POWER, recipes = {
+            { "mekanism:osmium_ore", "mekanism:dust_osmium", 2 },
+            { "mekanism:tin_ore", "mekanism:dust_tin", 2 },
+            { "mekanism:copper_ore", "mekanism:dust_copper", 2 },
+            { "mekanism:lead_ore", "mekanism:dust_lead", 2 },
+            { "mekanism:uranium_ore", "mekanism:dust_uranium", 2 },
+            { "minecraft:iron_ore", "mekanism:dust_iron", 2 },
+            { "minecraft:gold_ore", "mekanism:dust_gold", 2 },
+            { "minecraft:diamond_ore", "minecraft:diamond", 2 },
+            { "minecraft:emerald_ore", "minecraft:emerald", 2 },
+            { "minecraft:redstone_ore", "minecraft:redstone", 12 },
+            { "minecraft:lapis_ore", "minecraft:lapis_lazuli", 12 },
+            { "minecraft:coal_ore", "minecraft:coal", 2 },
+            { "minecraft:quartz_ore", "minecraft:quartz", 6 },
+            { "mekanism:fluorite_ore", "mekanism:fluorite_gem", 6 },
+            { "mekanism:dirty_dust_iron", "mekanism:dust_iron", 1 },
+            { "mekanism:dirty_dust_gold", "mekanism:dust_gold", 1 },
+            { "mekanism:dirty_dust_osmium", "mekanism:dust_osmium", 1 },
+            { "mekanism:dirty_dust_tin", "mekanism:dust_tin", 1 },
+            { "mekanism:dirty_dust_copper", "mekanism:dust_copper", 1 },
+            { "mekanism:dirty_dust_lead", "mekanism:dust_lead", 1 },
+            { "mekanism:dirty_dust_uranium", "mekanism:dust_uranium", 1 },
+            { "minecraft:redstone", "mekanism:enriched_redstone", 1 },
+            { "minecraft:coal", "mekanism:enriched_carbon", 2 },
+            { "minecraft:charcoal", "mekanism:enriched_carbon", 1 },
+            { "minecraft:diamond", "mekanism:enriched_diamond", 1 },
+            { "mekanism:dust_refined_obsidian", "mekanism:enriched_refined_obsidian", 1 },
+            { "minecraft:gold_ingot", "mekanism:enriched_gold", 1 },
+            { "mekanism:dust_tin", "mekanism:enriched_tin", 1 },
+            { "minecraft:gravel", "minecraft:flint", 1 },
+            { "minecraft:cobblestone", "minecraft:mossy_cobblestone", 1 },
+            { "minecraft:stone_bricks", "minecraft:cracked_stone_bricks", 1 },
+            { "mekanism:dust_obsidian", "mekanism:dust_refined_obsidian", 1 },
+            { "minecraft:obsidian", "mekanism:dust_obsidian", 4 },
+            { "mekanism:dust_diamond", "minecraft:diamond", 1 },
+            { "mekanism:dust_emerald", "minecraft:emerald", 1 },
+            { "mekanism:dust_lapis_lazuli", "minecraft:lapis_lazuli", 1 },
+            { "mekanism:dust_quartz", "minecraft:quartz", 1 },
+            { "mekanism:dust_coal", "minecraft:coal", 1 },
+            { "mekanism:dust_charcoal", "minecraft:charcoal", 1 },
+            { "mekanism:dust_fluorite", "mekanism:fluorite_gem", 1 },
+            { "mekanism:dust_uranium", "mekanism:yellow_cake_uranium", 2 }
+        }
+    })
+    registerMachine("advanced_enriching_factory", "Advanced Enriching Factory", { front = "res/enriching_factory_front.png", frontActive = "res/enriching_factory_front_active.png", side = "res/enriching_factory_side.png", top = "res/enriching_factory_top.png", bottom = "res/enriching_factory_bottom.png" }, {
+        hardness = 3.5, energyCapacity = 200000, energyPerTick = 250, processTicks = 200, parallel = 5, power = POWER, recipes = {
+            { "mekanism:osmium_ore", "mekanism:dust_osmium", 2 },
+            { "mekanism:tin_ore", "mekanism:dust_tin", 2 },
+            { "mekanism:copper_ore", "mekanism:dust_copper", 2 },
+            { "mekanism:lead_ore", "mekanism:dust_lead", 2 },
+            { "mekanism:uranium_ore", "mekanism:dust_uranium", 2 },
+            { "minecraft:iron_ore", "mekanism:dust_iron", 2 },
+            { "minecraft:gold_ore", "mekanism:dust_gold", 2 },
+            { "minecraft:diamond_ore", "minecraft:diamond", 2 },
+            { "minecraft:emerald_ore", "minecraft:emerald", 2 },
+            { "minecraft:redstone_ore", "minecraft:redstone", 12 },
+            { "minecraft:lapis_ore", "minecraft:lapis_lazuli", 12 },
+            { "minecraft:coal_ore", "minecraft:coal", 2 },
+            { "minecraft:quartz_ore", "minecraft:quartz", 6 },
+            { "mekanism:fluorite_ore", "mekanism:fluorite_gem", 6 },
+            { "mekanism:dirty_dust_iron", "mekanism:dust_iron", 1 },
+            { "mekanism:dirty_dust_gold", "mekanism:dust_gold", 1 },
+            { "mekanism:dirty_dust_osmium", "mekanism:dust_osmium", 1 },
+            { "mekanism:dirty_dust_tin", "mekanism:dust_tin", 1 },
+            { "mekanism:dirty_dust_copper", "mekanism:dust_copper", 1 },
+            { "mekanism:dirty_dust_lead", "mekanism:dust_lead", 1 },
+            { "mekanism:dirty_dust_uranium", "mekanism:dust_uranium", 1 },
+            { "minecraft:redstone", "mekanism:enriched_redstone", 1 },
+            { "minecraft:coal", "mekanism:enriched_carbon", 2 },
+            { "minecraft:charcoal", "mekanism:enriched_carbon", 1 },
+            { "minecraft:diamond", "mekanism:enriched_diamond", 1 },
+            { "mekanism:dust_refined_obsidian", "mekanism:enriched_refined_obsidian", 1 },
+            { "minecraft:gold_ingot", "mekanism:enriched_gold", 1 },
+            { "mekanism:dust_tin", "mekanism:enriched_tin", 1 },
+            { "minecraft:gravel", "minecraft:flint", 1 },
+            { "minecraft:cobblestone", "minecraft:mossy_cobblestone", 1 },
+            { "minecraft:stone_bricks", "minecraft:cracked_stone_bricks", 1 },
+            { "mekanism:dust_obsidian", "mekanism:dust_refined_obsidian", 1 },
+            { "minecraft:obsidian", "mekanism:dust_obsidian", 4 },
+            { "mekanism:dust_diamond", "minecraft:diamond", 1 },
+            { "mekanism:dust_emerald", "minecraft:emerald", 1 },
+            { "mekanism:dust_lapis_lazuli", "minecraft:lapis_lazuli", 1 },
+            { "mekanism:dust_quartz", "minecraft:quartz", 1 },
+            { "mekanism:dust_coal", "minecraft:coal", 1 },
+            { "mekanism:dust_charcoal", "minecraft:charcoal", 1 },
+            { "mekanism:dust_fluorite", "mekanism:fluorite_gem", 1 },
+            { "mekanism:dust_uranium", "mekanism:yellow_cake_uranium", 2 }
+        }
+    })
+    registerMachine("elite_enriching_factory", "Elite Enriching Factory", { front = "res/enriching_factory_front.png", frontActive = "res/enriching_factory_front_active.png", side = "res/enriching_factory_side.png", top = "res/enriching_factory_top.png", bottom = "res/enriching_factory_bottom.png" }, {
+        hardness = 3.5, energyCapacity = 280000, energyPerTick = 350, processTicks = 200, parallel = 7, power = POWER, recipes = {
+            { "mekanism:osmium_ore", "mekanism:dust_osmium", 2 },
+            { "mekanism:tin_ore", "mekanism:dust_tin", 2 },
+            { "mekanism:copper_ore", "mekanism:dust_copper", 2 },
+            { "mekanism:lead_ore", "mekanism:dust_lead", 2 },
+            { "mekanism:uranium_ore", "mekanism:dust_uranium", 2 },
+            { "minecraft:iron_ore", "mekanism:dust_iron", 2 },
+            { "minecraft:gold_ore", "mekanism:dust_gold", 2 },
+            { "minecraft:diamond_ore", "minecraft:diamond", 2 },
+            { "minecraft:emerald_ore", "minecraft:emerald", 2 },
+            { "minecraft:redstone_ore", "minecraft:redstone", 12 },
+            { "minecraft:lapis_ore", "minecraft:lapis_lazuli", 12 },
+            { "minecraft:coal_ore", "minecraft:coal", 2 },
+            { "minecraft:quartz_ore", "minecraft:quartz", 6 },
+            { "mekanism:fluorite_ore", "mekanism:fluorite_gem", 6 },
+            { "mekanism:dirty_dust_iron", "mekanism:dust_iron", 1 },
+            { "mekanism:dirty_dust_gold", "mekanism:dust_gold", 1 },
+            { "mekanism:dirty_dust_osmium", "mekanism:dust_osmium", 1 },
+            { "mekanism:dirty_dust_tin", "mekanism:dust_tin", 1 },
+            { "mekanism:dirty_dust_copper", "mekanism:dust_copper", 1 },
+            { "mekanism:dirty_dust_lead", "mekanism:dust_lead", 1 },
+            { "mekanism:dirty_dust_uranium", "mekanism:dust_uranium", 1 },
+            { "minecraft:redstone", "mekanism:enriched_redstone", 1 },
+            { "minecraft:coal", "mekanism:enriched_carbon", 2 },
+            { "minecraft:charcoal", "mekanism:enriched_carbon", 1 },
+            { "minecraft:diamond", "mekanism:enriched_diamond", 1 },
+            { "mekanism:dust_refined_obsidian", "mekanism:enriched_refined_obsidian", 1 },
+            { "minecraft:gold_ingot", "mekanism:enriched_gold", 1 },
+            { "mekanism:dust_tin", "mekanism:enriched_tin", 1 },
+            { "minecraft:gravel", "minecraft:flint", 1 },
+            { "minecraft:cobblestone", "minecraft:mossy_cobblestone", 1 },
+            { "minecraft:stone_bricks", "minecraft:cracked_stone_bricks", 1 },
+            { "mekanism:dust_obsidian", "mekanism:dust_refined_obsidian", 1 },
+            { "minecraft:obsidian", "mekanism:dust_obsidian", 4 },
+            { "mekanism:dust_diamond", "minecraft:diamond", 1 },
+            { "mekanism:dust_emerald", "minecraft:emerald", 1 },
+            { "mekanism:dust_lapis_lazuli", "minecraft:lapis_lazuli", 1 },
+            { "mekanism:dust_quartz", "minecraft:quartz", 1 },
+            { "mekanism:dust_coal", "minecraft:coal", 1 },
+            { "mekanism:dust_charcoal", "minecraft:charcoal", 1 },
+            { "mekanism:dust_fluorite", "mekanism:fluorite_gem", 1 },
+            { "mekanism:dust_uranium", "mekanism:yellow_cake_uranium", 2 }
+        }
+    })
+    registerMachine("basic_crushing_factory", "Basic Crushing Factory", { front = "res/crushing_factory_front.png", frontActive = "res/crushing_factory_front_active.png", side = "res/crushing_factory_side.png", top = "res/crushing_factory_top.png", bottom = "res/crushing_factory_bottom.png" }, {
+        hardness = 3.5, energyCapacity = 120000, energyPerTick = 150, processTicks = 200, parallel = 3, power = POWER, recipes = {
+            { "mekanism:ingot_osmium", "mekanism:dust_osmium", 1 },
+            { "mekanism:ingot_tin", "mekanism:dust_tin", 1 },
+            { "mekanism:ingot_copper", "mekanism:dust_copper", 1 },
+            { "mekanism:ingot_lead", "mekanism:dust_lead", 1 },
+            { "mekanism:ingot_uranium", "mekanism:dust_uranium", 1 },
+            { "mekanism:ingot_bronze", "mekanism:dust_bronze", 1 },
+            { "mekanism:ingot_steel", "mekanism:dust_steel", 1 },
+            { "mekanism:ingot_refined_obsidian", "mekanism:dust_refined_obsidian", 1 },
+            { "minecraft:iron_ingot", "mekanism:dust_iron", 1 },
+            { "minecraft:gold_ingot", "mekanism:dust_gold", 1 },
+            { "minecraft:diamond", "mekanism:dust_diamond", 1 },
+            { "minecraft:emerald", "mekanism:dust_emerald", 1 },
+            { "minecraft:quartz", "mekanism:dust_quartz", 1 },
+            { "minecraft:lapis_lazuli", "mekanism:dust_lapis_lazuli", 1 },
+            { "minecraft:coal", "mekanism:dust_coal", 1 },
+            { "minecraft:charcoal", "mekanism:dust_charcoal", 1 },
+            { "mekanism:fluorite_gem", "mekanism:dust_fluorite", 1 },
+            { "minecraft:obsidian", "mekanism:dust_obsidian", 4 },
+            { "minecraft:cobblestone", "minecraft:gravel", 1 },
+            { "minecraft:gravel", "minecraft:sand", 1 },
+            { "minecraft:stone", "minecraft:cobblestone", 1 },
+            { "minecraft:glowstone", "minecraft:glowstone_dust", 4 },
+            { "minecraft:wheat", "mekanism:bio_fuel", 2 },
+            { "minecraft:wheat_seeds", "mekanism:bio_fuel", 1 },
+            { "minecraft:apple", "mekanism:bio_fuel", 4 },
+            { "minecraft:carrot", "mekanism:bio_fuel", 2 },
+            { "minecraft:potato", "mekanism:bio_fuel", 2 },
+            { "minecraft:reeds", "mekanism:bio_fuel", 2 },
+            { "minecraft:melon", "mekanism:bio_fuel", 1 },
+            { "minecraft:pumpkin", "mekanism:bio_fuel", 4 },
+            { "minecraft:oak_sapling", "mekanism:bio_fuel", 2 },
+            { "minecraft:oak_leaves", "mekanism:bio_fuel", 1 },
+            { "mekanism:block_salt", "mekanism:salt", 4 },
+            { "mekanism:clump_iron", "mekanism:dirty_dust_iron", 1 },
+            { "mekanism:clump_gold", "mekanism:dirty_dust_gold", 1 },
+            { "mekanism:clump_osmium", "mekanism:dirty_dust_osmium", 1 },
+            { "mekanism:clump_tin", "mekanism:dirty_dust_tin", 1 },
+            { "mekanism:clump_copper", "mekanism:dirty_dust_copper", 1 },
+            { "mekanism:clump_lead", "mekanism:dirty_dust_lead", 1 },
+            { "mekanism:clump_uranium", "mekanism:dirty_dust_uranium", 1 },
+            { "minecraft:gunpowder", "mekanism:dust_sulfur", 1 }
+        }
+    })
+    registerMachine("advanced_crushing_factory", "Advanced Crushing Factory", { front = "res/crushing_factory_front.png", frontActive = "res/crushing_factory_front_active.png", side = "res/crushing_factory_side.png", top = "res/crushing_factory_top.png", bottom = "res/crushing_factory_bottom.png" }, {
+        hardness = 3.5, energyCapacity = 200000, energyPerTick = 250, processTicks = 200, parallel = 5, power = POWER, recipes = {
+            { "mekanism:ingot_osmium", "mekanism:dust_osmium", 1 },
+            { "mekanism:ingot_tin", "mekanism:dust_tin", 1 },
+            { "mekanism:ingot_copper", "mekanism:dust_copper", 1 },
+            { "mekanism:ingot_lead", "mekanism:dust_lead", 1 },
+            { "mekanism:ingot_uranium", "mekanism:dust_uranium", 1 },
+            { "mekanism:ingot_bronze", "mekanism:dust_bronze", 1 },
+            { "mekanism:ingot_steel", "mekanism:dust_steel", 1 },
+            { "mekanism:ingot_refined_obsidian", "mekanism:dust_refined_obsidian", 1 },
+            { "minecraft:iron_ingot", "mekanism:dust_iron", 1 },
+            { "minecraft:gold_ingot", "mekanism:dust_gold", 1 },
+            { "minecraft:diamond", "mekanism:dust_diamond", 1 },
+            { "minecraft:emerald", "mekanism:dust_emerald", 1 },
+            { "minecraft:quartz", "mekanism:dust_quartz", 1 },
+            { "minecraft:lapis_lazuli", "mekanism:dust_lapis_lazuli", 1 },
+            { "minecraft:coal", "mekanism:dust_coal", 1 },
+            { "minecraft:charcoal", "mekanism:dust_charcoal", 1 },
+            { "mekanism:fluorite_gem", "mekanism:dust_fluorite", 1 },
+            { "minecraft:obsidian", "mekanism:dust_obsidian", 4 },
+            { "minecraft:cobblestone", "minecraft:gravel", 1 },
+            { "minecraft:gravel", "minecraft:sand", 1 },
+            { "minecraft:stone", "minecraft:cobblestone", 1 },
+            { "minecraft:glowstone", "minecraft:glowstone_dust", 4 },
+            { "minecraft:wheat", "mekanism:bio_fuel", 2 },
+            { "minecraft:wheat_seeds", "mekanism:bio_fuel", 1 },
+            { "minecraft:apple", "mekanism:bio_fuel", 4 },
+            { "minecraft:carrot", "mekanism:bio_fuel", 2 },
+            { "minecraft:potato", "mekanism:bio_fuel", 2 },
+            { "minecraft:reeds", "mekanism:bio_fuel", 2 },
+            { "minecraft:melon", "mekanism:bio_fuel", 1 },
+            { "minecraft:pumpkin", "mekanism:bio_fuel", 4 },
+            { "minecraft:oak_sapling", "mekanism:bio_fuel", 2 },
+            { "minecraft:oak_leaves", "mekanism:bio_fuel", 1 },
+            { "mekanism:block_salt", "mekanism:salt", 4 },
+            { "mekanism:clump_iron", "mekanism:dirty_dust_iron", 1 },
+            { "mekanism:clump_gold", "mekanism:dirty_dust_gold", 1 },
+            { "mekanism:clump_osmium", "mekanism:dirty_dust_osmium", 1 },
+            { "mekanism:clump_tin", "mekanism:dirty_dust_tin", 1 },
+            { "mekanism:clump_copper", "mekanism:dirty_dust_copper", 1 },
+            { "mekanism:clump_lead", "mekanism:dirty_dust_lead", 1 },
+            { "mekanism:clump_uranium", "mekanism:dirty_dust_uranium", 1 },
+            { "minecraft:gunpowder", "mekanism:dust_sulfur", 1 }
+        }
+    })
+    registerMachine("elite_crushing_factory", "Elite Crushing Factory", { front = "res/crushing_factory_front.png", frontActive = "res/crushing_factory_front_active.png", side = "res/crushing_factory_side.png", top = "res/crushing_factory_top.png", bottom = "res/crushing_factory_bottom.png" }, {
+        hardness = 3.5, energyCapacity = 280000, energyPerTick = 350, processTicks = 200, parallel = 7, power = POWER, recipes = {
+            { "mekanism:ingot_osmium", "mekanism:dust_osmium", 1 },
+            { "mekanism:ingot_tin", "mekanism:dust_tin", 1 },
+            { "mekanism:ingot_copper", "mekanism:dust_copper", 1 },
+            { "mekanism:ingot_lead", "mekanism:dust_lead", 1 },
+            { "mekanism:ingot_uranium", "mekanism:dust_uranium", 1 },
+            { "mekanism:ingot_bronze", "mekanism:dust_bronze", 1 },
+            { "mekanism:ingot_steel", "mekanism:dust_steel", 1 },
+            { "mekanism:ingot_refined_obsidian", "mekanism:dust_refined_obsidian", 1 },
+            { "minecraft:iron_ingot", "mekanism:dust_iron", 1 },
+            { "minecraft:gold_ingot", "mekanism:dust_gold", 1 },
+            { "minecraft:diamond", "mekanism:dust_diamond", 1 },
+            { "minecraft:emerald", "mekanism:dust_emerald", 1 },
+            { "minecraft:quartz", "mekanism:dust_quartz", 1 },
+            { "minecraft:lapis_lazuli", "mekanism:dust_lapis_lazuli", 1 },
+            { "minecraft:coal", "mekanism:dust_coal", 1 },
+            { "minecraft:charcoal", "mekanism:dust_charcoal", 1 },
+            { "mekanism:fluorite_gem", "mekanism:dust_fluorite", 1 },
+            { "minecraft:obsidian", "mekanism:dust_obsidian", 4 },
+            { "minecraft:cobblestone", "minecraft:gravel", 1 },
+            { "minecraft:gravel", "minecraft:sand", 1 },
+            { "minecraft:stone", "minecraft:cobblestone", 1 },
+            { "minecraft:glowstone", "minecraft:glowstone_dust", 4 },
+            { "minecraft:wheat", "mekanism:bio_fuel", 2 },
+            { "minecraft:wheat_seeds", "mekanism:bio_fuel", 1 },
+            { "minecraft:apple", "mekanism:bio_fuel", 4 },
+            { "minecraft:carrot", "mekanism:bio_fuel", 2 },
+            { "minecraft:potato", "mekanism:bio_fuel", 2 },
+            { "minecraft:reeds", "mekanism:bio_fuel", 2 },
+            { "minecraft:melon", "mekanism:bio_fuel", 1 },
+            { "minecraft:pumpkin", "mekanism:bio_fuel", 4 },
+            { "minecraft:oak_sapling", "mekanism:bio_fuel", 2 },
+            { "minecraft:oak_leaves", "mekanism:bio_fuel", 1 },
+            { "mekanism:block_salt", "mekanism:salt", 4 },
+            { "mekanism:clump_iron", "mekanism:dirty_dust_iron", 1 },
+            { "mekanism:clump_gold", "mekanism:dirty_dust_gold", 1 },
+            { "mekanism:clump_osmium", "mekanism:dirty_dust_osmium", 1 },
+            { "mekanism:clump_tin", "mekanism:dirty_dust_tin", 1 },
+            { "mekanism:clump_copper", "mekanism:dirty_dust_copper", 1 },
+            { "mekanism:clump_lead", "mekanism:dirty_dust_lead", 1 },
+            { "mekanism:clump_uranium", "mekanism:dirty_dust_uranium", 1 },
+            { "minecraft:gunpowder", "mekanism:dust_sulfur", 1 }
+        }
+    })
+    registerMachine("basic_compressing_factory", "Basic Compressing Factory", { front = "res/compressing_factory_front.png", frontActive = "res/compressing_factory_front_active.png", side = "res/compressing_factory_side.png", top = "res/compressing_factory_top.png", bottom = "res/compressing_factory_bottom.png" }, {
+        hardness = 3.5, energyCapacity = 120000, energyPerTick = 150, processTicks = 200, parallel = 3, power = POWER, recipes = {
+            { "mekanism:dust_refined_obsidian", "mekanism:ingot_refined_obsidian", 1, extra = "mekanism:ingot_osmium" },
+            { "minecraft:glowstone_dust", "mekanism:ingot_refined_glowstone", 1, extra = "mekanism:ingot_osmium" },
+            { "mekanism:dust_diamond", "minecraft:diamond", 1, extra = "mekanism:ingot_osmium" },
+            { "mekanism:dust_fluorite", "mekanism:fluorite_gem", 1, extra = "mekanism:ingot_osmium" }
+        }
+    })
+    registerMachine("advanced_compressing_factory", "Advanced Compressing Factory", { front = "res/compressing_factory_front.png", frontActive = "res/compressing_factory_front_active.png", side = "res/compressing_factory_side.png", top = "res/compressing_factory_top.png", bottom = "res/compressing_factory_bottom.png" }, {
+        hardness = 3.5, energyCapacity = 200000, energyPerTick = 250, processTicks = 200, parallel = 5, power = POWER, recipes = {
+            { "mekanism:dust_refined_obsidian", "mekanism:ingot_refined_obsidian", 1, extra = "mekanism:ingot_osmium" },
+            { "minecraft:glowstone_dust", "mekanism:ingot_refined_glowstone", 1, extra = "mekanism:ingot_osmium" },
+            { "mekanism:dust_diamond", "minecraft:diamond", 1, extra = "mekanism:ingot_osmium" },
+            { "mekanism:dust_fluorite", "mekanism:fluorite_gem", 1, extra = "mekanism:ingot_osmium" }
+        }
+    })
+    registerMachine("elite_compressing_factory", "Elite Compressing Factory", { front = "res/compressing_factory_front.png", frontActive = "res/compressing_factory_front_active.png", side = "res/compressing_factory_side.png", top = "res/compressing_factory_top.png", bottom = "res/compressing_factory_bottom.png" }, {
+        hardness = 3.5, energyCapacity = 280000, energyPerTick = 350, processTicks = 200, parallel = 7, power = POWER, recipes = {
+            { "mekanism:dust_refined_obsidian", "mekanism:ingot_refined_obsidian", 1, extra = "mekanism:ingot_osmium" },
+            { "minecraft:glowstone_dust", "mekanism:ingot_refined_glowstone", 1, extra = "mekanism:ingot_osmium" },
+            { "mekanism:dust_diamond", "minecraft:diamond", 1, extra = "mekanism:ingot_osmium" },
+            { "mekanism:dust_fluorite", "mekanism:fluorite_gem", 1, extra = "mekanism:ingot_osmium" }
+        }
+    })
+    registerMachine("basic_combining_factory", "Basic Combining Factory", { front = "res/combining_factory_front.png", frontActive = "res/combining_factory_front_active.png", side = "res/combining_factory_side.png", top = "res/combining_factory_top.png", bottom = "res/combining_factory_bottom.png" }, {
+        hardness = 3.5, energyCapacity = 120000, energyPerTick = 150, processTicks = 200, parallel = 3, power = POWER, recipes = {
+            { "mekanism:dust_osmium", "mekanism:osmium_ore", 1, extra = "minecraft:cobblestone", inCount = 8 },
+            { "mekanism:dust_tin", "mekanism:tin_ore", 1, extra = "minecraft:cobblestone", inCount = 8 },
+            { "mekanism:dust_copper", "mekanism:copper_ore", 1, extra = "minecraft:cobblestone", inCount = 8 },
+            { "mekanism:dust_lead", "mekanism:lead_ore", 1, extra = "minecraft:cobblestone", inCount = 8 },
+            { "mekanism:dust_uranium", "mekanism:uranium_ore", 1, extra = "minecraft:cobblestone", inCount = 8 },
+            { "mekanism:dust_iron", "minecraft:iron_ore", 1, extra = "minecraft:cobblestone", inCount = 8 },
+            { "mekanism:dust_gold", "minecraft:gold_ore", 1, extra = "minecraft:cobblestone", inCount = 8 },
+            { "minecraft:diamond", "minecraft:diamond_ore", 1, extra = "minecraft:cobblestone", inCount = 3 },
+            { "minecraft:redstone", "minecraft:redstone_ore", 1, extra = "minecraft:cobblestone", inCount = 16 },
+            { "minecraft:emerald", "minecraft:emerald_ore", 1, extra = "minecraft:cobblestone", inCount = 3 },
+            { "minecraft:coal", "minecraft:coal_ore", 1, extra = "minecraft:cobblestone", inCount = 3 },
+            { "minecraft:lapis_lazuli", "minecraft:lapis_ore", 1, extra = "minecraft:cobblestone", inCount = 16 },
+            { "minecraft:quartz", "minecraft:quartz_ore", 1, extra = "minecraft:netherrack", inCount = 8 }
+        }
+    })
+    registerMachine("advanced_combining_factory", "Advanced Combining Factory", { front = "res/combining_factory_front.png", frontActive = "res/combining_factory_front_active.png", side = "res/combining_factory_side.png", top = "res/combining_factory_top.png", bottom = "res/combining_factory_bottom.png" }, {
+        hardness = 3.5, energyCapacity = 200000, energyPerTick = 250, processTicks = 200, parallel = 5, power = POWER, recipes = {
+            { "mekanism:dust_osmium", "mekanism:osmium_ore", 1, extra = "minecraft:cobblestone", inCount = 8 },
+            { "mekanism:dust_tin", "mekanism:tin_ore", 1, extra = "minecraft:cobblestone", inCount = 8 },
+            { "mekanism:dust_copper", "mekanism:copper_ore", 1, extra = "minecraft:cobblestone", inCount = 8 },
+            { "mekanism:dust_lead", "mekanism:lead_ore", 1, extra = "minecraft:cobblestone", inCount = 8 },
+            { "mekanism:dust_uranium", "mekanism:uranium_ore", 1, extra = "minecraft:cobblestone", inCount = 8 },
+            { "mekanism:dust_iron", "minecraft:iron_ore", 1, extra = "minecraft:cobblestone", inCount = 8 },
+            { "mekanism:dust_gold", "minecraft:gold_ore", 1, extra = "minecraft:cobblestone", inCount = 8 },
+            { "minecraft:diamond", "minecraft:diamond_ore", 1, extra = "minecraft:cobblestone", inCount = 3 },
+            { "minecraft:redstone", "minecraft:redstone_ore", 1, extra = "minecraft:cobblestone", inCount = 16 },
+            { "minecraft:emerald", "minecraft:emerald_ore", 1, extra = "minecraft:cobblestone", inCount = 3 },
+            { "minecraft:coal", "minecraft:coal_ore", 1, extra = "minecraft:cobblestone", inCount = 3 },
+            { "minecraft:lapis_lazuli", "minecraft:lapis_ore", 1, extra = "minecraft:cobblestone", inCount = 16 },
+            { "minecraft:quartz", "minecraft:quartz_ore", 1, extra = "minecraft:netherrack", inCount = 8 }
+        }
+    })
+    registerMachine("elite_combining_factory", "Elite Combining Factory", { front = "res/combining_factory_front.png", frontActive = "res/combining_factory_front_active.png", side = "res/combining_factory_side.png", top = "res/combining_factory_top.png", bottom = "res/combining_factory_bottom.png" }, {
+        hardness = 3.5, energyCapacity = 280000, energyPerTick = 350, processTicks = 200, parallel = 7, power = POWER, recipes = {
+            { "mekanism:dust_osmium", "mekanism:osmium_ore", 1, extra = "minecraft:cobblestone", inCount = 8 },
+            { "mekanism:dust_tin", "mekanism:tin_ore", 1, extra = "minecraft:cobblestone", inCount = 8 },
+            { "mekanism:dust_copper", "mekanism:copper_ore", 1, extra = "minecraft:cobblestone", inCount = 8 },
+            { "mekanism:dust_lead", "mekanism:lead_ore", 1, extra = "minecraft:cobblestone", inCount = 8 },
+            { "mekanism:dust_uranium", "mekanism:uranium_ore", 1, extra = "minecraft:cobblestone", inCount = 8 },
+            { "mekanism:dust_iron", "minecraft:iron_ore", 1, extra = "minecraft:cobblestone", inCount = 8 },
+            { "mekanism:dust_gold", "minecraft:gold_ore", 1, extra = "minecraft:cobblestone", inCount = 8 },
+            { "minecraft:diamond", "minecraft:diamond_ore", 1, extra = "minecraft:cobblestone", inCount = 3 },
+            { "minecraft:redstone", "minecraft:redstone_ore", 1, extra = "minecraft:cobblestone", inCount = 16 },
+            { "minecraft:emerald", "minecraft:emerald_ore", 1, extra = "minecraft:cobblestone", inCount = 3 },
+            { "minecraft:coal", "minecraft:coal_ore", 1, extra = "minecraft:cobblestone", inCount = 3 },
+            { "minecraft:lapis_lazuli", "minecraft:lapis_ore", 1, extra = "minecraft:cobblestone", inCount = 16 },
+            { "minecraft:quartz", "minecraft:quartz_ore", 1, extra = "minecraft:netherrack", inCount = 8 }
+        }
+    })
+    registerMachine("basic_purifying_factory", "Basic Purifying Factory", { front = "res/purifying_factory_front.png", frontActive = "res/purifying_factory_front_active.png", side = "res/purifying_factory_side.png", top = "res/purifying_factory_top.png", bottom = "res/purifying_factory_bottom.png" }, {
+        hardness = 3.5, energyCapacity = 120000, energyPerTick = 150, processTicks = 200, parallel = 3, power = POWER, recipes = {
+            { "mekanism:osmium_ore", "mekanism:clump_osmium", 3, extra = "minecraft:flint" },
+            { "mekanism:tin_ore", "mekanism:clump_tin", 3, extra = "minecraft:flint" },
+            { "mekanism:copper_ore", "mekanism:clump_copper", 3, extra = "minecraft:flint" },
+            { "mekanism:lead_ore", "mekanism:clump_lead", 3, extra = "minecraft:flint" },
+            { "mekanism:uranium_ore", "mekanism:clump_uranium", 3, extra = "minecraft:flint" },
+            { "minecraft:iron_ore", "mekanism:clump_iron", 3, extra = "minecraft:flint" },
+            { "minecraft:gold_ore", "mekanism:clump_gold", 3, extra = "minecraft:flint" },
+            { "mekanism:shard_iron", "mekanism:clump_iron", 1 },
+            { "mekanism:shard_gold", "mekanism:clump_gold", 1 },
+            { "mekanism:shard_osmium", "mekanism:clump_osmium", 1 },
+            { "mekanism:shard_tin", "mekanism:clump_tin", 1 },
+            { "mekanism:shard_copper", "mekanism:clump_copper", 1 },
+            { "mekanism:shard_lead", "mekanism:clump_lead", 1 },
+            { "mekanism:shard_uranium", "mekanism:clump_uranium", 1 },
+            { "minecraft:iron_ore", "mekanism:clump_iron", 3, chemIn = { "mekanism:oxygen", 40 } },
+            { "minecraft:gold_ore", "mekanism:clump_gold", 3, chemIn = { "mekanism:oxygen", 40 } },
+            { "mekanism:osmium_ore", "mekanism:clump_osmium", 3, chemIn = { "mekanism:oxygen", 40 } },
+            { "mekanism:tin_ore", "mekanism:clump_tin", 3, chemIn = { "mekanism:oxygen", 40 } },
+            { "mekanism:copper_ore", "mekanism:clump_copper", 3, chemIn = { "mekanism:oxygen", 40 } },
+            { "mekanism:lead_ore", "mekanism:clump_lead", 3, chemIn = { "mekanism:oxygen", 40 } },
+            { "mekanism:uranium_ore", "mekanism:clump_uranium", 3, chemIn = { "mekanism:oxygen", 40 } },
+            { "mekanism:shard_iron", "mekanism:clump_iron", 1, chemIn = { "mekanism:oxygen", 20 } },
+            { "mekanism:shard_gold", "mekanism:clump_gold", 1, chemIn = { "mekanism:oxygen", 20 } },
+            { "mekanism:shard_osmium", "mekanism:clump_osmium", 1, chemIn = { "mekanism:oxygen", 20 } },
+            { "mekanism:shard_tin", "mekanism:clump_tin", 1, chemIn = { "mekanism:oxygen", 20 } },
+            { "mekanism:shard_copper", "mekanism:clump_copper", 1, chemIn = { "mekanism:oxygen", 20 } },
+            { "mekanism:shard_lead", "mekanism:clump_lead", 1, chemIn = { "mekanism:oxygen", 20 } },
+            { "mekanism:shard_uranium", "mekanism:clump_uranium", 1, chemIn = { "mekanism:oxygen", 20 } }
+        }
+    })
+    registerMachine("advanced_purifying_factory", "Advanced Purifying Factory", { front = "res/purifying_factory_front.png", frontActive = "res/purifying_factory_front_active.png", side = "res/purifying_factory_side.png", top = "res/purifying_factory_top.png", bottom = "res/purifying_factory_bottom.png" }, {
+        hardness = 3.5, energyCapacity = 200000, energyPerTick = 250, processTicks = 200, parallel = 5, power = POWER, recipes = {
+            { "mekanism:osmium_ore", "mekanism:clump_osmium", 3, extra = "minecraft:flint" },
+            { "mekanism:tin_ore", "mekanism:clump_tin", 3, extra = "minecraft:flint" },
+            { "mekanism:copper_ore", "mekanism:clump_copper", 3, extra = "minecraft:flint" },
+            { "mekanism:lead_ore", "mekanism:clump_lead", 3, extra = "minecraft:flint" },
+            { "mekanism:uranium_ore", "mekanism:clump_uranium", 3, extra = "minecraft:flint" },
+            { "minecraft:iron_ore", "mekanism:clump_iron", 3, extra = "minecraft:flint" },
+            { "minecraft:gold_ore", "mekanism:clump_gold", 3, extra = "minecraft:flint" },
+            { "mekanism:shard_iron", "mekanism:clump_iron", 1 },
+            { "mekanism:shard_gold", "mekanism:clump_gold", 1 },
+            { "mekanism:shard_osmium", "mekanism:clump_osmium", 1 },
+            { "mekanism:shard_tin", "mekanism:clump_tin", 1 },
+            { "mekanism:shard_copper", "mekanism:clump_copper", 1 },
+            { "mekanism:shard_lead", "mekanism:clump_lead", 1 },
+            { "mekanism:shard_uranium", "mekanism:clump_uranium", 1 },
+            { "minecraft:iron_ore", "mekanism:clump_iron", 3, chemIn = { "mekanism:oxygen", 40 } },
+            { "minecraft:gold_ore", "mekanism:clump_gold", 3, chemIn = { "mekanism:oxygen", 40 } },
+            { "mekanism:osmium_ore", "mekanism:clump_osmium", 3, chemIn = { "mekanism:oxygen", 40 } },
+            { "mekanism:tin_ore", "mekanism:clump_tin", 3, chemIn = { "mekanism:oxygen", 40 } },
+            { "mekanism:copper_ore", "mekanism:clump_copper", 3, chemIn = { "mekanism:oxygen", 40 } },
+            { "mekanism:lead_ore", "mekanism:clump_lead", 3, chemIn = { "mekanism:oxygen", 40 } },
+            { "mekanism:uranium_ore", "mekanism:clump_uranium", 3, chemIn = { "mekanism:oxygen", 40 } },
+            { "mekanism:shard_iron", "mekanism:clump_iron", 1, chemIn = { "mekanism:oxygen", 20 } },
+            { "mekanism:shard_gold", "mekanism:clump_gold", 1, chemIn = { "mekanism:oxygen", 20 } },
+            { "mekanism:shard_osmium", "mekanism:clump_osmium", 1, chemIn = { "mekanism:oxygen", 20 } },
+            { "mekanism:shard_tin", "mekanism:clump_tin", 1, chemIn = { "mekanism:oxygen", 20 } },
+            { "mekanism:shard_copper", "mekanism:clump_copper", 1, chemIn = { "mekanism:oxygen", 20 } },
+            { "mekanism:shard_lead", "mekanism:clump_lead", 1, chemIn = { "mekanism:oxygen", 20 } },
+            { "mekanism:shard_uranium", "mekanism:clump_uranium", 1, chemIn = { "mekanism:oxygen", 20 } }
+        }
+    })
+    registerMachine("elite_purifying_factory", "Elite Purifying Factory", { front = "res/purifying_factory_front.png", frontActive = "res/purifying_factory_front_active.png", side = "res/purifying_factory_side.png", top = "res/purifying_factory_top.png", bottom = "res/purifying_factory_bottom.png" }, {
+        hardness = 3.5, energyCapacity = 280000, energyPerTick = 350, processTicks = 200, parallel = 7, power = POWER, recipes = {
+            { "mekanism:osmium_ore", "mekanism:clump_osmium", 3, extra = "minecraft:flint" },
+            { "mekanism:tin_ore", "mekanism:clump_tin", 3, extra = "minecraft:flint" },
+            { "mekanism:copper_ore", "mekanism:clump_copper", 3, extra = "minecraft:flint" },
+            { "mekanism:lead_ore", "mekanism:clump_lead", 3, extra = "minecraft:flint" },
+            { "mekanism:uranium_ore", "mekanism:clump_uranium", 3, extra = "minecraft:flint" },
+            { "minecraft:iron_ore", "mekanism:clump_iron", 3, extra = "minecraft:flint" },
+            { "minecraft:gold_ore", "mekanism:clump_gold", 3, extra = "minecraft:flint" },
+            { "mekanism:shard_iron", "mekanism:clump_iron", 1 },
+            { "mekanism:shard_gold", "mekanism:clump_gold", 1 },
+            { "mekanism:shard_osmium", "mekanism:clump_osmium", 1 },
+            { "mekanism:shard_tin", "mekanism:clump_tin", 1 },
+            { "mekanism:shard_copper", "mekanism:clump_copper", 1 },
+            { "mekanism:shard_lead", "mekanism:clump_lead", 1 },
+            { "mekanism:shard_uranium", "mekanism:clump_uranium", 1 },
+            { "minecraft:iron_ore", "mekanism:clump_iron", 3, chemIn = { "mekanism:oxygen", 40 } },
+            { "minecraft:gold_ore", "mekanism:clump_gold", 3, chemIn = { "mekanism:oxygen", 40 } },
+            { "mekanism:osmium_ore", "mekanism:clump_osmium", 3, chemIn = { "mekanism:oxygen", 40 } },
+            { "mekanism:tin_ore", "mekanism:clump_tin", 3, chemIn = { "mekanism:oxygen", 40 } },
+            { "mekanism:copper_ore", "mekanism:clump_copper", 3, chemIn = { "mekanism:oxygen", 40 } },
+            { "mekanism:lead_ore", "mekanism:clump_lead", 3, chemIn = { "mekanism:oxygen", 40 } },
+            { "mekanism:uranium_ore", "mekanism:clump_uranium", 3, chemIn = { "mekanism:oxygen", 40 } },
+            { "mekanism:shard_iron", "mekanism:clump_iron", 1, chemIn = { "mekanism:oxygen", 20 } },
+            { "mekanism:shard_gold", "mekanism:clump_gold", 1, chemIn = { "mekanism:oxygen", 20 } },
+            { "mekanism:shard_osmium", "mekanism:clump_osmium", 1, chemIn = { "mekanism:oxygen", 20 } },
+            { "mekanism:shard_tin", "mekanism:clump_tin", 1, chemIn = { "mekanism:oxygen", 20 } },
+            { "mekanism:shard_copper", "mekanism:clump_copper", 1, chemIn = { "mekanism:oxygen", 20 } },
+            { "mekanism:shard_lead", "mekanism:clump_lead", 1, chemIn = { "mekanism:oxygen", 20 } },
+            { "mekanism:shard_uranium", "mekanism:clump_uranium", 1, chemIn = { "mekanism:oxygen", 20 } }
+        }
+    })
+    registerMachine("basic_injecting_factory", "Basic Injecting Factory", { front = "res/injecting_factory_front.png", frontActive = "res/injecting_factory_front_active.png", side = "res/injecting_factory_side.png", top = "res/injecting_factory_top.png", bottom = "res/injecting_factory_bottom.png" }, {
+        hardness = 3.5, energyCapacity = 120000, energyPerTick = 150, processTicks = 200, parallel = 3, power = POWER, recipes = {
+            { "mekanism:osmium_ore", "mekanism:shard_osmium", 4, extra = "mekanism:salt" },
+            { "mekanism:tin_ore", "mekanism:shard_tin", 4, extra = "mekanism:salt" },
+            { "mekanism:copper_ore", "mekanism:shard_copper", 4, extra = "mekanism:salt" },
+            { "mekanism:lead_ore", "mekanism:shard_lead", 4, extra = "mekanism:salt" },
+            { "mekanism:uranium_ore", "mekanism:shard_uranium", 4, extra = "mekanism:salt" },
+            { "minecraft:iron_ore", "mekanism:shard_iron", 4, extra = "mekanism:salt" },
+            { "minecraft:gold_ore", "mekanism:shard_gold", 4, extra = "mekanism:salt" },
+            { "minecraft:iron_ore", "mekanism:shard_iron", 4, chemIn = { "mekanism:hydrogen_chloride", 40 } },
+            { "minecraft:gold_ore", "mekanism:shard_gold", 4, chemIn = { "mekanism:hydrogen_chloride", 40 } },
+            { "mekanism:osmium_ore", "mekanism:shard_osmium", 4, chemIn = { "mekanism:hydrogen_chloride", 40 } },
+            { "mekanism:tin_ore", "mekanism:shard_tin", 4, chemIn = { "mekanism:hydrogen_chloride", 40 } },
+            { "mekanism:copper_ore", "mekanism:shard_copper", 4, chemIn = { "mekanism:hydrogen_chloride", 40 } },
+            { "mekanism:lead_ore", "mekanism:shard_lead", 4, chemIn = { "mekanism:hydrogen_chloride", 40 } },
+            { "mekanism:uranium_ore", "mekanism:shard_uranium", 4, chemIn = { "mekanism:hydrogen_chloride", 40 } },
+            { "mekanism:crystal_iron", "mekanism:shard_iron", 1, chemIn = { "mekanism:hydrogen_chloride", 20 } },
+            { "mekanism:crystal_gold", "mekanism:shard_gold", 1, chemIn = { "mekanism:hydrogen_chloride", 20 } },
+            { "mekanism:crystal_osmium", "mekanism:shard_osmium", 1, chemIn = { "mekanism:hydrogen_chloride", 20 } },
+            { "mekanism:crystal_tin", "mekanism:shard_tin", 1, chemIn = { "mekanism:hydrogen_chloride", 20 } },
+            { "mekanism:crystal_copper", "mekanism:shard_copper", 1, chemIn = { "mekanism:hydrogen_chloride", 20 } },
+            { "mekanism:crystal_lead", "mekanism:shard_lead", 1, chemIn = { "mekanism:hydrogen_chloride", 20 } },
+            { "mekanism:crystal_uranium", "mekanism:shard_uranium", 1, chemIn = { "mekanism:hydrogen_chloride", 20 } }
+        }
+    })
+    registerMachine("advanced_injecting_factory", "Advanced Injecting Factory", { front = "res/injecting_factory_front.png", frontActive = "res/injecting_factory_front_active.png", side = "res/injecting_factory_side.png", top = "res/injecting_factory_top.png", bottom = "res/injecting_factory_bottom.png" }, {
+        hardness = 3.5, energyCapacity = 200000, energyPerTick = 250, processTicks = 200, parallel = 5, power = POWER, recipes = {
+            { "mekanism:osmium_ore", "mekanism:shard_osmium", 4, extra = "mekanism:salt" },
+            { "mekanism:tin_ore", "mekanism:shard_tin", 4, extra = "mekanism:salt" },
+            { "mekanism:copper_ore", "mekanism:shard_copper", 4, extra = "mekanism:salt" },
+            { "mekanism:lead_ore", "mekanism:shard_lead", 4, extra = "mekanism:salt" },
+            { "mekanism:uranium_ore", "mekanism:shard_uranium", 4, extra = "mekanism:salt" },
+            { "minecraft:iron_ore", "mekanism:shard_iron", 4, extra = "mekanism:salt" },
+            { "minecraft:gold_ore", "mekanism:shard_gold", 4, extra = "mekanism:salt" },
+            { "minecraft:iron_ore", "mekanism:shard_iron", 4, chemIn = { "mekanism:hydrogen_chloride", 40 } },
+            { "minecraft:gold_ore", "mekanism:shard_gold", 4, chemIn = { "mekanism:hydrogen_chloride", 40 } },
+            { "mekanism:osmium_ore", "mekanism:shard_osmium", 4, chemIn = { "mekanism:hydrogen_chloride", 40 } },
+            { "mekanism:tin_ore", "mekanism:shard_tin", 4, chemIn = { "mekanism:hydrogen_chloride", 40 } },
+            { "mekanism:copper_ore", "mekanism:shard_copper", 4, chemIn = { "mekanism:hydrogen_chloride", 40 } },
+            { "mekanism:lead_ore", "mekanism:shard_lead", 4, chemIn = { "mekanism:hydrogen_chloride", 40 } },
+            { "mekanism:uranium_ore", "mekanism:shard_uranium", 4, chemIn = { "mekanism:hydrogen_chloride", 40 } },
+            { "mekanism:crystal_iron", "mekanism:shard_iron", 1, chemIn = { "mekanism:hydrogen_chloride", 20 } },
+            { "mekanism:crystal_gold", "mekanism:shard_gold", 1, chemIn = { "mekanism:hydrogen_chloride", 20 } },
+            { "mekanism:crystal_osmium", "mekanism:shard_osmium", 1, chemIn = { "mekanism:hydrogen_chloride", 20 } },
+            { "mekanism:crystal_tin", "mekanism:shard_tin", 1, chemIn = { "mekanism:hydrogen_chloride", 20 } },
+            { "mekanism:crystal_copper", "mekanism:shard_copper", 1, chemIn = { "mekanism:hydrogen_chloride", 20 } },
+            { "mekanism:crystal_lead", "mekanism:shard_lead", 1, chemIn = { "mekanism:hydrogen_chloride", 20 } },
+            { "mekanism:crystal_uranium", "mekanism:shard_uranium", 1, chemIn = { "mekanism:hydrogen_chloride", 20 } }
+        }
+    })
+    registerMachine("elite_injecting_factory", "Elite Injecting Factory", { front = "res/injecting_factory_front.png", frontActive = "res/injecting_factory_front_active.png", side = "res/injecting_factory_side.png", top = "res/injecting_factory_top.png", bottom = "res/injecting_factory_bottom.png" }, {
+        hardness = 3.5, energyCapacity = 280000, energyPerTick = 350, processTicks = 200, parallel = 7, power = POWER, recipes = {
+            { "mekanism:osmium_ore", "mekanism:shard_osmium", 4, extra = "mekanism:salt" },
+            { "mekanism:tin_ore", "mekanism:shard_tin", 4, extra = "mekanism:salt" },
+            { "mekanism:copper_ore", "mekanism:shard_copper", 4, extra = "mekanism:salt" },
+            { "mekanism:lead_ore", "mekanism:shard_lead", 4, extra = "mekanism:salt" },
+            { "mekanism:uranium_ore", "mekanism:shard_uranium", 4, extra = "mekanism:salt" },
+            { "minecraft:iron_ore", "mekanism:shard_iron", 4, extra = "mekanism:salt" },
+            { "minecraft:gold_ore", "mekanism:shard_gold", 4, extra = "mekanism:salt" },
+            { "minecraft:iron_ore", "mekanism:shard_iron", 4, chemIn = { "mekanism:hydrogen_chloride", 40 } },
+            { "minecraft:gold_ore", "mekanism:shard_gold", 4, chemIn = { "mekanism:hydrogen_chloride", 40 } },
+            { "mekanism:osmium_ore", "mekanism:shard_osmium", 4, chemIn = { "mekanism:hydrogen_chloride", 40 } },
+            { "mekanism:tin_ore", "mekanism:shard_tin", 4, chemIn = { "mekanism:hydrogen_chloride", 40 } },
+            { "mekanism:copper_ore", "mekanism:shard_copper", 4, chemIn = { "mekanism:hydrogen_chloride", 40 } },
+            { "mekanism:lead_ore", "mekanism:shard_lead", 4, chemIn = { "mekanism:hydrogen_chloride", 40 } },
+            { "mekanism:uranium_ore", "mekanism:shard_uranium", 4, chemIn = { "mekanism:hydrogen_chloride", 40 } },
+            { "mekanism:crystal_iron", "mekanism:shard_iron", 1, chemIn = { "mekanism:hydrogen_chloride", 20 } },
+            { "mekanism:crystal_gold", "mekanism:shard_gold", 1, chemIn = { "mekanism:hydrogen_chloride", 20 } },
+            { "mekanism:crystal_osmium", "mekanism:shard_osmium", 1, chemIn = { "mekanism:hydrogen_chloride", 20 } },
+            { "mekanism:crystal_tin", "mekanism:shard_tin", 1, chemIn = { "mekanism:hydrogen_chloride", 20 } },
+            { "mekanism:crystal_copper", "mekanism:shard_copper", 1, chemIn = { "mekanism:hydrogen_chloride", 20 } },
+            { "mekanism:crystal_lead", "mekanism:shard_lead", 1, chemIn = { "mekanism:hydrogen_chloride", 20 } },
+            { "mekanism:crystal_uranium", "mekanism:shard_uranium", 1, chemIn = { "mekanism:hydrogen_chloride", 20 } }
+        }
+    })
+    registerMachine("basic_infusing_factory", "Basic Infusing Factory", { front = "res/infusing_factory_front.png", frontActive = "res/infusing_factory_front_active.png", side = "res/infusing_factory_side.png", top = "res/infusing_factory_top.png", bottom = "res/infusing_factory_bottom.png" }, {
+        hardness = 3.5, energyCapacity = 120000, energyPerTick = 150, processTicks = 200, parallel = 3, power = POWER, recipes = {
+            { "minecraft:iron_ingot", "mekanism:alloy_infused", 1, extra = "minecraft:redstone" },
+            { "minecraft:iron_ingot", "mekanism:alloy_infused", 1, extra = "mekanism:enriched_redstone" },
+            { "mekanism:ingot_osmium", "mekanism:basic_control_circuit", 1, extra = "minecraft:redstone" },
+            { "mekanism:ingot_osmium", "mekanism:basic_control_circuit", 1, extra = "mekanism:enriched_redstone" },
+            { "minecraft:iron_ingot", "mekanism:enriched_iron", 1, extra = "mekanism:enriched_carbon" },
+            { "mekanism:dust_iron", "mekanism:enriched_iron", 1, extra = "mekanism:enriched_carbon" },
+            { "mekanism:enriched_iron", "mekanism:dust_steel", 1, extra = "mekanism:enriched_carbon" },
+            { "mekanism:alloy_infused", "mekanism:alloy_reinforced", 1, extra = "mekanism:enriched_diamond" },
+            { "mekanism:alloy_reinforced", "mekanism:alloy_atomic", 1, extra = "mekanism:enriched_refined_obsidian" },
+            { "mekanism:dust_obsidian", "mekanism:dust_refined_obsidian", 1, extra = "mekanism:enriched_diamond" },
+            { "mekanism:ingot_copper", "mekanism:ingot_bronze", 1, extra = "mekanism:enriched_tin" },
+            { "mekanism:dust_copper", "mekanism:dust_bronze", 1, extra = "mekanism:enriched_tin" },
+            { "minecraft:cobblestone", "minecraft:mossy_cobblestone", 1, extra = "mekanism:bio_fuel" },
+            { "minecraft:dirt", "minecraft:grass_block", 1, extra = "mekanism:bio_fuel" },
+            { "minecraft:sand", "minecraft:dirt", 1, extra = "mekanism:bio_fuel" }
+        }
+    })
+    registerMachine("advanced_infusing_factory", "Advanced Infusing Factory", { front = "res/infusing_factory_front.png", frontActive = "res/infusing_factory_front_active.png", side = "res/infusing_factory_side.png", top = "res/infusing_factory_top.png", bottom = "res/infusing_factory_bottom.png" }, {
+        hardness = 3.5, energyCapacity = 200000, energyPerTick = 250, processTicks = 200, parallel = 5, power = POWER, recipes = {
+            { "minecraft:iron_ingot", "mekanism:alloy_infused", 1, extra = "minecraft:redstone" },
+            { "minecraft:iron_ingot", "mekanism:alloy_infused", 1, extra = "mekanism:enriched_redstone" },
+            { "mekanism:ingot_osmium", "mekanism:basic_control_circuit", 1, extra = "minecraft:redstone" },
+            { "mekanism:ingot_osmium", "mekanism:basic_control_circuit", 1, extra = "mekanism:enriched_redstone" },
+            { "minecraft:iron_ingot", "mekanism:enriched_iron", 1, extra = "mekanism:enriched_carbon" },
+            { "mekanism:dust_iron", "mekanism:enriched_iron", 1, extra = "mekanism:enriched_carbon" },
+            { "mekanism:enriched_iron", "mekanism:dust_steel", 1, extra = "mekanism:enriched_carbon" },
+            { "mekanism:alloy_infused", "mekanism:alloy_reinforced", 1, extra = "mekanism:enriched_diamond" },
+            { "mekanism:alloy_reinforced", "mekanism:alloy_atomic", 1, extra = "mekanism:enriched_refined_obsidian" },
+            { "mekanism:dust_obsidian", "mekanism:dust_refined_obsidian", 1, extra = "mekanism:enriched_diamond" },
+            { "mekanism:ingot_copper", "mekanism:ingot_bronze", 1, extra = "mekanism:enriched_tin" },
+            { "mekanism:dust_copper", "mekanism:dust_bronze", 1, extra = "mekanism:enriched_tin" },
+            { "minecraft:cobblestone", "minecraft:mossy_cobblestone", 1, extra = "mekanism:bio_fuel" },
+            { "minecraft:dirt", "minecraft:grass_block", 1, extra = "mekanism:bio_fuel" },
+            { "minecraft:sand", "minecraft:dirt", 1, extra = "mekanism:bio_fuel" }
+        }
+    })
+    registerMachine("elite_infusing_factory", "Elite Infusing Factory", { front = "res/infusing_factory_front.png", frontActive = "res/infusing_factory_front_active.png", side = "res/infusing_factory_side.png", top = "res/infusing_factory_top.png", bottom = "res/infusing_factory_bottom.png" }, {
+        hardness = 3.5, energyCapacity = 280000, energyPerTick = 350, processTicks = 200, parallel = 7, power = POWER, recipes = {
+            { "minecraft:iron_ingot", "mekanism:alloy_infused", 1, extra = "minecraft:redstone" },
+            { "minecraft:iron_ingot", "mekanism:alloy_infused", 1, extra = "mekanism:enriched_redstone" },
+            { "mekanism:ingot_osmium", "mekanism:basic_control_circuit", 1, extra = "minecraft:redstone" },
+            { "mekanism:ingot_osmium", "mekanism:basic_control_circuit", 1, extra = "mekanism:enriched_redstone" },
+            { "minecraft:iron_ingot", "mekanism:enriched_iron", 1, extra = "mekanism:enriched_carbon" },
+            { "mekanism:dust_iron", "mekanism:enriched_iron", 1, extra = "mekanism:enriched_carbon" },
+            { "mekanism:enriched_iron", "mekanism:dust_steel", 1, extra = "mekanism:enriched_carbon" },
+            { "mekanism:alloy_infused", "mekanism:alloy_reinforced", 1, extra = "mekanism:enriched_diamond" },
+            { "mekanism:alloy_reinforced", "mekanism:alloy_atomic", 1, extra = "mekanism:enriched_refined_obsidian" },
+            { "mekanism:dust_obsidian", "mekanism:dust_refined_obsidian", 1, extra = "mekanism:enriched_diamond" },
+            { "mekanism:ingot_copper", "mekanism:ingot_bronze", 1, extra = "mekanism:enriched_tin" },
+            { "mekanism:dust_copper", "mekanism:dust_bronze", 1, extra = "mekanism:enriched_tin" },
+            { "minecraft:cobblestone", "minecraft:mossy_cobblestone", 1, extra = "mekanism:bio_fuel" },
+            { "minecraft:dirt", "minecraft:grass_block", 1, extra = "mekanism:bio_fuel" },
+            { "minecraft:sand", "minecraft:dirt", 1, extra = "mekanism:bio_fuel" }
+        }
+    })
+    registerMachine("basic_sawing_factory", "Basic Sawing Factory", { front = "res/sawing_factory_front.png", frontActive = "res/sawing_factory_front_active.png", side = "res/sawing_factory_side.png", top = "res/sawing_factory_top.png", bottom = "res/sawing_factory_bottom.png" }, {
+        hardness = 3.5, energyCapacity = 120000, energyPerTick = 150, processTicks = 200, parallel = 3, power = POWER, recipes = {
+            { "minecraft:oak_log", "minecraft:oak_planks", 6, secondary = { "mekanism:sawdust", chance = 0.25 } },
+            { "minecraft:oak_planks", "minecraft:stick", 6, secondary = { "mekanism:sawdust", chance = 0.25 } },
+            { "minecraft:bookshelf", "minecraft:oak_planks", 6 },
+            { "minecraft:crafting_table", "minecraft:oak_planks", 4 },
+            { "minecraft:chest", "minecraft:oak_planks", 8 },
+            { "minecraft:wooden_door", "minecraft:oak_planks", 6 },
+            { "minecraft:stick", "mekanism:sawdust", 1 }
+        }
+    })
+    registerMachine("advanced_sawing_factory", "Advanced Sawing Factory", { front = "res/sawing_factory_front.png", frontActive = "res/sawing_factory_front_active.png", side = "res/sawing_factory_side.png", top = "res/sawing_factory_top.png", bottom = "res/sawing_factory_bottom.png" }, {
+        hardness = 3.5, energyCapacity = 200000, energyPerTick = 250, processTicks = 200, parallel = 5, power = POWER, recipes = {
+            { "minecraft:oak_log", "minecraft:oak_planks", 6, secondary = { "mekanism:sawdust", chance = 0.25 } },
+            { "minecraft:oak_planks", "minecraft:stick", 6, secondary = { "mekanism:sawdust", chance = 0.25 } },
+            { "minecraft:bookshelf", "minecraft:oak_planks", 6 },
+            { "minecraft:crafting_table", "minecraft:oak_planks", 4 },
+            { "minecraft:chest", "minecraft:oak_planks", 8 },
+            { "minecraft:wooden_door", "minecraft:oak_planks", 6 },
+            { "minecraft:stick", "mekanism:sawdust", 1 }
+        }
+    })
+    registerMachine("elite_sawing_factory", "Elite Sawing Factory", { front = "res/sawing_factory_front.png", frontActive = "res/sawing_factory_front_active.png", side = "res/sawing_factory_side.png", top = "res/sawing_factory_top.png", bottom = "res/sawing_factory_bottom.png" }, {
+        hardness = 3.5, energyCapacity = 280000, energyPerTick = 350, processTicks = 200, parallel = 7, power = POWER, recipes = {
+            { "minecraft:oak_log", "minecraft:oak_planks", 6, secondary = { "mekanism:sawdust", chance = 0.25 } },
+            { "minecraft:oak_planks", "minecraft:stick", 6, secondary = { "mekanism:sawdust", chance = 0.25 } },
+            { "minecraft:bookshelf", "minecraft:oak_planks", 6 },
+            { "minecraft:crafting_table", "minecraft:oak_planks", 4 },
+            { "minecraft:chest", "minecraft:oak_planks", 8 },
+            { "minecraft:wooden_door", "minecraft:oak_planks", 6 },
+            { "minecraft:stick", "mekanism:sawdust", 1 }
+        }
+    })
 
     -- crafting
     registerShapedRecipe("osmium_sword", {"M", "M", "S"}, { M = "mekanism:ingot_osmium", S = "minecraft:stick" }, "mekanism:osmium_sword", { count = 1, group = ERecipeGroup.Tool })
@@ -535,6 +1503,119 @@ function main()
     registerShapedRecipe("advanced_universal_cable", {"CCC", "CAC", "CCC"}, { C = "mekanism:basic_universal_cable", A = "mekanism:alloy_infused" }, "mekanism:advanced_universal_cable", { count = 8, group = ERecipeGroup.Mechanism })
     registerShapedRecipe("elite_universal_cable", {"CCC", "CAC", "CCC"}, { C = "mekanism:advanced_universal_cable", A = "mekanism:alloy_reinforced" }, "mekanism:elite_universal_cable", { count = 8, group = ERecipeGroup.Mechanism })
     registerShapedRecipe("ultimate_universal_cable", {"CCC", "CAC", "CCC"}, { C = "mekanism:elite_universal_cable", A = "mekanism:alloy_atomic" }, "mekanism:ultimate_universal_cable", { count = 8, group = ERecipeGroup.Mechanism })
+    registerShapedRecipe("upgrade_speed", {" G ", "ADA", " G "}, { G = "minecraft:glass", A = "mekanism:alloy_infused", D = "mekanism:dust_osmium" }, "mekanism:upgrade_speed", { count = 1, group = ERecipeGroup.Mechanism })
+    registerShapedRecipe("upgrade_energy", {" G ", "ADA", " G "}, { G = "minecraft:glass", A = "mekanism:alloy_infused", D = "mekanism:dust_gold" }, "mekanism:upgrade_energy", { count = 1, group = ERecipeGroup.Mechanism })
+    registerShapedRecipe("upgrade_muffling", {" G ", "ADA", " G "}, { G = "minecraft:glass", A = "mekanism:alloy_infused", D = "mekanism:dust_steel" }, "mekanism:upgrade_muffling", { count = 1, group = ERecipeGroup.Mechanism })
+    registerShapedRecipe("configurator", {" L ", "AEA", " S "}, { L = "minecraft:lapis_lazuli", A = "mekanism:alloy_infused", E = "mekanism:energy_tablet", S = "minecraft:stick" }, "mekanism:configurator", { count = 1, group = ERecipeGroup.Tool })
+    registerShapedRecipe("teleportation_core", {"LAL", "GDG", "LAL"}, { L = "minecraft:lapis_lazuli", A = "mekanism:alloy_atomic", G = "minecraft:gold_ingot", D = "minecraft:diamond" }, "mekanism:teleportation_core", { count = 1, group = ERecipeGroup.Mechanism })
+    registerShapedRecipe("structural_glass", {"GSG", "S S", "GSG"}, { G = "minecraft:glass", S = "mekanism:ingot_steel" }, "mekanism:structural_glass", { count = 4, group = ERecipeGroup.Structure })
+    registerShapedRecipe("dynamic_tank", {" S ", "SXS", " S "}, { S = "mekanism:ingot_steel", X = "minecraft:bucket" }, "mekanism:dynamic_tank", { count = 4, group = ERecipeGroup.Structure })
+    registerShapedRecipe("induction_casing", {" S ", "SXS", " S "}, { S = "mekanism:ingot_steel", X = "mekanism:energy_tablet" }, "mekanism:induction_casing", { count = 4, group = ERecipeGroup.Structure })
+    registerShapedRecipe("thermal_evaporation_block", {" S ", "SXS", " S "}, { S = "mekanism:ingot_steel", X = "mekanism:ingot_copper" }, "mekanism:thermal_evaporation_block", { count = 4, group = ERecipeGroup.Structure })
+    registerShapedRecipe("boiler_casing", {" S ", "SXS", " S "}, { S = "mekanism:ingot_steel", X = "mekanism:ingot_osmium" }, "mekanism:boiler_casing", { count = 4, group = ERecipeGroup.Structure })
+    registerShapedRecipe("turbine_casing", {" S ", "SXS", " S "}, { S = "mekanism:ingot_steel", X = "mekanism:ingot_osmium" }, "mekanism:turbine_casing", { count = 4, group = ERecipeGroup.Structure })
+    registerShapedRecipe("fission_reactor_casing", {" S ", "SXS", " S "}, { S = "mekanism:ingot_steel", X = "mekanism:ingot_lead" }, "mekanism:fission_reactor_casing", { count = 4, group = ERecipeGroup.Structure })
+    registerShapedRecipe("sps_casing", {" S ", "SXS", " S "}, { S = "mekanism:ingot_steel", X = "mekanism:pellet_polonium" }, "mekanism:sps_casing", { count = 4, group = ERecipeGroup.Structure })
+    registerShapedRecipe("reactor_frame", {" S ", "SXS", " S "}, { S = "mekanism:ingot_steel", X = "mekanism:alloy_atomic" }, "mekanism:reactor_frame", { count = 4, group = ERecipeGroup.Structure })
+    registerShapedRecipe("teleporter_frame", {" S ", "SXS", " S "}, { S = "mekanism:ingot_steel", X = "mekanism:alloy_infused" }, "mekanism:teleporter_frame", { count = 8, group = ERecipeGroup.Structure })
+    registerShapedRecipe("thermal_evaporation_valve", {" B ", "BCB", " B "}, { B = "mekanism:thermal_evaporation_block", C = "mekanism:advanced_control_circuit" }, "mekanism:thermal_evaporation_valve", { count = 1, group = ERecipeGroup.Mechanism })
+    registerShapedRecipe("thermal_evaporation_controller", {"CGC", "BTB", "BBB"}, { C = "mekanism:basic_control_circuit", G = "minecraft:glass", B = "mekanism:thermal_evaporation_block", T = "mekanism:basic_fluid_tank" }, "mekanism:thermal_evaporation_controller", { count = 1, group = ERecipeGroup.Mechanism })
+    registerShapedRecipe("boiler_valve", {" B ", "BCB", " B "}, { B = "mekanism:boiler_casing", C = "mekanism:advanced_control_circuit" }, "mekanism:boiler_valve", { count = 2, group = ERecipeGroup.Mechanism })
+    registerShapedRecipe("thermoelectric_boiler", {"BCB", "CTC", "BCB"}, { B = "mekanism:boiler_casing", C = "mekanism:elite_control_circuit", T = "mekanism:basic_chemical_tank" }, "mekanism:thermoelectric_boiler", { count = 1, group = ERecipeGroup.Mechanism })
+    registerShapedRecipe("superheating_element", {"SCS", "CRC", "SCS"}, { S = "mekanism:ingot_steel", C = "mekanism:ingot_copper", R = "minecraft:redstone_block" }, "mekanism:superheating_element", { count = 2, group = ERecipeGroup.Mechanism })
+    registerShapedRecipe("pressure_disperser", {"SCS", "GIG", "SCS"}, { S = "mekanism:ingot_steel", C = "mekanism:basic_control_circuit", G = "minecraft:glass", I = "minecraft:iron_bars" }, "mekanism:pressure_disperser", { count = 1, group = ERecipeGroup.Mechanism })
+    registerShapedRecipe("turbine_rotor", {"SAS", "SAS", "SAS"}, { S = "mekanism:ingot_steel", A = "mekanism:alloy_infused" }, "mekanism:turbine_rotor", { count = 1, group = ERecipeGroup.Mechanism })
+    registerShapedRecipe("electromagnetic_coil", {"SGS", "GEG", "SGS"}, { S = "mekanism:ingot_steel", G = "minecraft:gold_ingot", E = "mekanism:energy_tablet" }, "mekanism:electromagnetic_coil", { count = 1, group = ERecipeGroup.Mechanism })
+    registerShapedRecipe("turbine_vent", {" B ", "BIB", " B "}, { B = "mekanism:turbine_casing", I = "minecraft:iron_bars" }, "mekanism:turbine_vent", { count = 4, group = ERecipeGroup.Mechanism })
+    registerShapedRecipe("turbine_valve", {" B ", "BCB", " B "}, { B = "mekanism:turbine_casing", C = "mekanism:elite_control_circuit" }, "mekanism:turbine_valve", { count = 1, group = ERecipeGroup.Mechanism })
+    registerShapedRecipe("saturating_condenser", {"SBS", "SCS", "SBS"}, { S = "mekanism:ingot_steel", B = "minecraft:bucket", C = "mekanism:advanced_control_circuit" }, "mekanism:saturating_condenser", { count = 1, group = ERecipeGroup.Mechanism })
+    registerShapedRecipe("fission_reactor_port", {" B ", "BCB", " B "}, { B = "mekanism:fission_reactor_casing", C = "mekanism:elite_control_circuit" }, "mekanism:fission_reactor_port", { count = 4, group = ERecipeGroup.Mechanism })
+    registerShapedRecipe("fission_fuel_assembly", {"LAL", "LBL", "LAL"}, { L = "mekanism:ingot_lead", A = "mekanism:alloy_reinforced", B = "mekanism:basic_chemical_tank" }, "mekanism:fission_fuel_assembly", { count = 1, group = ERecipeGroup.Mechanism })
+    registerShapedRecipe("fission_reactor_controller", {"CRC", "BTB", "CRC"}, { C = "mekanism:ultimate_control_circuit", R = "minecraft:redstone_block", B = "mekanism:fission_reactor_casing", T = "mekanism:elite_chemical_tank" }, "mekanism:fission_reactor_controller", { count = 1, group = ERecipeGroup.Mechanism })
+    registerShapedRecipe("reactor_glass", {" F ", "FGF", " F "}, { F = "mekanism:reactor_frame", G = "mekanism:structural_glass" }, "mekanism:reactor_glass", { count = 4, group = ERecipeGroup.Structure })
+    registerShapedRecipe("reactor_port", {" F ", "FCF", " F "}, { F = "mekanism:reactor_frame", C = "mekanism:ultimate_control_circuit" }, "mekanism:reactor_port", { count = 2, group = ERecipeGroup.Mechanism })
+    registerShapedRecipe("fusion_reactor_controller", {"CGC", "ATA", "AAA"}, { C = "mekanism:ultimate_control_circuit", G = "mekanism:reactor_glass", A = "mekanism:reactor_frame", T = "mekanism:ultimate_chemical_tank" }, "mekanism:fusion_reactor_controller", { count = 1, group = ERecipeGroup.Mechanism })
+    registerShapedRecipe("sps_port", {" B ", "BCB", " B "}, { B = "mekanism:sps_casing", C = "mekanism:ultimate_control_circuit" }, "mekanism:sps_port", { count = 1, group = ERecipeGroup.Mechanism })
+    registerShapedRecipe("induction_port", {" B ", "BCB", " B "}, { B = "mekanism:induction_casing", C = "mekanism:elite_control_circuit" }, "mekanism:induction_port", { count = 2, group = ERecipeGroup.Mechanism })
+    registerShapedRecipe("dynamic_valve", {" B ", "BCB", " B "}, { B = "mekanism:dynamic_tank", C = "mekanism:basic_control_circuit" }, "mekanism:dynamic_valve", { count = 2, group = ERecipeGroup.Mechanism })
+    registerShapedRecipe("basic_induction_cell", {"LXL", "XCX", "LXL"}, { L = "mekanism:dust_lithium", X = "mekanism:energy_tablet", C = "mekanism:basic_energy_cube" }, "mekanism:basic_induction_cell", { count = 1, group = ERecipeGroup.Mechanism })
+    registerShapedRecipe("basic_induction_provider", {"LXL", "XCX", "LXL"}, { L = "mekanism:ingot_copper", X = "mekanism:basic_control_circuit", C = "mekanism:basic_energy_cube" }, "mekanism:basic_induction_provider", { count = 1, group = ERecipeGroup.Mechanism })
+    registerShapedRecipe("advanced_induction_cell", {"LXL", "XCX", "LXL"}, { L = "mekanism:dust_lithium", X = "mekanism:basic_induction_cell", C = "mekanism:advanced_energy_cube" }, "mekanism:advanced_induction_cell", { count = 1, group = ERecipeGroup.Mechanism })
+    registerShapedRecipe("advanced_induction_provider", {"LXL", "XCX", "LXL"}, { L = "mekanism:ingot_copper", X = "mekanism:basic_induction_provider", C = "mekanism:advanced_energy_cube" }, "mekanism:advanced_induction_provider", { count = 1, group = ERecipeGroup.Mechanism })
+    registerShapedRecipe("elite_induction_cell", {"LXL", "XCX", "LXL"}, { L = "mekanism:dust_lithium", X = "mekanism:advanced_induction_cell", C = "mekanism:elite_energy_cube" }, "mekanism:elite_induction_cell", { count = 1, group = ERecipeGroup.Mechanism })
+    registerShapedRecipe("elite_induction_provider", {"LXL", "XCX", "LXL"}, { L = "mekanism:ingot_copper", X = "mekanism:advanced_induction_provider", C = "mekanism:elite_energy_cube" }, "mekanism:elite_induction_provider", { count = 1, group = ERecipeGroup.Mechanism })
+    registerShapedRecipe("ultimate_induction_cell", {"LXL", "XCX", "LXL"}, { L = "mekanism:dust_lithium", X = "mekanism:elite_induction_cell", C = "mekanism:ultimate_energy_cube" }, "mekanism:ultimate_induction_cell", { count = 1, group = ERecipeGroup.Mechanism })
+    registerShapedRecipe("ultimate_induction_provider", {"LXL", "XCX", "LXL"}, { L = "mekanism:ingot_copper", X = "mekanism:elite_induction_provider", C = "mekanism:ultimate_energy_cube" }, "mekanism:ultimate_induction_provider", { count = 1, group = ERecipeGroup.Mechanism })
+    registerShapedRecipe("basic_fluid_tank", {"RIR", "I I", "RIR"}, { R = "minecraft:redstone", I = "minecraft:iron_ingot" }, "mekanism:basic_fluid_tank", { count = 1, group = ERecipeGroup.Mechanism })
+    registerShapedRecipe("basic_chemical_tank", {"ROR", "O O", "ROR"}, { R = "minecraft:redstone", O = "mekanism:ingot_osmium" }, "mekanism:basic_chemical_tank", { count = 1, group = ERecipeGroup.Mechanism })
+    registerShapedRecipe("advanced_fluid_tank", {"ATA", "T T", "ATA"}, { A = "mekanism:alloy_infused", T = "mekanism:basic_fluid_tank" }, "mekanism:advanced_fluid_tank", { count = 1, group = ERecipeGroup.Mechanism })
+    registerShapedRecipe("advanced_chemical_tank", {"ATA", "T T", "ATA"}, { A = "mekanism:alloy_infused", T = "mekanism:basic_chemical_tank" }, "mekanism:advanced_chemical_tank", { count = 1, group = ERecipeGroup.Mechanism })
+    registerShapedRecipe("elite_fluid_tank", {"ATA", "T T", "ATA"}, { A = "mekanism:alloy_reinforced", T = "mekanism:advanced_fluid_tank" }, "mekanism:elite_fluid_tank", { count = 1, group = ERecipeGroup.Mechanism })
+    registerShapedRecipe("elite_chemical_tank", {"ATA", "T T", "ATA"}, { A = "mekanism:alloy_reinforced", T = "mekanism:advanced_chemical_tank" }, "mekanism:elite_chemical_tank", { count = 1, group = ERecipeGroup.Mechanism })
+    registerShapedRecipe("ultimate_fluid_tank", {"ATA", "T T", "ATA"}, { A = "mekanism:alloy_atomic", T = "mekanism:elite_fluid_tank" }, "mekanism:ultimate_fluid_tank", { count = 1, group = ERecipeGroup.Mechanism })
+    registerShapedRecipe("ultimate_chemical_tank", {"ATA", "T T", "ATA"}, { A = "mekanism:alloy_atomic", T = "mekanism:elite_chemical_tank" }, "mekanism:ultimate_chemical_tank", { count = 1, group = ERecipeGroup.Mechanism })
+    registerShapedRecipe("basic_mechanical_pipe", {"SBS"}, { S = "mekanism:ingot_steel", B = "minecraft:bucket" }, "mekanism:basic_mechanical_pipe", { count = 8, group = ERecipeGroup.Mechanism })
+    registerShapedRecipe("basic_pressurized_tube", {"SGS"}, { S = "mekanism:ingot_steel", G = "minecraft:glass" }, "mekanism:basic_pressurized_tube", { count = 8, group = ERecipeGroup.Mechanism })
+    registerShapedRecipe("basic_logistical_transporter", {"SCS"}, { S = "mekanism:ingot_steel", C = "mekanism:basic_control_circuit" }, "mekanism:basic_logistical_transporter", { count = 8, group = ERecipeGroup.Mechanism })
+    registerShapedRecipe("advanced_mechanical_pipe", {"CCC", "CAC", "CCC"}, { C = "mekanism:basic_mechanical_pipe", A = "mekanism:alloy_infused" }, "mekanism:advanced_mechanical_pipe", { count = 8, group = ERecipeGroup.Mechanism })
+    registerShapedRecipe("advanced_pressurized_tube", {"CCC", "CAC", "CCC"}, { C = "mekanism:basic_pressurized_tube", A = "mekanism:alloy_infused" }, "mekanism:advanced_pressurized_tube", { count = 8, group = ERecipeGroup.Mechanism })
+    registerShapedRecipe("advanced_logistical_transporter", {"CCC", "CAC", "CCC"}, { C = "mekanism:basic_logistical_transporter", A = "mekanism:alloy_infused" }, "mekanism:advanced_logistical_transporter", { count = 8, group = ERecipeGroup.Mechanism })
+    registerShapedRecipe("elite_mechanical_pipe", {"CCC", "CAC", "CCC"}, { C = "mekanism:advanced_mechanical_pipe", A = "mekanism:alloy_reinforced" }, "mekanism:elite_mechanical_pipe", { count = 8, group = ERecipeGroup.Mechanism })
+    registerShapedRecipe("elite_pressurized_tube", {"CCC", "CAC", "CCC"}, { C = "mekanism:advanced_pressurized_tube", A = "mekanism:alloy_reinforced" }, "mekanism:elite_pressurized_tube", { count = 8, group = ERecipeGroup.Mechanism })
+    registerShapedRecipe("elite_logistical_transporter", {"CCC", "CAC", "CCC"}, { C = "mekanism:advanced_logistical_transporter", A = "mekanism:alloy_reinforced" }, "mekanism:elite_logistical_transporter", { count = 8, group = ERecipeGroup.Mechanism })
+    registerShapedRecipe("ultimate_mechanical_pipe", {"CCC", "CAC", "CCC"}, { C = "mekanism:elite_mechanical_pipe", A = "mekanism:alloy_atomic" }, "mekanism:ultimate_mechanical_pipe", { count = 8, group = ERecipeGroup.Mechanism })
+    registerShapedRecipe("ultimate_pressurized_tube", {"CCC", "CAC", "CCC"}, { C = "mekanism:elite_pressurized_tube", A = "mekanism:alloy_atomic" }, "mekanism:ultimate_pressurized_tube", { count = 8, group = ERecipeGroup.Mechanism })
+    registerShapedRecipe("ultimate_logistical_transporter", {"CCC", "CAC", "CCC"}, { C = "mekanism:elite_logistical_transporter", A = "mekanism:alloy_atomic" }, "mekanism:ultimate_logistical_transporter", { count = 8, group = ERecipeGroup.Mechanism })
+    registerShapedRecipe("electrolytic_separator", {"IRI", "ACA", "IRI"}, { I = "minecraft:iron_ingot", R = "minecraft:redstone", A = "mekanism:alloy_infused", C = "mekanism:steel_casing" }, "mekanism:electrolytic_separator", { count = 1, group = ERecipeGroup.Mechanism })
+    registerShapedRecipe("chemical_oxidizer", {"ACA", "TMT", "ACA"}, { A = "mekanism:alloy_infused", C = "mekanism:advanced_control_circuit", T = "mekanism:basic_chemical_tank", M = "mekanism:steel_casing" }, "mekanism:chemical_oxidizer", { count = 1, group = ERecipeGroup.Mechanism })
+    registerShapedRecipe("chemical_infuser", {"ACA", "TMT", "ACA"}, { A = "mekanism:alloy_reinforced", C = "mekanism:advanced_control_circuit", T = "mekanism:basic_chemical_tank", M = "mekanism:steel_casing" }, "mekanism:chemical_infuser", { count = 1, group = ERecipeGroup.Mechanism })
+    registerShapedRecipe("chemical_dissolution_chamber", {"CTC", "AMA", "CTC"}, { C = "mekanism:ultimate_control_circuit", T = "mekanism:basic_chemical_tank", A = "mekanism:alloy_atomic", M = "mekanism:steel_casing" }, "mekanism:chemical_dissolution_chamber", { count = 1, group = ERecipeGroup.Mechanism })
+    registerShapedRecipe("chemical_washer", {"CBC", "TMT", "CBC"}, { C = "mekanism:ultimate_control_circuit", B = "minecraft:bucket", T = "mekanism:basic_chemical_tank", M = "mekanism:steel_casing" }, "mekanism:chemical_washer", { count = 1, group = ERecipeGroup.Mechanism })
+    registerShapedRecipe("chemical_crystallizer", {"TCT", "AMA", "TCT"}, { T = "mekanism:basic_chemical_tank", C = "mekanism:ultimate_control_circuit", A = "mekanism:alloy_atomic", M = "mekanism:steel_casing" }, "mekanism:chemical_crystallizer", { count = 1, group = ERecipeGroup.Mechanism })
+    registerShapedRecipe("pressurized_reaction_chamber", {"ACA", "EMT", "ACA"}, { A = "mekanism:alloy_reinforced", C = "mekanism:elite_control_circuit", E = "mekanism:enrichment_chamber", T = "mekanism:basic_chemical_tank", M = "mekanism:steel_casing" }, "mekanism:pressurized_reaction_chamber", { count = 1, group = ERecipeGroup.Mechanism })
+    registerShapedRecipe("isotopic_centrifuge", {"LCL", "TMT", "LCL"}, { L = "mekanism:ingot_lead", C = "mekanism:elite_control_circuit", T = "mekanism:basic_chemical_tank", M = "mekanism:steel_casing" }, "mekanism:isotopic_centrifuge", { count = 1, group = ERecipeGroup.Mechanism })
+    registerShapedRecipe("solar_neutron_activator", {"AGA", "CMC", "AGA"}, { A = "mekanism:alloy_reinforced", G = "mekanism:solar_generator", C = "mekanism:elite_control_circuit", M = "mekanism:steel_casing" }, "mekanism:solar_neutron_activator", { count = 1, group = ERecipeGroup.Mechanism })
+    registerShapedRecipe("antiprotonic_nucleosynthesizer", {"ACA", "TMT", "ACA"}, { A = "mekanism:alloy_atomic", C = "mekanism:ultimate_control_circuit", T = "mekanism:ultimate_chemical_tank", M = "mekanism:steel_casing" }, "mekanism:antiprotonic_nucleosynthesizer", { count = 1, group = ERecipeGroup.Mechanism })
+    registerShapedRecipe("electric_pump", {" B ", "IMI", "ICI"}, { B = "minecraft:bucket", I = "mekanism:ingot_osmium", M = "mekanism:steel_casing", C = "mekanism:basic_control_circuit" }, "mekanism:electric_pump", { count = 1, group = ERecipeGroup.Mechanism })
+    registerShapedRecipe("digital_miner", {"ACA", "LRL", "TMT"}, { A = "mekanism:alloy_atomic", C = "mekanism:ultimate_control_circuit", L = "mekanism:basic_logistical_transporter", R = "mekanism:teleportation_core", T = "mekanism:enrichment_chamber", M = "mekanism:steel_casing" }, "mekanism:digital_miner", { count = 1, group = ERecipeGroup.Mechanism })
+    registerShapedRecipe("teleporter", {"COC", "OTO", "COC"}, { C = "mekanism:basic_control_circuit", O = "mekanism:teleporter_frame", T = "mekanism:teleportation_core" }, "mekanism:teleporter", { count = 1, group = ERecipeGroup.Mechanism })
+    registerShapedRecipe("gas_burning_generator", {"PEP", "CMC", "PEP"}, { P = "mekanism:basic_pressurized_tube", E = "mekanism:electrolytic_separator", C = "mekanism:basic_control_circuit", M = "mekanism:steel_casing" }, "mekanism:gas_burning_generator", { count = 1, group = ERecipeGroup.Mechanism })
+    registerShapedRecipe("chargepad", {"PPP", "SES"}, { P = "minecraft:stone_pressure_plate", S = "mekanism:ingot_steel", E = "mekanism:energy_tablet" }, "mekanism:chargepad", { count = 1, group = ERecipeGroup.Mechanism })
+    registerShapedRecipe("basic_smelting_factory", {"RCR", "IMI", "RCR"}, { R = "minecraft:redstone", C = "mekanism:basic_control_circuit", I = "minecraft:iron_ingot", M = "mekanism:energized_smelter" }, "mekanism:basic_smelting_factory", { count = 1, group = ERecipeGroup.Mechanism })
+    registerShapedRecipe("advanced_smelting_factory", {"ACA", "IMI", "ACA"}, { A = "mekanism:alloy_infused", C = "mekanism:advanced_control_circuit", I = "mekanism:ingot_osmium", M = "mekanism:basic_smelting_factory" }, "mekanism:advanced_smelting_factory", { count = 1, group = ERecipeGroup.Mechanism })
+    registerShapedRecipe("elite_smelting_factory", {"ACA", "IMI", "ACA"}, { A = "mekanism:alloy_reinforced", C = "mekanism:elite_control_circuit", I = "minecraft:gold_ingot", M = "mekanism:advanced_smelting_factory" }, "mekanism:elite_smelting_factory", { count = 1, group = ERecipeGroup.Mechanism })
+    registerShapedRecipe("basic_enriching_factory", {"RCR", "IMI", "RCR"}, { R = "minecraft:redstone", C = "mekanism:basic_control_circuit", I = "minecraft:iron_ingot", M = "mekanism:enrichment_chamber" }, "mekanism:basic_enriching_factory", { count = 1, group = ERecipeGroup.Mechanism })
+    registerShapedRecipe("advanced_enriching_factory", {"ACA", "IMI", "ACA"}, { A = "mekanism:alloy_infused", C = "mekanism:advanced_control_circuit", I = "mekanism:ingot_osmium", M = "mekanism:basic_enriching_factory" }, "mekanism:advanced_enriching_factory", { count = 1, group = ERecipeGroup.Mechanism })
+    registerShapedRecipe("elite_enriching_factory", {"ACA", "IMI", "ACA"}, { A = "mekanism:alloy_reinforced", C = "mekanism:elite_control_circuit", I = "minecraft:gold_ingot", M = "mekanism:advanced_enriching_factory" }, "mekanism:elite_enriching_factory", { count = 1, group = ERecipeGroup.Mechanism })
+    registerShapedRecipe("basic_crushing_factory", {"RCR", "IMI", "RCR"}, { R = "minecraft:redstone", C = "mekanism:basic_control_circuit", I = "minecraft:iron_ingot", M = "mekanism:crusher" }, "mekanism:basic_crushing_factory", { count = 1, group = ERecipeGroup.Mechanism })
+    registerShapedRecipe("advanced_crushing_factory", {"ACA", "IMI", "ACA"}, { A = "mekanism:alloy_infused", C = "mekanism:advanced_control_circuit", I = "mekanism:ingot_osmium", M = "mekanism:basic_crushing_factory" }, "mekanism:advanced_crushing_factory", { count = 1, group = ERecipeGroup.Mechanism })
+    registerShapedRecipe("elite_crushing_factory", {"ACA", "IMI", "ACA"}, { A = "mekanism:alloy_reinforced", C = "mekanism:elite_control_circuit", I = "minecraft:gold_ingot", M = "mekanism:advanced_crushing_factory" }, "mekanism:elite_crushing_factory", { count = 1, group = ERecipeGroup.Mechanism })
+    registerShapedRecipe("basic_compressing_factory", {"RCR", "IMI", "RCR"}, { R = "minecraft:redstone", C = "mekanism:basic_control_circuit", I = "minecraft:iron_ingot", M = "mekanism:osmium_compressor" }, "mekanism:basic_compressing_factory", { count = 1, group = ERecipeGroup.Mechanism })
+    registerShapedRecipe("advanced_compressing_factory", {"ACA", "IMI", "ACA"}, { A = "mekanism:alloy_infused", C = "mekanism:advanced_control_circuit", I = "mekanism:ingot_osmium", M = "mekanism:basic_compressing_factory" }, "mekanism:advanced_compressing_factory", { count = 1, group = ERecipeGroup.Mechanism })
+    registerShapedRecipe("elite_compressing_factory", {"ACA", "IMI", "ACA"}, { A = "mekanism:alloy_reinforced", C = "mekanism:elite_control_circuit", I = "minecraft:gold_ingot", M = "mekanism:advanced_compressing_factory" }, "mekanism:elite_compressing_factory", { count = 1, group = ERecipeGroup.Mechanism })
+    registerShapedRecipe("basic_combining_factory", {"RCR", "IMI", "RCR"}, { R = "minecraft:redstone", C = "mekanism:basic_control_circuit", I = "minecraft:iron_ingot", M = "mekanism:combiner" }, "mekanism:basic_combining_factory", { count = 1, group = ERecipeGroup.Mechanism })
+    registerShapedRecipe("advanced_combining_factory", {"ACA", "IMI", "ACA"}, { A = "mekanism:alloy_infused", C = "mekanism:advanced_control_circuit", I = "mekanism:ingot_osmium", M = "mekanism:basic_combining_factory" }, "mekanism:advanced_combining_factory", { count = 1, group = ERecipeGroup.Mechanism })
+    registerShapedRecipe("elite_combining_factory", {"ACA", "IMI", "ACA"}, { A = "mekanism:alloy_reinforced", C = "mekanism:elite_control_circuit", I = "minecraft:gold_ingot", M = "mekanism:advanced_combining_factory" }, "mekanism:elite_combining_factory", { count = 1, group = ERecipeGroup.Mechanism })
+    registerShapedRecipe("basic_purifying_factory", {"RCR", "IMI", "RCR"}, { R = "minecraft:redstone", C = "mekanism:basic_control_circuit", I = "minecraft:iron_ingot", M = "mekanism:purification_chamber" }, "mekanism:basic_purifying_factory", { count = 1, group = ERecipeGroup.Mechanism })
+    registerShapedRecipe("advanced_purifying_factory", {"ACA", "IMI", "ACA"}, { A = "mekanism:alloy_infused", C = "mekanism:advanced_control_circuit", I = "mekanism:ingot_osmium", M = "mekanism:basic_purifying_factory" }, "mekanism:advanced_purifying_factory", { count = 1, group = ERecipeGroup.Mechanism })
+    registerShapedRecipe("elite_purifying_factory", {"ACA", "IMI", "ACA"}, { A = "mekanism:alloy_reinforced", C = "mekanism:elite_control_circuit", I = "minecraft:gold_ingot", M = "mekanism:advanced_purifying_factory" }, "mekanism:elite_purifying_factory", { count = 1, group = ERecipeGroup.Mechanism })
+    registerShapedRecipe("basic_injecting_factory", {"RCR", "IMI", "RCR"}, { R = "minecraft:redstone", C = "mekanism:basic_control_circuit", I = "minecraft:iron_ingot", M = "mekanism:chemical_injection_chamber" }, "mekanism:basic_injecting_factory", { count = 1, group = ERecipeGroup.Mechanism })
+    registerShapedRecipe("advanced_injecting_factory", {"ACA", "IMI", "ACA"}, { A = "mekanism:alloy_infused", C = "mekanism:advanced_control_circuit", I = "mekanism:ingot_osmium", M = "mekanism:basic_injecting_factory" }, "mekanism:advanced_injecting_factory", { count = 1, group = ERecipeGroup.Mechanism })
+    registerShapedRecipe("elite_injecting_factory", {"ACA", "IMI", "ACA"}, { A = "mekanism:alloy_reinforced", C = "mekanism:elite_control_circuit", I = "minecraft:gold_ingot", M = "mekanism:advanced_injecting_factory" }, "mekanism:elite_injecting_factory", { count = 1, group = ERecipeGroup.Mechanism })
+    registerShapedRecipe("basic_infusing_factory", {"RCR", "IMI", "RCR"}, { R = "minecraft:redstone", C = "mekanism:basic_control_circuit", I = "minecraft:iron_ingot", M = "mekanism:metallurgic_infuser" }, "mekanism:basic_infusing_factory", { count = 1, group = ERecipeGroup.Mechanism })
+    registerShapedRecipe("advanced_infusing_factory", {"ACA", "IMI", "ACA"}, { A = "mekanism:alloy_infused", C = "mekanism:advanced_control_circuit", I = "mekanism:ingot_osmium", M = "mekanism:basic_infusing_factory" }, "mekanism:advanced_infusing_factory", { count = 1, group = ERecipeGroup.Mechanism })
+    registerShapedRecipe("elite_infusing_factory", {"ACA", "IMI", "ACA"}, { A = "mekanism:alloy_reinforced", C = "mekanism:elite_control_circuit", I = "minecraft:gold_ingot", M = "mekanism:advanced_infusing_factory" }, "mekanism:elite_infusing_factory", { count = 1, group = ERecipeGroup.Mechanism })
+    registerShapedRecipe("basic_sawing_factory", {"RCR", "IMI", "RCR"}, { R = "minecraft:redstone", C = "mekanism:basic_control_circuit", I = "minecraft:iron_ingot", M = "mekanism:precision_sawmill" }, "mekanism:basic_sawing_factory", { count = 1, group = ERecipeGroup.Mechanism })
+    registerShapedRecipe("advanced_sawing_factory", {"ACA", "IMI", "ACA"}, { A = "mekanism:alloy_infused", C = "mekanism:advanced_control_circuit", I = "mekanism:ingot_osmium", M = "mekanism:basic_sawing_factory" }, "mekanism:advanced_sawing_factory", { count = 1, group = ERecipeGroup.Mechanism })
+    registerShapedRecipe("elite_sawing_factory", {"ACA", "IMI", "ACA"}, { A = "mekanism:alloy_reinforced", C = "mekanism:elite_control_circuit", I = "minecraft:gold_ingot", M = "mekanism:advanced_sawing_factory" }, "mekanism:elite_sawing_factory", { count = 1, group = ERecipeGroup.Mechanism })
+    registerShapedRecipe("jetpack", {"SCS", "TAT", "S S"}, { S = "mekanism:ingot_steel", C = "mekanism:basic_control_circuit", T = "mekanism:basic_chemical_tank", A = "mekanism:alloy_infused" }, "mekanism:jetpack", { count = 1, group = ERecipeGroup.Armour })
+    registerShapedRecipe("free_runners", {"C C", "A A", "T T"}, { C = "mekanism:basic_control_circuit", A = "mekanism:alloy_infused", T = "mekanism:energy_tablet" }, "mekanism:free_runners", { count = 1, group = ERecipeGroup.Armour })
+    registerShapedRecipe("scuba_mask", {" G ", "GTG", "SSS"}, { G = "minecraft:glass", T = "mekanism:basic_chemical_tank", S = "mekanism:ingot_steel" }, "mekanism:scuba_mask", { count = 1, group = ERecipeGroup.Armour })
+    registerShapedRecipe("mekasuit_helmet", {"PCP", "PSP"}, { P = "mekanism:alloy_atomic", C = "mekanism:ultimate_control_circuit", S = "mekanism:scuba_mask" }, "mekanism:mekasuit_helmet", { count = 1, group = ERecipeGroup.Armour })
+    registerShapedRecipe("mekasuit_bodyarmor", {"P P", "PCP", "PJP"}, { P = "mekanism:alloy_atomic", C = "mekanism:ultimate_control_circuit", J = "mekanism:jetpack" }, "mekanism:mekasuit_bodyarmor", { count = 1, group = ERecipeGroup.Armour })
+    registerShapedRecipe("mekasuit_pants", {"PCP", "P P", "P P"}, { P = "mekanism:alloy_atomic", C = "mekanism:ultimate_control_circuit" }, "mekanism:mekasuit_pants", { count = 1, group = ERecipeGroup.Armour })
+    registerShapedRecipe("mekasuit_boots", {"P P", "RCR"}, { P = "mekanism:alloy_atomic", C = "mekanism:ultimate_control_circuit", R = "mekanism:free_runners" }, "mekanism:mekasuit_boots", { count = 1, group = ERecipeGroup.Armour })
+    registerShapedRecipe("atomic_disassembler", {"AEA", "ACA", " O "}, { A = "mekanism:alloy_atomic", E = "mekanism:energy_tablet", C = "mekanism:ultimate_control_circuit", O = "mekanism:ingot_refined_obsidian" }, "mekanism:atomic_disassembler", { count = 1, group = ERecipeGroup.Tool })
     registerSmeltingRecipe("smelt_osmium_ore", "mekanism:osmium_ore", "mekanism:ingot_osmium", { count = 1, xp = 0.7 })
     registerSmeltingRecipe("smelt_tin_ore", "mekanism:tin_ore", "mekanism:ingot_tin", { count = 1, xp = 0.7 })
     registerSmeltingRecipe("smelt_copper_ore", "mekanism:copper_ore", "mekanism:ingot_copper", { count = 1, xp = 0.7 })
@@ -551,5 +1632,5 @@ function main()
     registerSmeltingRecipe("smelt_dust_gold", "mekanism:dust_gold", "minecraft:gold_ingot", { count = 1, xp = 0.3 })
     registerSmeltingRecipe("smelt_enriched_iron", "mekanism:enriched_iron", "minecraft:iron_ingot", { count = 1, xp = 0.1 })
 
-    log("Mekanism: 19 blocks, 133 items, 9 machines, 12 energy blocks registered")
+    log("Mekanism: 49 blocks, 149 items, 9 machines, 12 energy blocks registered")
 end
