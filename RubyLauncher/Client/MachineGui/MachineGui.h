@@ -40,4 +40,9 @@ namespace HSMachineGui
 	void update(const Screen &screen);
 	void clear(int pad);
 	void render();
+
+	// Mekanism-style background drawn under the machine screen (the scene's own panel is hidden):
+	// panel and slot rectangles in pixels of the UI render target
+	struct Rect { float x0, y0, x1, y1; };
+	void renderBackground(int screenW, int screenH, const Rect &panel, const std::vector<Rect> &slots, int outputSlot);
 }

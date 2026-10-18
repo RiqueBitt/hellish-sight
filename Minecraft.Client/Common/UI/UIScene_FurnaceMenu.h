@@ -40,6 +40,8 @@ protected:
 	virtual void handleReload();
 
 	virtual void tick();
+	virtual void render(S32 width, S32 height, C4JRender::eViewportType viewport);	// Hellish Sight: Mekanism-style machine background
+	bool m_hsPanelHidden = false;
 
 	virtual int getSectionColumns(ESceneSection eSection);
 	virtual int getSectionRows(ESceneSection eSection);

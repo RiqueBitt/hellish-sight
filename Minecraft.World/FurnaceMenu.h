@@ -31,6 +31,9 @@ private:
 public:
 	virtual void addSlotListener(ContainerListener *listener);
 	virtual void broadcastChanges();
+	// Hellish Sight: the server adds its listener before the client has the menu (open packet
+	// sent after), so the first data would be dropped: resend everything on the next broadcast
+	void hsResendAll() { for (int i = 0; i < 48; i++) hsSent[i] = 0x7fffffff; tc = -1; lt = -1; ld = -1; }
 	virtual void setData(int id, int value);
 	virtual bool stillValid(shared_ptr<Player> player);
 	virtual shared_ptr<ItemInstance> quickMoveStack(shared_ptr<Player> player, int slotIndex);

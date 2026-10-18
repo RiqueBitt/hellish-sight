@@ -1441,6 +1441,8 @@ bool ServerPlayer::openFurnace(shared_ptr<FurnaceTileEntity> furnace)
 #endif
 		connection->send(std::make_shared<ContainerOpenPacket>(containerCounter, ContainerOpenPacket::FURNACE, furnace->getCustomName(), furnace->getContainerSize(), furnace->hasCustomName()));
 		refreshContainer(containerMenu);
+		static_cast<FurnaceMenu *>(containerMenu)->hsResendAll();	// Hellish Sight: machine data after the open packet
+		containerMenu->broadcastChanges();
 	}
 	else
 	{

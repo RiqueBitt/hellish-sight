@@ -254,3 +254,39 @@ namespace HSMachineGui
 		glDisable(GL_ALPHA_TEST);
 	}
 }
+
+namespace HSMachineGui
+{
+	void renderBackground(int screenW, int screenH, const Rect &panel, const std::vector<Rect> &slots, int outputSlot)
+	{
+		if (!available() || screenW <= 0 || screenH <= 0) return;
+		ui.setupCustomDrawGameState();
+		glMatrixMode(GL_PROJECTION);
+		glLoadIdentity();
+		glOrtho(0, static_cast<float>(screenW), static_cast<float>(screenH), 0, 1000, 3000);
+		glMatrixMode(GL_MODELVIEW);
+		glLoadIdentity();
+		glTranslatef(0, 0, -2000);
+		const float scale = static_cast<float>((std::max)(1, (screenH + 180) / 360));
+		glScalef(scale, scale, 1.0f);
+		glDisable(GL_DEPTH_TEST);
+		glDepthMask(false);
+		glEnable(GL_BLEND);
+		glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+		glEnable(GL_TEXTURE_2D);
+
+		const int px0 = static_cast<int>(panel.x0 / scale), py0 = static_cast<int>(panel.y0 / scale);
+		const int px1 = static_cast<int>(panel.x1 / scale), py1 = static_cast<int>(panel.y1 / scale);
+		nineSlice("gui_base", px0, py0, px1 - px0, py1 - py0, 4);
+		for (size_t i = 0; i < slots.size(); ++i)
+		{
+			const Rect &r = slots[i];
+			const int x0 = static_cast<int>(r.x0 / scale), y0 = static_cast<int>(r.y0 / scale);
+			const int x1 = static_cast<int>(r.x1 / scale + 0.5f), y1 = static_cast<int>(r.y1 / scale + 0.5f);
+			if (x1 - x0 < 4 || y1 - y0 < 4) continue;
+			stretched(static_cast<int>(i) == outputSlot ? "gui_slot_output" : "gui_slot", x0, y0, x1 - x0, y1 - y0);
+		}
+		glColor4f(1, 1, 1, 1);
+		ui.endCustomDrawGameState();
+	}
+}

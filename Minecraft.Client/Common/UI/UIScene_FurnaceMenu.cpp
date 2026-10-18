@@ -410,3 +410,44 @@ UIControl *UIScene_FurnaceMenu::getSection(ESceneSection eSection)
 	}
 	return control;
 }
+
+// Hellish Sight: mod machines get the mod's own GUI background (Mekanism base panel and slots);
+// the scene's panel is hidden and the slots / items / progress are drawn by the movie on top of it.
+void UIScene_FurnaceMenu::render(S32 width, S32 height, C4JRender::eViewportType viewport)
+{
+#ifdef _WINDOWS64
+	const bool machine = m_furnace != nullptr && m_furnace->hsData[HSD_KIND] > 0 && HSMachineGui::available() && viewport == C4JRender::VIEWPORT_TYPE_FULLSCREEN;
+	if (machine != m_hsPanelHidden)
+	{
+		m_controlBackgroundPanel.setVisible(!machine);
+		m_hsPanelHidden = machine;
+	}
+	if (machine && m_movieWidth > 0 && m_movieHeight > 0)
+	{
+		const float sx = static_cast<float>(width) / m_movieWidth, sy = static_cast<float>(height) / m_movieHeight;
+		const float mainX = static_cast<float>(m_controlMainPanel.getXPos()), mainY = static_cast<float>(m_controlMainPanel.getYPos());
+		HSMachineGui::Rect panel = { (m_fPanelMinX + mainX) * sx, (m_fPanelMinY + mainY) * sy, (m_fPanelMaxX + mainX) * sx, (m_fPanelMaxY + mainY) * sy };
+		std::vector<HSMachineGui::Rect> slots;
+		int outputSlot = -1;
+		for (int iSection = m_eFirstSection; iSection < m_eMaxSection; ++iSection)
+		{
+			const ESceneSection eSection = static_cast<ESceneSection>(iSection);
+			if (!IsSectionSlotList(eSection)) continue;
+			UIVec2D sectionPos;
+			GetPositionOfSection(eSection, &sectionPos);
+			int cols = 0, rows = 0;
+			const int count = GetSectionDimensions(eSection, &cols, &rows);
+			for (int i = 0; i < count && i < 64; ++i)
+			{
+				UIVec2D pos, size;
+				GetItemScreenData(eSection, i, &pos, &size);
+				pos += sectionPos;
+				if (eSection == eSectionFurnaceResult) outputSlot = static_cast<int>(slots.size());
+				slots.push_back({ (pos.x + mainX) * sx, (pos.y + mainY) * sy, (pos.x + size.x + mainX) * sx, (pos.y + size.y + mainY) * sy });
+			}
+		}
+		HSMachineGui::renderBackground(width, height, panel, slots, outputSlot);
+	}
+#endif
+	UIScene_AbstractContainerMenu::render(width, height, viewport);
+}

@@ -204,7 +204,7 @@ os.makedirs(GUI_OUT, exist_ok=True)
 for src, dst in (('base.png', 'gui_base'), ('bar/base.png', 'gui_bar_base'), ('bar/vertical_power.png', 'gui_bar_power'),
                  ('gauge/normal.png', 'gui_gauge'), ('gauge/overlay/standard.png', 'gui_gauge_overlay'),
                  ('progress/right/empty.png', 'gui_progress_empty'), ('progress/right/full.png', 'gui_progress_full'),
-                 ('slot/normal.png', 'gui_slot'), ('slot/power.png', 'gui_slot_power')):
+                 ('slot/normal.png', 'gui_slot'), ('slot/power.png', 'gui_slot_power'), ('slot/output.png', 'gui_slot_output')):
     p = os.path.join(GUI, src)
     if os.path.exists(p):
         Image.open(p).convert('RGBA').save(os.path.join(GUI_OUT, dst + '.png'))
