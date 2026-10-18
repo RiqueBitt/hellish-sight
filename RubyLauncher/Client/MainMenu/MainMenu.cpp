@@ -14,6 +14,7 @@
 #include "Common/ModPaths.h"
 #include "Client/PcInput/PcInput.h"
 
+#include <shellapi.h>
 #include <algorithm>
 #include <cmath>
 #include <vector>
