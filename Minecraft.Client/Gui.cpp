@@ -29,6 +29,7 @@
 #include "../Minecraft.World/LevelChunk.h"
 #include "../Minecraft.World/Biome.h"
 #include <Common/UI/UI.h>
+#include "Client/Glance/GlanceHud.h"
 #ifdef _WINDOWS64
 #include "Windows64\KeyboardMouseInput.h"
 #endif
@@ -661,6 +662,12 @@ void Gui::render(float a, bool mouseFree, int xMouse, int yMouse)
 			}
 			Lighting::turnOff();
 			glDisable(GL_RESCALE_NORMAL);
+
+			// Ruby Launcher: Glance "what am I looking at" panel (off unless a mod enables it)
+			Glance::Hud::get().render(minecraft,
+				(bTwoPlayerSplitscreen ? iWidthOffset : 0) + screenWidth / 2,
+				iSafezoneTopYHalf,
+				iPad);
 		}
 #endif // RENDER_HUD
 

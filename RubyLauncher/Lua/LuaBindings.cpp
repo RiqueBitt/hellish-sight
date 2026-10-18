@@ -3,6 +3,7 @@
 #include "Common/ModPaths.h"
 #include "Common/ModStore.h"
 #include "Loader.h"
+#include "Client/Glance/GlanceLua.h"
 
 #include <map>
 #include <vector>
@@ -838,6 +839,8 @@ void LuaBindings::bindServerFunctions(sol::state& lua, MinecraftServer* server) 
 }
 
 void LuaBindings::bindClientFunctions(sol::state& lua) {
+    Glance::bindLua(lua);
+
     lua.new_enum<EBaseItem>("EBaseItem", {
         {"Default", EBaseItem::Default},
         {"Food", EBaseItem::Food},
