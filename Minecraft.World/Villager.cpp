@@ -14,7 +14,7 @@
 #include "net.minecraft.world.item.trading.h"
 #include "net.minecraft.world.level.tile.h"
 #include "net.minecraft.world.level.h"
-#include "..\Minecraft.Client\Textures.h"
+#include "../Minecraft.Client/Textures.h"
 #include "Villager.h"
 #include "AbstractContainerMenu.h"
 
@@ -156,7 +156,7 @@ bool Villager::mobInteract(shared_ptr<Player> player)
 	shared_ptr<ItemInstance> item = player->inventory->getSelected();
 	bool holdingSpawnEgg = item != nullptr && item->id == Item::spawnEgg_Id;
 
-	if (!holdingSpawnEgg && isAlive() && !isTrading() && !isBaby())
+	if (!player->isSneaking() && !holdingSpawnEgg && isAlive() && !isTrading() && !isBaby())
 	{
 		if (!level->isClientSide)
 		{
@@ -472,6 +472,7 @@ void Villager::addOffers(int addCount)
 		addItemForPurchase(newOffers, Tile::glass_Id, random, getRecipeChance(.2f));
 		addItemForPurchase(newOffers, Item::compass_Id, random, getRecipeChance(.2f));
 		addItemForPurchase(newOffers, Item::clock_Id, random, getRecipeChance(.2f));
+		addItemForPurchase(newOffers, Item::nameTag_Id, random, getRecipeChance(.2f));
 
 		if (random->nextFloat() < getRecipeChance(0.07f))
 		{
@@ -774,4 +775,20 @@ wstring Villager::getDisplayName()
 		break;
 	};
 	return app.GetString(name);
+}
+
+void Villager::thunderHit(const LightningBolt *lightningBolt)
+{
+	if (level->isClientSide) return;
+	shared_ptr<Witch> witch = std::make_shared<Witch>(level);
+	witch->moveTo(x, y, z, yRot, xRot);
+
+	if (this->hasCustomName())
+        witch->setCustomName(this->getCustomName());
+
+	if (this->isPersistenceRequired())
+		witch->setPersistenceRequired();
+	
+	level->addEntity(witch);
+	remove();
 }

@@ -31,6 +31,9 @@ public:
 		eTexturePackList,
 		eBitmapIcon,
 		eTouchControl,
+		eBook,
+		ePageFlip,
+		eAchievementList,
 	};
 protected:
 	eUIControlType m_eControlType;
@@ -63,7 +66,7 @@ public:
 	UIControl();
 
 	virtual bool setupControl(UIScene *scene, IggyValuePath *parent, const string &controlName);
-	void UpdateControl();
+	virtual void UpdateControl();
 	void setHidden(bool bHidden) {m_bHidden=bHidden;}
 	bool getHidden(void) {return m_bHidden;}
 
@@ -78,6 +81,8 @@ public:
 
 	S32 getXPos();
 	S32 getYPos();
+	void setXPos(S32 x);
+	void setYPos(S32 y);
 	S32 getWidth();
 	S32 getHeight();
 

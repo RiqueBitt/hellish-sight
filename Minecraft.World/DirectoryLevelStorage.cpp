@@ -11,6 +11,7 @@
 #include "LevelData.h"
 #include "DirectoryLevelStorage.h"
 #include "ConsoleSaveFileIO.h"
+#include "../Minecraft.Client/Minecraft.h"
 
 const wstring DirectoryLevelStorage::sc_szPlayerDir(L"players/");
 
@@ -43,7 +44,7 @@ int _MapDataMappings::getDimension(int id)
 	default:
 #ifndef _CONTENT_PACKAGE
 		printf("Read invalid dimension from MapDataMapping\n");
-		__debugbreak();
+		DEBUG_BREAK();
 #endif
 		break;
 	}
@@ -72,7 +73,7 @@ void _MapDataMappings::setMapping(int id, PlayerUID xuid, int dimension)
 	default:
 #ifndef _CONTENT_PACKAGE
 		printf("Trinyg to set a MapDataMapping for an invalid dimension.\n");
-		__debugbreak();
+		DEBUG_BREAK();
 #endif
 		break;
 	}
@@ -398,6 +399,7 @@ void DirectoryLevelStorage::save(shared_ptr<Player> player)
 	if( playerXuid != INVALID_XUID && !player->isGuest() )
 #endif
 	{
+		Minecraft::GetInstance()->forceStatsSave(player->getPlayerIndex());
 		CompoundTag *tag = new CompoundTag();
 		player->saveWithoutId(tag);
 #if defined(__PS3__) || defined(__ORBIS__) || defined(__PSVITA__)

@@ -1,6 +1,6 @@
 #pragma once
 #include <unordered_set>
-#include "..\Minecraft.World\net.minecraft.network.h"
+#include "../Minecraft.World/net.minecraft.network.h"
 class Minecraft;
 class MultiPlayerLevel;
 class SavedDataStorage;
@@ -48,6 +48,9 @@ private:
 
 	std::unordered_set<int> m_trackedEntityIds;
 	std::unordered_set<int64_t> m_visibleChunks;
+	bool m_isForkServer;  // true when connected to a fork server (received MC|ForkHello)
+	bool m_recivedRecipeRegistyUpdate;
+	bool m_recivedCreativeRegistyUpdate;
 
 	static int64_t chunkKey(int x, int z) { return ((int64_t)x << 32) | ((int64_t)z & 0xFFFFFFFF); }
 

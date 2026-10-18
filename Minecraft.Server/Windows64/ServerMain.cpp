@@ -5,14 +5,18 @@
 #include "Input.h"
 #include "Minecraft.h"
 #include "MinecraftServer.h"
-#include "..\Access\Access.h"
-#include "..\Common\StringUtils.h"
-#include "..\ServerLogger.h"
-#include "..\ServerLogManager.h"
-#include "..\ServerProperties.h"
-#include "..\ServerShutdown.h"
-#include "..\WorldManager.h"
-#include "..\Console\ServerCli.h"
+#include "../Access/Access.h"
+#include "../Common/StringUtils.h"
+#include "../ServerLogger.h"
+#include "../ServerLogManager.h"
+#include "../ServerProperties.h"
+#include "../ServerShutdown.h"
+#include "../WorldManager.h"
+#include "../Console/ServerCli.h"
+#include "../Security/SecurityConfig.h"
+#include "../Security/RateLimiter.h"
+#include "../Security/IdentityTokenManager.h"
+#include "../FourKitBridge.h"
 #include "Tesselator.h"
 #include "Windows64/4JLibs/inc/4J_Render.h"
 #include "Windows64/GameConfig/Minecraft.spa.h"
@@ -28,8 +32,12 @@
 #include "../../Minecraft.World/TilePos.h"
 #include "../../Minecraft.World/compression.h"
 #include "../../Minecraft.World/OldChunkStorage.h"
+#include "../../Minecraft.World/BiomeSource.h"
+#include "../../Minecraft.World/LevelType.h"
+#include "../../Minecraft.World/ConsoleSaveFileOriginal.h"
 #include "../../Minecraft.World/net.minecraft.world.level.tile.h"
 #include "../../Minecraft.World/Random.h"
+#include "../../Minecraft.World/MobCategory.h"
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -158,6 +166,7 @@ static void PrintUsage()
 	ServerRuntime::LogInfo("usage", "  -maxplayers <1-8>     Public slots (default: server.properties:max-players)");
 	ServerRuntime::LogInfo("usage", "  -seed <int64>         World seed (overrides server.properties:level-seed)");
 	ServerRuntime::LogInfo("usage", "  -loglevel <level>     debug|info|warn|error (default: server.properties:log-level)");
+	ServerRuntime::LogInfo("usage", "  -perftrace            Enable noisy [perf] sampling output (histograms, per-iter samples)");
 	ServerRuntime::LogInfo("usage", "  -help                 Show this help");
 }
 
@@ -264,6 +273,10 @@ static bool ParseCommandLine(int argc, char **argv, DedicatedServerConfig *confi
 				return false;
 			}
 		}
+		else if (_stricmp(arg, "-perftrace") == 0)
+		{
+			ServerRuntime::g_serverPerfTrace = true;
+		}
 		else
 		{
 			LogErrorf("startup", "Unknown or incomplete argument: %s", arg);
@@ -325,6 +338,7 @@ static void TickCoreSystems()
 	g_NetworkManager.DoWork();
 	ProfileManager.Tick();
 	StorageManager.Tick();
+    ConsoleSaveFileOriginal::flushPendingBackgroundSave();
 }
 
 /**
@@ -363,11 +377,31 @@ int main(int argc, char **argv)
 	config.showHelp = false;
 
 	SetConsoleCtrlHandler(ConsoleCtrlHandlerProc, TRUE);
+
+	// Disable QuickEdit mode so clicking in the console window doesn't freeze
+	// the server process. Without this, any accidental click pauses all threads
+	// that write to stdout until a key is pressed.
+	{
+		HANDLE hInput = GetStdHandle(STD_INPUT_HANDLE);
+		DWORD mode = 0;
+		GetConsoleMode(hInput, &mode);
+		mode &= ~ENABLE_QUICK_EDIT_MODE;
+		mode |= ENABLE_EXTENDED_FLAGS;
+		SetConsoleMode(hInput, mode);
+	}
+
 	SetExeWorkingDirectory();
 
 	// Load base settings from server.properties, then override with CLI values when provided
 	ServerPropertiesConfig serverProperties = LoadServerPropertiesConfig();
 	ApplyServerPropertiesToDedicatedConfig(serverProperties, &config);
+
+	// Hardcore mode forces Hard difficulty (matches vanilla Java behavior)
+	if (serverProperties.hardcore && serverProperties.difficulty != 3)
+	{
+		LogInfof("startup", "Hardcore mode enabled: forcing difficulty from %d to 3 (Hard).", serverProperties.difficulty);
+		serverProperties.difficulty = 3;
+	}
 
 	if (!ParseCommandLine(argc, argv, &config))
 	{
@@ -407,6 +441,41 @@ int main(int argc, char **argv)
 		return 2;
 	}
 	accessShutdownGuard.Activate();
+
+	{
+		ServerRuntime::Security::SecuritySettings secSettings;
+		secSettings.hidePlayerListPreLogin = serverProperties.hidePlayerListPreLogin;
+		secSettings.rateLimitConnectionsPerWindow = serverProperties.rateLimitConnectionsPerWindow;
+		secSettings.rateLimitWindowSeconds = serverProperties.rateLimitWindowSeconds;
+		secSettings.maxPendingConnections = serverProperties.maxPendingConnections;
+		secSettings.requireChallengeToken = serverProperties.requireChallengeToken;
+		secSettings.enableStreamCipher = serverProperties.enableStreamCipher;
+		secSettings.requireSecureClient = serverProperties.requireSecureClient;
+		secSettings.proxyProtocol = serverProperties.proxyProtocol;
+		ServerRuntime::Security::InitializeSettings(secSettings);
+		LogInfof("startup", "Security: hide-player-list=%s, rate-limit=%d/%ds, max-pending=%d, challenge-token=%s, stream-cipher=%s, require-secure-client=%s",
+			secSettings.hidePlayerListPreLogin ? "true" : "false",
+			secSettings.rateLimitConnectionsPerWindow,
+			secSettings.rateLimitWindowSeconds,
+			secSettings.maxPendingConnections,
+			secSettings.requireChallengeToken ? "required" : "optional",
+			secSettings.enableStreamCipher ? "enabled" : "disabled",
+			secSettings.requireSecureClient ? "true" : "false");
+		if (secSettings.proxyProtocol)
+		{
+			LogInfof("startup", "PROXY protocol: enabled (all connections must send PROXY v1 header)");
+		}
+		if (secSettings.requireSecureClient && !secSettings.enableStreamCipher)
+		{
+			LogInfof("startup", "WARNING: require-secure-client is enabled but enable-stream-cipher is disabled -- secure client enforcement will have no effect");
+		}
+
+		if (secSettings.requireChallengeToken)
+		{
+			ServerRuntime::Security::GetIdentityTokenManager().Initialize("identity-tokens.json");
+		}
+	}
+
 	LogInfof("startup", "LAN advertise: %s", serverProperties.lanAdvertise ? "enabled" : "disabled");
 	LogInfof("startup", "Whitelist: %s", serverProperties.whiteListEnabled ? "enabled" : "disabled");
 	LogInfof("startup", "Spawn protection radius: %d", serverProperties.spawnProtectionRadius);
@@ -419,39 +488,11 @@ int main(int argc, char **argv)
 		config.worldHellScale);
 #endif
 
-	LogStartupStep("registering hidden window class");
-	HINSTANCE hInstance = GetModuleHandle(NULL);
-	MyRegisterClass(hInstance);
-
-	LogStartupStep("creating hidden window");
-	if (!InitInstance(hInstance, SW_HIDE))
-	{
-		LogError("startup", "Failed to create window instance.");
-		
-		return 2;
-	}
-	ShowWindow(g_hWnd, SW_HIDE);
-
-	LogStartupStep("initializing graphics device wrappers");
-	if (FAILED(InitDevice()))
-	{
-		LogError("startup", "Failed to initialize D3D device.");
-		CleanupDevice();
-		
-		return 2;
-	}
-
 	LogStartupStep("loading media/string tables");
 	app.loadMediaArchive();
-	RenderManager.Initialise(g_pd3dDevice, g_pSwapChain);
 	app.loadStringTable();
-	ui.init(g_pd3dDevice, g_pImmediateContext, g_pRenderTargetView, g_pDepthStencilView, g_iScreenWidth, g_iScreenHeight);
 
 	InputManager.Initialise(1, 3, MINECRAFT_ACTION_MAX, ACTION_MAX_MENU);
-	g_KBMInput.Init();
-	DefineActions();
-	InputManager.SetJoypadMapVal(0, 0);
-	InputManager.SetKeyRepeatRate(0.3f, 0.2f);
 
 	ProfileManager.Initialise(
 		TITLEID_MINECRAFT,
@@ -494,9 +535,17 @@ int main(int argc, char **argv)
 	{
 		LogError("startup", "Minecraft initialization failed.");
 		CleanupDevice();
-		
+
 		return 3;
 	}
+
+	MobCategory::monster->setMaxInstancesPerLevel(serverProperties.maxMonsters);
+	MobCategory::creature->setMaxInstancesPerLevel(serverProperties.maxAnimals);
+	MobCategory::ambient->setMaxInstancesPerLevel(serverProperties.maxAmbient);
+	MobCategory::waterCreature->setMaxInstancesPerLevel(serverProperties.maxWaterAnimals);
+	MobCategory::creature_wolf->setMaxInstancesPerLevel(serverProperties.maxWolves);
+	MobCategory::creature_chicken->setMaxInstancesPerLevel(serverProperties.maxChickens);
+	MobCategory::creature_mushroomcow->setMaxInstancesPerLevel(serverProperties.maxMushroomCows);
 
 	app.InitGameSettings();
 
@@ -529,6 +578,7 @@ int main(int argc, char **argv)
 	app.SetGameHostOption(eGameHostOption_DoTileDrops, serverProperties.doTileDrops ? 1 : 0);
 	app.SetGameHostOption(eGameHostOption_NaturalRegeneration, serverProperties.naturalRegeneration ? 1 : 0);
 	app.SetGameHostOption(eGameHostOption_DoDaylightCycle, serverProperties.doDaylightCycle ? 1 : 0);
+	app.SetGameHostOption(eGameHostOption_Hardcore, serverProperties.hardcore ? 1 : 0);
 #ifdef _LARGE_WORLDS
 	app.SetGameHostOption(eGameHostOption_WorldSize, serverProperties.worldSize);
 	// Apply desired target size for loading existing worlds.
@@ -536,6 +586,12 @@ int main(int argc, char **argv)
 	app.SetGameNewWorldSize(serverProperties.worldSizeChunks, true);
 	app.SetGameNewHellScale(serverProperties.worldHellScale);
 #endif
+
+	if (serverProperties.hasOverrideSeed)
+	{
+		LogInfof("startup", "Seed override active: %lld", serverProperties.overrideSeed);
+		app.SetSeedOverride(serverProperties.overrideSeed);
+	}
 
 	StorageManager.SetSaveDisabled(serverProperties.disableSaving);
 	// Read world name and fixed save-id from server.properties
@@ -576,9 +632,19 @@ int main(int argc, char **argv)
 	{
 		param->seed = config.seed;
 	}
+	else if (worldBootstrap.saveData == nullptr)
+	{
+		// Only run seed validation when creating a brand-new world.
+		// Existing worlds already have their seed in level.dat.
+	    LogInfof("startup", "Finding seed with biome diversity for %d-chunk world...", config.worldSizeChunks);
+	    // LordCambion changes removed the worldSizeChunks param from BiomeSource#findSeed
+		// param->seed = BiomeSource::findSeed(LevelType::lvl_normal, config.worldSizeChunks);
+	    param->seed = BiomeSource::findSeed(LevelType::lvl_normal);
+		LogInfof("startup", "Selected seed: %lld", param->seed);
+	}
 	else
 	{
-		param->seed = (new Random())->nextLong();
+		param->seed = (new Random())->nextLong(); // placeholder; level.dat seed takes priority
 	}
 #ifdef _LARGE_WORLDS
 	param->xzSize = (unsigned int)config.worldSizeChunks;
@@ -617,6 +683,8 @@ int main(int argc, char **argv)
 
 	LogStartupStep("server startup complete");
 	LogInfof("startup", "Dedicated server listening on %s:%d", g_Win64MultiplayerIP, g_Win64MultiplayerPort);
+
+	FourKitBridge::Initialize();
 	if (worldBootstrap.status == eWorldBootstrap_CreatedNew && !IsShutdownRequested() && !app.m_bShutdown)
 	{
 		// Windows64 suppresses saveToDisc right after new world creation
@@ -655,7 +723,7 @@ int main(int argc, char **argv)
 			break;
 		}
 
-		if (autosaveRequested && app.GetXuiServerAction(kServerActionPad) == eXuiServerAction_Idle)
+		if (autosaveRequested && app.GetXuiServerAction(kServerActionPad) == eXuiServerAction_Idle && !ConsoleSaveFileOriginal::hasPendingBackgroundSave())
 		{
 			LogWorldIO("autosave completed");
 			autosaveRequested = false;
@@ -667,12 +735,13 @@ int main(int argc, char **argv)
 		}
 
 		DWORD now = GetTickCount();
-		if ((LONG)(now - nextAutosaveTick) >= 0)
+		if ((LONG)(now - nextAutosaveTick) >= 0 && !IsShutdownRequested() && !app.m_bShutdown)
 		{
 			if (app.GetXuiServerAction(kServerActionPad) == eXuiServerAction_Idle)
 			{
 				LogWorldIO("requesting autosave");
 				app.SetXuiServerAction(kServerActionPad, eXuiServerAction_AutoSaveGame);
+				FourKitBridge::FireWorldSave();
 				autosaveRequested = true;
 			}
 			nextAutosaveTick = now + autosaveIntervalMs;
@@ -683,16 +752,34 @@ int main(int argc, char **argv)
 	serverCli.Stop();
 	app.m_bShutdown = true;
 
+	FourKitBridge::Shutdown(); //close out the translation layer early for plugin shutdown
+
 	LogInfof("shutdown", "Dedicated server stopped");
 	MinecraftServer *server = MinecraftServer::getInstance();
 	if (server != NULL)
 	{
+		// Drain any in-flight autosave before requesting the exit save so the
+		// async autosave can't overwrite the exit save with an older snapshot,
+		// and so m_saveOnExit gets set (prior logic skipped it when a save was
+		// pending, causing silent data loss on restart).
+		if (ConsoleSaveFileOriginal::hasPendingBackgroundSave())
+		{
+			LogWorldIO("Draining pending autosave before exit save...");
+			const DWORD kDrainTimeoutMs = 30000;
+			DWORD drainStart = GetTickCount();
+			while (ConsoleSaveFileOriginal::hasPendingBackgroundSave())
+			{
+				if ((LONG)(GetTickCount() - drainStart) > (LONG)kDrainTimeoutMs)
+				{
+					LogWorldIO("Autosave drain timed out; continuing with exit save");
+					break;
+				}
+				TickCoreSystems();
+				Sleep(10);
+			}
+		}
 		server->setSaveOnExit(true);
-	}
-	if (server != NULL)
-	{
-		LogWorldIO("requesting save before shutdown");
-		LogWorldIO("using saveOnExit for shutdown");
+		LogWorldIO("requesting exit save");
 	}
 
 	MinecraftServer::HaltServer();
@@ -701,7 +788,18 @@ int main(int argc, char **argv)
 	{
 		C4JThread waitThread(&WaitForServerStoppedThreadProc, NULL, "WaitServerStopped");
 		waitThread.Run();
+		while (waitThread.isRunning())
+		{
+			TickCoreSystems();
+			Sleep(10);
+		}
 		waitThread.WaitForCompletion(INFINITE);
+	}
+
+	while (ConsoleSaveFileOriginal::hasPendingBackgroundSave())
+	{
+		TickCoreSystems();
+		Sleep(10);
 	}
 
 	LogInfof("shutdown", "Cleaning up and exiting.");

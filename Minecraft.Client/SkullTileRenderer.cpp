@@ -2,9 +2,9 @@
 #include "SkullTileRenderer.h"
 #include "SkeletonHeadModel.h"
 #include "PlayerRenderer.h"
-#include "..\Minecraft.World\SkullTileEntity.h"
-#include "..\Minecraft.World\net.minecraft.h"
-#include "..\Minecraft.World\net.minecraft.world.level.tile.h"
+#include "../Minecraft.World/SkullTileEntity.h"
+#include "../Minecraft.World/net.minecraft.h"
+#include "../Minecraft.World/net.minecraft.world.level.tile.h"
 
 SkullTileRenderer *SkullTileRenderer::instance = nullptr;
 
@@ -48,25 +48,15 @@ void SkullTileRenderer::renderSkull(float x, float y, float z, int face, float r
 		break;
 	case SkullTileEntity::TYPE_ZOMBIE:
 		bindTexture(&ZOMBIE_LOCATION);
-		//model = zombieModel;
+		model = skeletonModel;
 		break;
 	case SkullTileEntity::TYPE_CHAR:
-		//if (!extra.empty())
-		//{
-		//	wstring url = "http://skins.minecraft.net/MinecraftSkins/" + StringUtil.stripColor(extra) + ".png";
-
-		//	if (!instance->tileEntityRenderDispatcher->textures->hasHttpTexture(url))
-		//	{
-		//		instance->tileEntityRenderDispatcher->textures->addHttpTexture(url, new MobSkinTextureProcessor());
-		//	}
-
-		//	bindTexture(url, "/mob/char.png");
-		//}
-		//else
-		{
-			bindTexture(&PlayerRenderer::DEFAULT_LOCATION);
-		}
+	{
+		Textures *textures = Minecraft::GetInstance()->textures;
+		model = zombieModel;
+		bindTexture(&PlayerRenderer::DEFAULT_LOCATION);
 		break;
+	}
 	case SkullTileEntity::TYPE_CREEPER:
 		bindTexture(&CREEPER_LOCATION);
 		break;

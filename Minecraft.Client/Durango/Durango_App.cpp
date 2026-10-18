@@ -1,17 +1,17 @@
 ﻿#include "stdafx.h"
-#include "..\Common\Consoles_App.h"
-#include "..\User.h"
-#include "..\..\Minecraft.Client\Minecraft.h"
-#include "..\..\Minecraft.Client\MinecraftServer.h"
-#include "..\..\Minecraft.Client\PlayerList.h"
-#include "..\..\Minecraft.Client\ServerPlayer.h"
-#include "..\..\Minecraft.World\Level.h"
-#include "..\..\Minecraft.World\LevelSettings.h"
-#include "..\..\Minecraft.World\BiomeSource.h"
-#include "..\..\Minecraft.World\LevelType.h"
-#include "ServiceConfig\Events-XBLA.8-149E11AEEvents.h"
-#include "..\..\Minecraft.World\DurangoStats.h"
-#include "..\..\Minecraft.Client\Durango\XML\xmlFilesCallback.h"
+#include "../Common/Consoles_App.h"
+#include "../User.h"
+#include "../../Minecraft.Client/Minecraft.h"
+#include "../../Minecraft.Client/MinecraftServer.h"
+#include "../../Minecraft.Client/PlayerList.h"
+#include "../../Minecraft.Client/ServerPlayer.h"
+#include "../../Minecraft.World/Level.h"
+#include "../../Minecraft.World/LevelSettings.h"
+#include "../../Minecraft.World/BiomeSource.h"
+#include "../../Minecraft.World/LevelType.h"
+#include "ServiceConfig/Events-XBLA.8-149E11AEEvents.h"
+#include "../../Minecraft.World/DurangoStats.h"
+#include "../../Minecraft.Client/Durango/XML/xmlFilesCallback.h"
 #include "Common/UI/UI.h"
 
 CConsoleMinecraftApp app;
@@ -641,7 +641,7 @@ int CConsoleMinecraftApp::Callback_TMSPPReadDLCFile(void *pParam,int iPad, int i
 		{
 			DWORD error = GetLastError();
 			app.DebugPrintf("Failed to open DLCXbox1.cmp with error code %d (%x)\n", error, error);
-			__debugbreak();
+			DEBUG_BREAK();
 			return 0;
 		}
 

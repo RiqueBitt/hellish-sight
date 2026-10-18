@@ -1,8 +1,17 @@
 FROM debian:bookworm-slim
 
 ARG DEBIAN_FRONTEND=noninteractive
-# basically, it only works with a Release build.(libs are not included in Debug build)
-ARG MC_RUNTIME_DIR=x64/Minecraft.Server/Release
+# Build the server with CMake first (see COMPILE.md). The build context is
+# the repo root, and the path below points at the **vanilla** server's Release
+# output. The vanilla flavour is shipped because it has no .NET dependency
+# and runs reliably under Wine.
+#
+# A FourKit-enabled image is intentionally NOT built here yet: hosting the
+# .NET 10 self-contained runtime through Wine has not been smoke-tested.
+# Once it's validated, this Dockerfile can be extended (or split into a
+# second variant) to bake in the runtime/ and plugins/ folders from
+# build/windows64/Minecraft.Server.FourKit/Release.
+ARG MC_RUNTIME_DIR=build/windows64/Minecraft.Server/Release
 
 RUN dpkg --add-architecture i386 \
     && apt-get update \

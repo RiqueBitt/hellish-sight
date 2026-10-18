@@ -1,15 +1,15 @@
 #include "stdafx.h"
 #include "StatsCounter.h"
-#include "..\Minecraft.World\Stat.h"
-#include "..\Minecraft.World\Stats.h"
-#include "..\Minecraft.World\Achievement.h"
-#include "..\Minecraft.World\Achievements.h"
-#include "..\Minecraft.Client\LocalPlayer.h"
+#include "../Minecraft.World/Stat.h"
+#include "../Minecraft.World/Stats.h"
+#include "../Minecraft.World/Achievement.h"
+#include "../Minecraft.World/Achievements.h"
+#include "../Minecraft.Client/LocalPlayer.h"
 
-#include "..\Minecraft.World\net.minecraft.world.level.tile.h"
-#include "..\Minecraft.World\net.minecraft.world.item.h"
+#include "../Minecraft.World/net.minecraft.world.level.tile.h"
+#include "../Minecraft.World/net.minecraft.world.item.h"
 
-#include "..\Minecraft.Client\Common\Leaderboards\LeaderboardManager.h"
+#include "../Minecraft.Client/Common/Leaderboards/LeaderboardManager.h"
 
 Stat** StatsCounter::LARGE_STATS[] = {
 	&Stats::walkOneM,
@@ -211,6 +211,7 @@ void StatsCounter::save(int player, bool force)
 
 	//Check we're going to have enough room to store all possible stats
 	unsigned int uiTotalStatsSize = (Stats::all->size() * 4 * sizeof(unsigned short)) - (Achievements::achievements->size() * 3 * sizeof(unsigned short)) + (LARGE_STATS_COUNT*4*(sizeof(unsigned int)-sizeof(unsigned short)));
+	//Do change this back and fix it.
 	assert( uiTotalStatsSize <= (CConsoleMinecraftApp::GAME_DEFINED_PROFILE_DATA_BYTES-sizeof(GAME_SETTINGS)) );
 
 	//Retrieve the data pointer from the profile

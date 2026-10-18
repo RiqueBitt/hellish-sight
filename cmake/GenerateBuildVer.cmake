@@ -7,7 +7,7 @@ if(NOT OUTPUT_FILE)
   message(FATAL_ERROR "OUTPUT_FILE must be set.")
 endif()
 
-set(BUILD_NUMBER 560) # Note: Build/network has to stay static for now, as without it builds wont be able to play together. We can change it later when we have a better versioning scheme in place.
+set(BUILD_NUMBER 570) # Note: Build/network has to stay static for now, as without it builds wont be able to play together. We can change it later when we have a better versioning scheme in place.
 set(SUFFIX "")
 
 # Get short SHA

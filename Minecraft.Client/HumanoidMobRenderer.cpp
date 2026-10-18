@@ -4,11 +4,11 @@
 #include "HumanoidModel.h"
 #include "ModelPart.h"
 #include "EntityRenderDispatcher.h"
-#include "..\Minecraft.World\net.minecraft.world.item.h"
-#include "..\Minecraft.World\net.minecraft.world.level.tile.h"
-#include "..\Minecraft.World\net.minecraft.world.entity.h"
-#include "..\Minecraft.World\net.minecraft.world.entity.monster.h"
-#include "..\Minecraft.World\net.minecraft.h"
+#include "../Minecraft.World/net.minecraft.world.item.h"
+#include "../Minecraft.World/net.minecraft.world.level.tile.h"
+#include "../Minecraft.World/net.minecraft.world.entity.h"
+#include "../Minecraft.World/net.minecraft.world.entity.monster.h"
+#include "../Minecraft.World/net.minecraft.h"
 #include "Host/RubyLauncherHost.h"
 
 const wstring HumanoidMobRenderer::MATERIAL_NAMES[5] = { L"cloth", L"chain", L"iron", L"diamond", L"gold" };
@@ -250,7 +250,7 @@ void HumanoidMobRenderer::additionalRendering(shared_ptr<LivingEntity> mob, floa
 		humanoidModel->arm0->translateTo(1 / 16.0f);
 		glTranslatef(-1 / 16.0f, 7 / 16.0f, 1 / 16.0f);
 
-		if (item->id < 256 && TileRenderer::canRender(Tile::tiles[item->id]->getRenderShape()))
+		if (item->id < 256 && TileRenderer::canRender(Tile::tiles[item->id]->getRenderShape()) && item->id != Tile::barrier_Id)
 		{
 			float s = 8 / 16.0f;
 			glTranslatef(-0 / 16.0f, 3 / 16.0f, -5 / 16.0f);

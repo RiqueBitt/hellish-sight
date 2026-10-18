@@ -1,15 +1,15 @@
 #include "stdafx.h"
-#include "..\..\..\Minecraft.World\net.minecraft.world.entity.h"
-#include "..\..\..\Minecraft.World\Mth.h"
-#include "..\..\..\Minecraft.World\Random.h"
-#include "..\..\..\Minecraft.World\LevelData.h"
-#include "..\..\Minecraft.h"
-#include "..\..\MultiplayerLocalPlayer.h"
+#include "../../../Minecraft.World/net.minecraft.world.entity.h"
+#include "../../../Minecraft.World/Mth.h"
+#include "../../../Minecraft.World/Random.h"
+#include "../../../Minecraft.World/LevelData.h"
+#include "../../Minecraft.h"
+#include "../../MultiPlayerLocalPlayer.h"
 #include "SoundEngine.h"
-#include "..\..\TexturePackRepository.h"
-#include "..\..\TexturePack.h"
-#include "..\..\Common\DLC\DLCAudioFile.h"
-#include "..\..\DLCTexturePack.h"
+#include "../../TexturePackRepository.h"
+#include "../../TexturePack.h"
+#include "../../Common/DLC/DLCAudioFile.h"
+#include "../../DLCTexturePack.h"
 
 
 IXAudio2* g_pXAudio2 = nullptr;       // pointer to XAudio2 instance used by QNet and XACT
@@ -487,7 +487,7 @@ void SoundEngine::play(int iSound, float x, float y, float z, float volume, floa
 	{
 #ifndef _CONTENT_PACKAGE
 #ifdef _DEBUG
-		__debugbreak();
+		DEBUG_BREAK();
 #endif
 		//wprintf(L"WARNING: Sound cue not found - %ls\n", name.c_str() );
 		app.DebugPrintf("Not found: %s\n",xboxName);

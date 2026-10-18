@@ -277,7 +277,7 @@ source_group("Common/UI" FILES ${_MINECRAFT_CLIENT_COMMON_COMMON_UI})
 
 set(_MINECRAFT_CLIENT_COMMON_COMMON_UI_ALL_PLATFORMS
   "${CMAKE_CURRENT_SOURCE_DIR}/ArchiveFile.cpp"
-  "${CMAKE_CURRENT_SOURCE_DIR}/ArchiveFile.h"
+  "${CMAKE_CURRENT_SOURCE_DIR}/ArchiveFile.h" 
   "${BASE_DIR}/UI/IUIController.h"
   "${BASE_DIR}/UI/IUIScene_AbstractContainerMenu.cpp"
   "${BASE_DIR}/UI/IUIScene_AbstractContainerMenu.h"
@@ -293,6 +293,8 @@ set(_MINECRAFT_CLIENT_COMMON_COMMON_UI_ALL_PLATFORMS
   "${BASE_DIR}/UI/IUIScene_ContainerMenu.h"
   "${BASE_DIR}/UI/IUIScene_CraftingMenu.cpp"
   "${BASE_DIR}/UI/IUIScene_CraftingMenu.h"
+  "${BASE_DIR}/UI/IUIScene_ClassicCraftingMenu.cpp"
+  "${BASE_DIR}/UI/IUIScene_ClassicCraftingMenu.h"
   "${BASE_DIR}/UI/IUIScene_CreativeMenu.cpp"
   "${BASE_DIR}/UI/IUIScene_CreativeMenu.h"
   "${BASE_DIR}/UI/IUIScene_DispenserMenu.cpp"
@@ -315,6 +317,12 @@ set(_MINECRAFT_CLIENT_COMMON_COMMON_UI_ALL_PLATFORMS
   "${BASE_DIR}/UI/IUIScene_PauseMenu.h"
   "${BASE_DIR}/UI/IUIScene_TradingMenu.cpp"
   "${BASE_DIR}/UI/IUIScene_TradingMenu.h"
+  "${BASE_DIR}/UI/IUIScene_WritingBookMenu.cpp"
+  "${BASE_DIR}/UI/IUIScene_WritingBookMenu.h"
+  "${BASE_DIR}/UI/UIScene_AchievementsMenu.cpp"
+  "${BASE_DIR}/UI/UIScene_AchievementsMenu.h" 
+  "${BASE_DIR}/UI/UIControl_AchievementsList.cpp" 
+  "${BASE_DIR}/UI/UIControl_AchievementsList.h"
   "${BASE_DIR}/UI/UIEnums.h"
   "${BASE_DIR}/UI/UIStructs.h"
 )
@@ -410,6 +418,8 @@ source_group("Windows64/Iggy/gdraw" FILES ${_MINECRAFT_CLIENT_COMMON_WINDOWS64_I
 set(_MINECRAFT_CLIENT_COMMON_WINDOWS64_NETWORK
   "${CMAKE_CURRENT_SOURCE_DIR}/Windows64/Network/WinsockNetLayer.cpp"
   "${CMAKE_CURRENT_SOURCE_DIR}/Windows64/Network/WinsockNetLayer.h"
+  "${CMAKE_CURRENT_SOURCE_DIR}/../Minecraft.Server/Security/StreamCipher.cpp"
+  "${CMAKE_CURRENT_SOURCE_DIR}/../Minecraft.Server/Security/StreamCipher.h"
 )
 source_group("Windows64/Network" FILES ${_MINECRAFT_CLIENT_COMMON_WINDOWS64_NETWORK})
 
@@ -612,6 +622,15 @@ set(_MINECRAFT_CLIENT_COMMON_NET_MINECRAFT_CLIENT_MODEL
   "${CMAKE_CURRENT_SOURCE_DIR}/WolfModel.h"
   "${CMAKE_CURRENT_SOURCE_DIR}/ZombieModel.cpp"
   "${CMAKE_CURRENT_SOURCE_DIR}/ZombieModel.h"
+  "${CMAKE_CURRENT_SOURCE_DIR}/RabbitModel.cpp"
+  "${CMAKE_CURRENT_SOURCE_DIR}/RabbitModel.h"
+  "${CMAKE_CURRENT_SOURCE_DIR}/ArmorStandModel.cpp"
+  "${CMAKE_CURRENT_SOURCE_DIR}/ArmorStandModel.h"
+  "${CMAKE_CURRENT_SOURCE_DIR}/EndermiteModel.cpp"
+  "${CMAKE_CURRENT_SOURCE_DIR}/EndermiteModel.h"
+  "${CMAKE_CURRENT_SOURCE_DIR}/GuardianModel.cpp"
+  "${CMAKE_CURRENT_SOURCE_DIR}/GuardianModel.h"
+
 )
 source_group("net/minecraft/client/model" FILES ${_MINECRAFT_CLIENT_COMMON_NET_MINECRAFT_CLIENT_MODEL})
 
@@ -632,6 +651,17 @@ set(_MINECRAFT_CLIENT_COMMON_NET_MINECRAFT_CLIENT_MODEL_GEOM
   "${CMAKE_CURRENT_SOURCE_DIR}/ModelPart.h"
   "${CMAKE_CURRENT_SOURCE_DIR}/TexOffs.cpp"
   "${CMAKE_CURRENT_SOURCE_DIR}/TexOffs.h"
+  "${CMAKE_CURRENT_SOURCE_DIR}/AbstractArmorLayer.h"
+  "${CMAKE_CURRENT_SOURCE_DIR}/AbstractArmorLayer.cpp"
+  "${CMAKE_CURRENT_SOURCE_DIR}/HumanoidArmorLayer.h"
+  "${CMAKE_CURRENT_SOURCE_DIR}/HumanoidArmorLayer.cpp"
+  "${CMAKE_CURRENT_SOURCE_DIR}/ArmorStandArmorModel.h"
+  "${CMAKE_CURRENT_SOURCE_DIR}/ArmorStandArmorModel.cpp"
+  "${CMAKE_CURRENT_SOURCE_DIR}/ItemInHandLayer.h"
+  "${CMAKE_CURRENT_SOURCE_DIR}/ItemInHandLayer.cpp"
+  "${CMAKE_CURRENT_SOURCE_DIR}/CustomHeadLayer.h"
+  "${CMAKE_CURRENT_SOURCE_DIR}/CustomHeadLayer.cpp"
+  "${CMAKE_CURRENT_SOURCE_DIR}/RenderLayer.h"
 )
 source_group("net/minecraft/client/model/geom" FILES ${_MINECRAFT_CLIENT_COMMON_NET_MINECRAFT_CLIENT_MODEL_GEOM})
 
@@ -650,6 +680,8 @@ set(_MINECRAFT_CLIENT_COMMON_NET_MINECRAFT_CLIENT_MULTIPLAYER
 source_group("net/minecraft/client/multiplayer" FILES ${_MINECRAFT_CLIENT_COMMON_NET_MINECRAFT_CLIENT_MULTIPLAYER})
 
 set(_MINECRAFT_CLIENT_COMMON_NET_MINECRAFT_CLIENT_PARTICLE
+  "${CMAKE_CURRENT_SOURCE_DIR}/BarrierParticle.cpp"
+  "${CMAKE_CURRENT_SOURCE_DIR}/BarrierParticle.h"
   "${CMAKE_CURRENT_SOURCE_DIR}/BreakingItemParticle.cpp"
   "${CMAKE_CURRENT_SOURCE_DIR}/BreakingItemParticle.h"
   "${CMAKE_CURRENT_SOURCE_DIR}/BubbleParticle.cpp"
@@ -702,6 +734,8 @@ set(_MINECRAFT_CLIENT_COMMON_NET_MINECRAFT_CLIENT_PARTICLE
   "${CMAKE_CURRENT_SOURCE_DIR}/SpellParticle.h"
   "${CMAKE_CURRENT_SOURCE_DIR}/SplashParticle.cpp"
   "${CMAKE_CURRENT_SOURCE_DIR}/SplashParticle.h"
+  "${CMAKE_CURRENT_SOURCE_DIR}/WaterWakeParticle.cpp"
+  "${CMAKE_CURRENT_SOURCE_DIR}/WaterWakeParticle.h"
   "${CMAKE_CURRENT_SOURCE_DIR}/SuspendedParticle.cpp"
   "${CMAKE_CURRENT_SOURCE_DIR}/SuspendedParticle.h"
   "${CMAKE_CURRENT_SOURCE_DIR}/SuspendedTownParticle.cpp"
@@ -712,6 +746,10 @@ set(_MINECRAFT_CLIENT_COMMON_NET_MINECRAFT_CLIENT_PARTICLE
   "${CMAKE_CURRENT_SOURCE_DIR}/TerrainParticle.h"
   "${CMAKE_CURRENT_SOURCE_DIR}/WaterDropParticle.cpp"
   "${CMAKE_CURRENT_SOURCE_DIR}/WaterDropParticle.h"
+  "${CMAKE_CURRENT_SOURCE_DIR}/ParticleType.h"
+  "${CMAKE_CURRENT_SOURCE_DIR}/ParticleType.cpp"
+  "${CMAKE_CURRENT_SOURCE_DIR}/MobAppearanceParticle.h"
+  "${CMAKE_CURRENT_SOURCE_DIR}/MobAppearanceParticle.cpp"
 )
 source_group("net/minecraft/client/particle" FILES ${_MINECRAFT_CLIENT_COMMON_NET_MINECRAFT_CLIENT_PARTICLE})
 
@@ -884,6 +922,13 @@ set(_MINECRAFT_CLIENT_COMMON_NET_MINECRAFT_CLIENT_RENDERER_ENTITY
   "${CMAKE_CURRENT_SOURCE_DIR}/WolfRenderer.h"
   "${CMAKE_CURRENT_SOURCE_DIR}/ZombieRenderer.cpp"
   "${CMAKE_CURRENT_SOURCE_DIR}/ZombieRenderer.h"
+  "${CMAKE_CURRENT_SOURCE_DIR}/RabbitRenderer.cpp"
+  "${CMAKE_CURRENT_SOURCE_DIR}/RabbitRenderer.h"
+  "${CMAKE_CURRENT_SOURCE_DIR}/ArmorStandRenderer.cpp"
+  "${CMAKE_CURRENT_SOURCE_DIR}/EndermiteRenderer.cpp"
+  "${CMAKE_CURRENT_SOURCE_DIR}/EndermiteRenderer.h"
+  "${CMAKE_CURRENT_SOURCE_DIR}/GuardianRenderer.cpp"
+  "${CMAKE_CURRENT_SOURCE_DIR}/GuardianRenderer.h"
 )
 source_group("net/minecraft/client/renderer/entity" FILES ${_MINECRAFT_CLIENT_COMMON_NET_MINECRAFT_CLIENT_RENDERER_ENTITY})
 

@@ -1,8 +1,8 @@
 #pragma once
 #include "ConsoleInputSource.h"
-#include "..\Minecraft.World\ArrayWithLength.h"
-#include "..\Minecraft.World\SharedConstants.h"
-#include "..\Minecraft.World\C4JThread.h"
+#include "../Minecraft.World/ArrayWithLength.h"
+#include "../Minecraft.World/SharedConstants.h"
+#include "../Minecraft.World/C4JThread.h"
 
 class ServerConnection;
 class Settings;
@@ -260,13 +260,21 @@ private:
 	static int s_slowQueuePlayerIndex;
 	static int s_slowQueueLastTime;
 	static bool s_slowQueuePacketSent;
+#ifdef MINECRAFT_SERVER_BUILD
+	// Cap on chunk-data packet sends per tick. Paired with per-tick rotation
+	// in ServerConnection::tick so every player gets a turn even when bound.
+	static int s_dedicatedChunkSendsThisTick;
+	static const int DEDICATED_MAX_CHUNK_SENDS_PER_TICK = 10;
+#endif
 #endif
 
-	bool IsServerPaused() { return m_isServerPaused; }
+	
 
 private:
 	// 4J Added
 	bool m_saveOnExit;
+	bool m_deleteWorldOnExit; // 4J Added - for hardcore mode world deletion
+	wstring m_saveFolderName; // 4J Added - stored for hardcore world deletion
 	bool m_suspending;
 
 public:
@@ -280,8 +288,12 @@ public:
 	void chunkPacketManagement_PostTick();
 
 	void setSaveOnExit(bool save) { m_saveOnExit = save; s_bSaveOnExitAnswered = true; }
+	void setDeleteWorldOnExit(bool del) { m_deleteWorldOnExit = del; }
+	bool getDeleteWorldOnExit() const { return m_deleteWorldOnExit; }
+	const wstring& getSaveFolderName() const { return m_saveFolderName; }
 	void Suspend();
 	bool IsSuspending();
+	bool IsServerPaused() { return m_isServerPaused; }
 
 	// 4J Stu - A load of functions were all added in 1.0.1 in the ServerInterface, but I don't think we need any of them
 };

@@ -1,7 +1,7 @@
 #include "stdafx.h"
 #include "net.minecraft.commands.h"
-#include "..\Minecraft.Client\MinecraftServer.h"
-#include "..\Minecraft.Client\ServerLevel.h"
+#include "../Minecraft.Client/MinecraftServer.h"
+#include "../Minecraft.Client/ServerLevel.h"
 #include "net.minecraft.network.packet.h"
 #include "TimeCommand.h"
 
@@ -80,6 +80,16 @@ shared_ptr<GameCommandPacket> TimeCommand::preparePacket(bool night)
 	DataOutputStream dos(&baos);
 
 	dos.writeBoolean(night);
+
+	return std::make_shared<GameCommandPacket>(eGameCommand_Time, baos.toByteArray());
+}
+
+shared_ptr<GameCommandPacket> TimeCommand::preparePacket(int ticks)
+{
+	ByteArrayOutputStream baos;
+	DataOutputStream dos(&baos);
+
+	dos.writeInt(ticks);
 
 	return std::make_shared<GameCommandPacket>(eGameCommand_Time, baos.toByteArray());
 }

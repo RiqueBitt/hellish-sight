@@ -5,9 +5,9 @@
 #include "CreateWorldScreen.h"
 #include "RenameWorldScreen.h"
 #include "DemoMode.h"
-#include "..\Minecraft.World\net.minecraft.locale.h"
-#include "..\Minecraft.World\net.minecraft.world.level.h"
-#include "..\Minecraft.World\net.minecraft.world.level.storage.h"
+#include "../Minecraft.World/net.minecraft.locale.h"
+#include "../Minecraft.World/net.minecraft.world.level.h"
+#include "../Minecraft.World/net.minecraft.world.level.storage.h"
 
 
 SelectWorldScreen::SelectWorldScreen(Screen *lastScreen)
@@ -301,6 +301,12 @@ void SelectWorldScreen::WorldSelectionList::renderItem(int i, int x, int y, int 
     if (levelSummary->isRequiresConversion())
 	{
         info = parent->conversionLang + L" " + info;
+    }
+
+    // 4J Added: Show [Hardcore] badge for hardcore worlds
+    if (levelSummary->isHardcore())
+    {
+        name = name + L" [Hardcore]";
     }
 
     parent->drawString(parent->font, name, x + 2, y + 1, 0xffffff);

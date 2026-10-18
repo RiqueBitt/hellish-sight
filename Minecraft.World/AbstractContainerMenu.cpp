@@ -4,6 +4,10 @@
 #include "net.minecraft.world.level.redstone.h"
 #include "Slot.h"
 #include "AbstractContainerMenu.h"
+#if defined(_WINDOWS64) && defined(MINECRAFT_SERVER_BUILD)
+#include "Mth.h"
+#include "../Minecraft.Server/FourKitBridge.h"
+#endif
 
 // 4J Stu - The java does not have ctor here (being an abstract) but we need one to initialise the member variables
 // TODO Make sure all derived classes also call this
@@ -248,13 +252,55 @@ shared_ptr<ItemInstance> AbstractContainerMenu::clicked(int slotIndex, int butto
 				{
 					if (buttonNum == 0)
 					{
-						player->drop(inventory->getCarried());
-						inventory->setCarried(nullptr);
+#if defined(_WINDOWS64) && defined(MINECRAFT_SERVER_BUILD)
+						{
+							auto carried = inventory->getCarried();
+							bool dropAllowed = true;
+							if (carried != nullptr && carried->count > 0)
+							{
+								if (FourKitBridge::FirePlayerDropItem(player->entityId, carried)) {
+									dropAllowed = false;
+								} else {
+									player->drop(carried);
+									inventory->setCarried(nullptr);
+									dropAllowed = false;
+								}
+							}
+							if (dropAllowed)
+							{
+#endif
+								player->drop(inventory->getCarried());
+								inventory->setCarried(nullptr);
+#if defined(_WINDOWS64) && defined(MINECRAFT_SERVER_BUILD)
+							}
+						}
+#endif
 					}
 					if (buttonNum == 1)
 					{
-						player->drop(inventory->getCarried()->remove(1));
-						if (inventory->getCarried()->count == 0) inventory->setCarried(nullptr);
+#if defined(_WINDOWS64) && defined(MINECRAFT_SERVER_BUILD)
+						{
+							auto carried = inventory->getCarried();
+							bool dropAllowed = true;
+							if (carried != nullptr && carried->count > 0)
+							{
+								if (FourKitBridge::FirePlayerDropItem(player->entityId, carried)) {
+									dropAllowed = false;
+								} else {
+									player->drop(carried->remove(1));
+									inventory->setCarried(nullptr);
+									dropAllowed = false;
+								}
+							}
+							if (dropAllowed)
+							{
+#endif
+								player->drop(inventory->getCarried()->remove(1));
+								if (inventory->getCarried()->count == 0) inventory->setCarried(nullptr);
+#if defined(_WINDOWS64) && defined(MINECRAFT_SERVER_BUILD)
+							}
+						}
+#endif
 					}
 
 				}
@@ -476,7 +522,35 @@ shared_ptr<ItemInstance> AbstractContainerMenu::clicked(int slotIndex, int butto
 		Slot *slot = slots.at(slotIndex);
 		if (slot != nullptr && slot->hasItem() && slot->mayPickup(player))
 		{
-			shared_ptr<ItemInstance> item = slot->remove(buttonNum == 0 ? 1 : slot->getItem()->count);
+			int dropCount = buttonNum == 0 ? 1 : slot->getItem()->count;
+#if defined(_WINDOWS64) && defined(MINECRAFT_SERVER_BUILD)
+		// fix for issue reported by aiden
+		{
+			auto slotItem = slot->getItem();
+			bool dropAllowed = true;
+			if (slotItem != nullptr && slotItem->count > 0)
+			{
+				if (FourKitBridge::FirePlayerDropItem(player->entityId, slotItem)) {
+					dropAllowed = false;
+				}
+				else
+				{
+					shared_ptr<ItemInstance> item = slot->remove(dropCount);
+					slot->onTake(player, item);
+					item->id = slotItem->id;
+					item->count = slotItem->count;
+					item->setRawAuxValue(slotItem->getAuxValue());
+					item->tag = slotItem->tag;
+
+					player->drop(item);
+					dropAllowed = false;
+				}
+			}
+			if (!dropAllowed)
+				return nullptr;
+		}
+#endif
+			shared_ptr<ItemInstance> item = slot->remove(dropCount);
 			slot->onTake(player, item);
 			player->drop(item);
 		}

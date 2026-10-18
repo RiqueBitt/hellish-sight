@@ -1,9 +1,10 @@
 #pragma once
 
 #include <string>
+#include <vector>
 #include <stdarg.h>
 
-#include "..\Minecraft.World\DisconnectPacket.h"
+#include "../Minecraft.World/DisconnectPacket.h"
 
 namespace ServerRuntime
 {
@@ -17,7 +18,10 @@ namespace ServerRuntime
         {
             eTcpRejectReason_BannedIp = 0,
             eTcpRejectReason_GameNotReady,
-            eTcpRejectReason_ServerFull
+            eTcpRejectReason_ServerFull,
+            eTcpRejectReason_RateLimited,
+            eTcpRejectReason_TooManyPending,
+            eTcpRejectReason_InvalidProxyHeader
         };
 
         /**
@@ -89,10 +93,26 @@ namespace ServerRuntime
         void OnAcceptedTcpConnection(unsigned char smallId, const char *ip);
 
         /**
-         * Associates a player name with the connection and emits the accepted login log
-         * 接続にプレイヤー名を関連付けてログイン成功を記録
+         * Associates a player name and identity with the connection and emits the accepted login log
          */
-        void OnAcceptedPlayerLogin(unsigned char smallId, const std::wstring &playerName);
+        void OnAcceptedPlayerLogin(unsigned char smallId, const std::wstring &playerName,
+            PlayerUID offlineXuid = INVALID_XUID, PlayerUID onlineXuid = INVALID_XUID, bool isGuest = false);
+
+        // Security milestone recording -- accumulates per-connection state for the
+        // consolidated "player secured" summary line
+        void OnCipherHandshakeCompleted(unsigned char smallId);
+        void OnCipherCompletedNoTokenRequired(unsigned char smallId);
+        void OnIdentityTokenIssued(unsigned char smallId);
+        void OnIdentityTokenVerified(unsigned char smallId);
+        void OnIdentityTokenTimeout(unsigned char smallId, const std::wstring &playerName);
+
+        // Security warnings -- emit immediately to CLI
+        void OnIdentityTokenMismatch(unsigned char smallId, const std::wstring &playerName);
+        void OnIdentityTokenTimeout(unsigned char smallId, const std::wstring &playerName);
+        void OnUnsecuredClientKicked(unsigned char smallId);
+        void OnXuidSpoofDetected(unsigned char smallId, const std::wstring &claimedName,
+            const char *newIp, const char *existingIp);
+        void OnUnauthorizedCommand(unsigned char smallId, const std::wstring &playerName, const char *action);
 
         /**
          * Emits a named login rejection log and clears cached metadata for that smallId
@@ -123,5 +143,21 @@ namespace ServerRuntime
          * 指定smallIdに紐づく接続キャッシュを消去
          */
         void ClearConnection(unsigned char smallId);
+
+        /**
+         * Cache a player name -> XUID mapping from a login attempt (accepted or rejected).
+         * Used by `whitelist add <name>` to resolve names to XUIDs.
+         */
+        void CachePlayerXuid(const std::wstring &playerName, PlayerUID xuid);
+
+        /**
+         * Get all cached XUIDs for a player name (case-insensitive).
+         * Returns the number of distinct XUIDs seen. If > 1, the name is ambiguous
+         * and the operator should use an explicit XUID.
+         *
+         * Note: cached names are attacker-controlled (from LoginPacket). This cache
+         * is an operator convenience tool, not a security mechanism.
+         */
+        int GetCachedXuids(const std::string &playerName, std::vector<PlayerUID> *outXuids);
     }
 }

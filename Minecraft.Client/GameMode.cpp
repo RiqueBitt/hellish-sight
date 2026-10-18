@@ -2,13 +2,13 @@
 #include "GameMode.h"
 #include "LocalPlayer.h"
 #include "LevelRenderer.h"
-#include "..\Minecraft.World\net.minecraft.world.level.h"
-#include "..\Minecraft.World\net.minecraft.world.level.tile.h"
-#include "..\Minecraft.World\net.minecraft.world.level.dimension.h"
-#include "..\Minecraft.World\net.minecraft.world.item.h"
-#include "..\Minecraft.World\net.minecraft.world.inventory.h"
-#include "..\Minecraft.World\net.minecraft.world.entity.player.h"
-#include "..\Minecraft.World\net.minecraft.world.level.chunk.h"
+#include "../Minecraft.World/net.minecraft.world.level.h"
+#include "../Minecraft.World/net.minecraft.world.level.tile.h"
+#include "../Minecraft.World/net.minecraft.world.level.dimension.h"
+#include "../Minecraft.World/net.minecraft.world.item.h"
+#include "../Minecraft.World/net.minecraft.world.inventory.h"
+#include "../Minecraft.World/net.minecraft.world.entity.player.h"
+#include "../Minecraft.World/net.minecraft.world.level.chunk.h"
 
 GameMode::GameMode(Minecraft *minecraft)
 {
@@ -179,4 +179,8 @@ bool GameMode::handleCraftItem(int recipe, shared_ptr<Player> player)
 void GameMode::handleDebugOptions(unsigned int uiVal, shared_ptr<Player> player)
 {
 	player->SetDebugOptions(uiVal);
+}
+bool GameMode::isSpectator()
+{
+    return gameType == GameType::SPECTATOR;
 }

@@ -1,22 +1,22 @@
 #include "stdafx.h"
 #include "UI.h"
 #include "UIScene_PauseMenu.h"
-#include "..\..\MinecraftServer.h"
-#include "..\..\MultiplayerLocalPlayer.h"
-#include "..\..\TexturePackRepository.h"
-#include "..\..\TexturePack.h"
-#include "..\..\DLCTexturePack.h"
-#include "..\..\..\Minecraft.World\StringHelpers.h"
+#include "../../MinecraftServer.h"
+#include "../../MultiPlayerLocalPlayer.h"
+#include "../../TexturePackRepository.h"
+#include "../../TexturePack.h"
+#include "../../DLCTexturePack.h"
+#include "../../../Minecraft.World/StringHelpers.h"
 #ifdef __ORBIS__
 #include <error_dialog.h>
 #endif
 
 #ifdef _DURANGO
-#include "..\..\Durango\Leaderboards\DurangoStatsDebugger.h"
+#include "../../Durango/Leaderboards/DurangoStatsDebugger.h"
 #endif
 
 #ifdef __PSVITA__
-#include "PSVita\Network\SonyCommerce_Vita.h"
+#include "PSVita/Network/SonyCommerce_Vita.h"
 #endif
 
 #if defined __PS3__ || defined __ORBIS__
@@ -619,11 +619,11 @@ void UIScene_PauseMenu::handlePress(F64 controlId, F64 childId)
 			Windows::Xbox::ApplicationModel::Help::Show(user);
 		}
 		break;
-#elif TO_BE_IMPLEMENTED
+#endif
 	case BUTTON_PAUSE_ACHIEVEMENTS:
 
 		// guests can't look at achievements
-		if(ProfileManager.IsGuest(pNotifyPressData->UserIndex))
+		/*if(ProfileManager.IsGuest(pNotifyPressData->UserIndex))
 		{
 			UINT uiIDA[1];
 			uiIDA[0]=IDS_OK;
@@ -632,9 +632,10 @@ void UIScene_PauseMenu::handlePress(F64 controlId, F64 childId)
 		else
 		{
 			XShowAchievementsUI( pNotifyPressData->UserIndex );
-		}
+		}*/
+		ui.NavigateToScene(m_iPad, eUIScene_AchievementsMenu);
 		break;
-#endif
+
 
 	case BUTTON_PAUSE_HELPANDOPTIONS:
 		ui.NavigateToScene(m_iPad,eUIScene_HelpAndOptionsMenu);	
@@ -992,6 +993,7 @@ int UIScene_PauseMenu::UnlockFullSaveReturned(void *pParam,int iPad,C4JStorage::
 				ProfileManager.DisplayFullVersionPurchase(false,pMinecraft->player->GetXboxPad(),eSen_UpsellID_Full_Version_Of_Game);
 			}
 		}
+		pMinecraft->forceStatsSave(pMinecraft->player->GetXboxPad());
 	}
 	else
 	{

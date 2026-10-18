@@ -19,11 +19,11 @@
 #include "net.minecraft.world.item.alchemy.h"
 #include "net.minecraft.world.item.enchantment.h"
 #include "net.minecraft.world.h"
-#include "..\Minecraft.Client\ServerLevel.h"
-#include "..\Minecraft.Client\EntityTracker.h"
+#include "../Minecraft.Client/ServerLevel.h"
+#include "../Minecraft.Client/EntityTracker.h"
 #include "com.mojang.nbt.h"
 #include "Mob.h"
-#include "..\Minecraft.Client\Textures.h"
+#include "../Minecraft.Client/Textures.h"
 #include "SoundTypes.h"
 #include "BasicTypeContainers.h"
 #include "ParticleTypes.h"
@@ -740,6 +740,9 @@ int Mob::getEquipmentSlotForItem(shared_ptr<ItemInstance> item)
 	if (item->id == Tile::pumpkin_Id || item->id == Item::skull_Id)
 	{
 		return SLOT_HELM;
+	}
+	if (item->id == Item::elytra_Id) {
+		return SLOT_CHEST;
 	}
 
 	ArmorItem *armorItem = dynamic_cast<ArmorItem *>(item->getItem());

@@ -1,9 +1,9 @@
 #include "stdafx.h"
-#include "..\..\..\Minecraft.World\Socket.h"
-#include "..\..\..\Minecraft.World\StringHelpers.h"
+#include "../../../Minecraft.World/Socket.h"
+#include "../../../Minecraft.World/StringHelpers.h"
 #include "PlatformNetworkManagerSony.h"
 #include "NetworkPlayerSony.h"
-#include "..\..\Common\Network\GameNetworkManager.h"
+#include "../../Common/Network/GameNetworkManager.h"
 
 CPlatformNetworkManagerSony *g_pPlatformNetworkManager;
 
@@ -247,8 +247,6 @@ void CPlatformNetworkManagerSony::HandlePlayerJoined(SQRNetworkPlayer *         
 
 void CPlatformNetworkManagerSony::HandlePlayerLeaving(SQRNetworkPlayer *pSQRPlayer)
 {
-	//__debugbreak();
-
 	app.DebugPrintf( "Player 0x%p leaving.\n",
         pSQRPlayer );
 

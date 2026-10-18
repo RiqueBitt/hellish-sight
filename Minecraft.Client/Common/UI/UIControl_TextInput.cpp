@@ -1,7 +1,7 @@
 #include "stdafx.h"
 #include "UI.h"
 #include "UIControl_TextInput.h"
-#include "..\..\Screen.h"
+#include "../../Screen.h"
 
 UIControl_TextInput::UIControl_TextInput()
 {
@@ -220,7 +220,7 @@ UIControl_TextInput::EDirectEditResult UIControl_TextInput::tickDirectEdit()
 		sanitized.reserve(pasted.length());
 
 		for (wchar_t pc : pasted)
-		{        
+		{
 			if (pc >= 0x20) // Keep printable characters
 			{
 				if (m_iCharLimit > 0 && (m_editBuffer.length() + sanitized.length()) >= (size_t)m_iCharLimit)

@@ -1,6 +1,7 @@
 #pragma once
 
 #include "ArmorItem.h"
+#include "ElytraItem.h"
 #include "BedItem.h"
 #include "BoatItem.h"
 #include "BowItem.h"
@@ -21,6 +22,7 @@
 #include "Item.h"
 #include "ItemInstance.h"
 #include "LeafTileItem.h"
+#include "LeafTileItem2.h"
 #include "MapItem.h"
 #include "MinecartItem.h"
 //#include "PaintingItem.h"
@@ -34,7 +36,7 @@
 #include "ShearsItem.h"
 #include "ShovelItem.h"
 #include "SignItem.h"
-#include "SnowBallItem.h"
+#include "SnowballItem.h"
 #include "StoneSlabTileItem.h"
 #include "TileItem.h"
 #include "TilePlanterItem.h"
@@ -85,3 +87,5 @@
 #include "ClockItem.h"
 #include "CompassItem.h"
 #include "HtmlString.h"
+
+#include "FishFoodItem.h"

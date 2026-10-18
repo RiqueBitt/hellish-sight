@@ -1,15 +1,15 @@
 #include "stdafx.h"
-#include "..\..\..\Minecraft.World\Socket.h"
-#include "..\..\..\Minecraft.World\StringHelpers.h"
+#include "../../../Minecraft.World/Socket.h"
+#include "../../../Minecraft.World/StringHelpers.h"
 #include "PlatformNetworkManagerStub.h"
-#include "..\..\Xbox\Network\NetworkPlayerXbox.h"
+#include "../../Xbox/Network/NetworkPlayerXbox.h"
 #ifdef _WINDOWS64
-#include "..\..\Windows64\Network\WinsockNetLayer.h"
-#include "..\..\Windows64\Windows64_Xuid.h"
-#include "..\..\Minecraft.h"
-#include "..\..\User.h"
-#include "..\..\MinecraftServer.h"
-#include "..\..\PlayerList.h"
+#include "../../Windows64/Network/WinsockNetLayer.h"
+#include "../../Windows64/Windows64_Xuid.h"
+#include "../../Minecraft.h"
+#include "../../User.h"
+#include "../../MinecraftServer.h"
+#include "../../PlayerList.h"
 #include <iostream>
 #endif
 
@@ -134,7 +134,14 @@ void CPlatformNetworkManagerStub::NotifyPlayerLeaving(IQNetPlayer* pQNetPlayer)
 	if (socket != nullptr)
 	{
 		if (m_pIQNet->IsHost())
+		{
 			g_NetworkManager.CloseConnection(networkPlayer);
+
+			// Propagate the TCP drop to the game Socket so any orphaned
+			// PendingConnection at this smallId cleans up before its login
+			// timer fires and leaks a DisconnectPacket to the reused slot.
+			socket->close(true);
+		}
 	}
 
 	if (m_pIQNet->IsHost())
@@ -173,6 +180,11 @@ bool CPlatformNetworkManagerStub::Initialise(CGameNetworkManager *pGameNetworkMa
 	m_bSearchPending = false;
 
 	m_bIsOfflineGame = false;
+#ifdef _WINDOWS64
+	m_bJoinPending = false;
+	m_joinLocalUsersMask = 0;
+	m_joinHostName[0] = 0;
+#endif
 	m_pSearchParam = nullptr;
 	m_SessionsUpdatedCallback = nullptr;
 
@@ -280,6 +292,40 @@ void CPlatformNetworkManagerStub::DoWork()
 		else
 		{
 			m_bLeaveGameOnTick = false;
+		}
+	}
+
+	// Async join finalization: when the background thread reports success,
+	// register players and transition the session to starting state.
+	if (m_bJoinPending)
+	{
+		WinsockNetLayer::eJoinState state = WinsockNetLayer::GetJoinState();
+		if (state == WinsockNetLayer::eJoinState_Success)
+		{
+			WinsockNetLayer::FinalizeJoin();
+
+			BYTE localSmallId = WinsockNetLayer::GetLocalSmallId();
+
+			IQNet::m_player[localSmallId].m_smallId = localSmallId;
+			IQNet::m_player[localSmallId].m_isRemote = false;
+			IQNet::m_player[localSmallId].m_isHostPlayer = false;
+			IQNet::m_player[localSmallId].m_resolvedXuid = Win64Xuid::ResolvePersistentXuid();
+
+			Minecraft* pMinecraft = Minecraft::GetInstance();
+			wcscpy_s(IQNet::m_player[localSmallId].m_gamertag, 32, pMinecraft->user->name.c_str());
+			IQNet::s_playerCount = localSmallId + 1;
+
+			NotifyPlayerJoined(&IQNet::m_player[0]);
+			NotifyPlayerJoined(&IQNet::m_player[localSmallId]);
+
+			m_pGameNetworkManager->StateChange_AnyToStarting();
+			m_bJoinPending = false;
+		}
+		else if (state == WinsockNetLayer::eJoinState_Failed ||
+				 state == WinsockNetLayer::eJoinState_Rejected ||
+				 state == WinsockNetLayer::eJoinState_Cancelled)
+		{
+			m_bJoinPending = false;
 		}
 	}
 #endif
@@ -517,30 +563,17 @@ int CPlatformNetworkManagerStub::JoinGame(FriendSessionInfo* searchResult, int l
 
 	WinsockNetLayer::StopDiscovery();
 
-	if (!WinsockNetLayer::JoinGame(hostIP, hostPort))
+	wcsncpy_s(m_joinHostName, 32, searchResult->data.hostName, _TRUNCATE);
+	m_joinLocalUsersMask = localUsersMask;
+
+	if (!WinsockNetLayer::BeginJoinGame(hostIP, hostPort))
 	{
-		app.DebugPrintf("Win64 LAN: Failed to connect to %s:%d\n", hostIP, hostPort);
+		app.DebugPrintf("Win64 LAN: Failed to start async join to %s:%d\n", hostIP, hostPort);
 		return CGameNetworkManager::JOINGAME_FAIL_GENERAL;
 	}
 
-	BYTE localSmallId = WinsockNetLayer::GetLocalSmallId();
-
-	IQNet::m_player[localSmallId].m_smallId = localSmallId;
-	IQNet::m_player[localSmallId].m_isRemote = false;
-	IQNet::m_player[localSmallId].m_isHostPlayer = false;
-	// Local non-host identity is the persistent uid.dat XUID.
-	IQNet::m_player[localSmallId].m_resolvedXuid = Win64Xuid::ResolvePersistentXuid();
-
-	Minecraft* pMinecraft = Minecraft::GetInstance();
-	wcscpy_s(IQNet::m_player[localSmallId].m_gamertag, 32, pMinecraft->user->name.c_str());
-	IQNet::s_playerCount = localSmallId + 1;
-
-	NotifyPlayerJoined(&IQNet::m_player[0]);
-	NotifyPlayerJoined(&IQNet::m_player[localSmallId]);
-
-	m_pGameNetworkManager->StateChange_AnyToStarting();
-
-	return CGameNetworkManager::JOINGAME_SUCCESS;
+	m_bJoinPending = true;
+	return CGameNetworkManager::JOINGAME_PENDING;
 #else
 	return CGameNetworkManager::JOINGAME_SUCCESS;
 #endif
@@ -896,7 +929,11 @@ void CPlatformNetworkManagerStub::SearchForGames()
 					strncpy_s(info->data.hostIP, sizeof(info->data.hostIP), ipBuf, _TRUNCATE);
 					info->data.hostPort = port;
 					info->sessionId = static_cast<uint64_t>(inet_addr(ipBuf)) | static_cast<uint64_t>(port) << 32;
-					friendsSessions[0].push_back(info);
+					//Fix null crash? I think its here...
+					if (info) {
+						friendsSessions[0].push_back(info);
+					}
+					
 				}
 			}
 		}
@@ -955,6 +992,13 @@ void CPlatformNetworkManagerStub::ForceFriendsSessionRefresh()
 		delete m_pSearchResults[i];
 		m_pSearchResults[i] = nullptr;
 	}
+
+#ifdef _WINDOWS64
+	// Immediately rebuild the session list from servers.db so that
+	// edits/deletions are visible as soon as the UI regains focus,
+	// rather than waiting for the next TickSearch() cycle.
+	SearchForGames();
+#endif
 }
 
 INetworkPlayer *CPlatformNetworkManagerStub::addNetworkPlayer(IQNetPlayer *pQNetPlayer)

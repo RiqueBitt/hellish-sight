@@ -2,6 +2,7 @@
 
 #include "BanManager.h"
 #include "WhitelistManager.h"
+#include "OpManager.h"
 
 namespace ServerRuntime
 {
@@ -14,6 +15,7 @@ namespace ServerRuntime
 		void Shutdown();
 		bool Reload();
 		bool ReloadWhitelist();
+		bool ReloadOps();
 		bool IsInitialized();
 		bool IsWhitelistEnabled();
 		void SetWhitelistEnabled(bool enabled);
@@ -21,6 +23,7 @@ namespace ServerRuntime
 		bool IsPlayerBanned(PlayerUID xuid);
 		bool IsIpBanned(const std::string &ip);
 		bool IsPlayerWhitelisted(PlayerUID xuid);
+		bool IsPlayerOp(PlayerUID xuid);
 
 		bool AddPlayerBan(PlayerUID xuid, const std::string &name, const BanMetadata &metadata);
 		bool AddIpBan(const std::string &ip, const BanMetadata &metadata);
@@ -28,6 +31,8 @@ namespace ServerRuntime
 		bool RemoveIpBan(const std::string &ip);
 		bool AddWhitelistedPlayer(PlayerUID xuid, const std::string &name, const WhitelistMetadata &metadata);
 		bool RemoveWhitelistedPlayer(PlayerUID xuid);
+		bool AddOp(PlayerUID xuid, const std::string &name, const OpMetadata &metadata);
+		bool RemoveOp(PlayerUID xuid);
 
 		/**
 		 * Copies the current cached player bans for inspection or command output
@@ -40,6 +45,7 @@ namespace ServerRuntime
 		 */
 		bool SnapshotBannedIps(std::vector<BannedIpEntry> *outEntries);
 		bool SnapshotWhitelistedPlayers(std::vector<WhitelistedPlayerEntry> *outEntries);
+		bool SnapshotOps(std::vector<OpPlayerEntry> *outEntries);
 
 		std::string FormatXuid(PlayerUID xuid);
 		bool TryParseXuid(const std::string &text, PlayerUID *outXuid);

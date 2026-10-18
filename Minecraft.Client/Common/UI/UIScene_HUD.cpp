@@ -3,12 +3,13 @@
 #include "UIScene_HUD.h"
 #include "UISplitScreenHelpers.h"
 #include "BossMobGuiInfo.h"
-#include "..\..\Minecraft.h"
-#include "..\..\MultiplayerLocalPlayer.h"
-#include "..\..\..\Minecraft.World\net.minecraft.world.entity.boss.enderdragon.h"
-#include "..\..\EnderDragonRenderer.h"
-#include "..\..\..\Minecraft.World\net.minecraft.world.inventory.h"
-#include "..\..\..\Minecraft.World\StringHelpers.h"
+#include "../../Minecraft.h"
+#include "../../MultiPlayerLocalPlayer.h"
+#include "../../../Minecraft.World/net.minecraft.world.entity.boss.enderdragon.h"
+#include "../../EnderDragonRenderer.h"
+#include "../../../Minecraft.World/net.minecraft.world.inventory.h"
+#include "../../../Minecraft.World/StringHelpers.h"
+#include <ChatScreen.h>
 
 UIScene_HUD::UIScene_HUD(int iPad, void *initData, UILayer *parentLayer) : UIScene(iPad, parentLayer)
 {
@@ -23,8 +24,10 @@ UIScene_HUD::UIScene_HUD(int iPad, void *initData, UILayer *parentLayer) : UISce
 	for(unsigned int i = 0; i < CHAT_LINES_COUNT; ++i)
 	{
 		m_labelChatText[i].init(L"");
+		IggyValueSetBooleanRS(m_labelChatText[i].getIggyValuePath(), 0, "m_bUseHtmlText", true);
 	}
 	m_labelJukebox.init(L"");
+	IggyValueSetBooleanRS(m_labelJukebox.getIggyValuePath(), 0, "m_bUseHtmlText", true);
 
 	addTimer(0, 100);
 }
@@ -124,8 +127,9 @@ void UIScene_HUD::tick()
 			return;
 		}
 
+	    int idx = BossMobGuiInfo::getIndexFromDimension(pMinecraft->localplayers[m_iPad]->dimension);
 		// Is boss present?
-		bool noBoss = BossMobGuiInfo::name.empty() || BossMobGuiInfo::displayTicks <= 0;
+	    bool noBoss = BossMobGuiInfo::name[idx].empty() || BossMobGuiInfo::displayTicks[idx] <= 0;
 		if (noBoss) 
 		{
 			if (m_showDragonHealth)
@@ -143,14 +147,14 @@ void UIScene_HUD::tick()
 		}
 		else
 		{
-			BossMobGuiInfo::displayTicks--;
+		    BossMobGuiInfo::displayTicks[idx]--;
 
 			m_ticksWithNoBoss = 0;			
-			SetDragonHealth(BossMobGuiInfo::healthProgress);
+		    SetDragonHealth(BossMobGuiInfo::healthProgress[idx]);
 
 			if (!m_showDragonHealth)
 			{
-				SetDragonLabel(BossMobGuiInfo::name);
+			    SetDragonLabel(BossMobGuiInfo::name[idx]);
 				ShowDragonHealth(true);
 			}
 		}
@@ -248,17 +252,27 @@ void UIScene_HUD::handleReload()
 
 	m_labelDisplayName.setVisible(m_lastShowDisplayName);
 
-	SetDragonLabel(BossMobGuiInfo::name);
+    Minecraft* pMinecraft = Minecraft::GetInstance();
+
+    int idx = 0;
+    if(pMinecraft->localplayers[m_iPad] != nullptr)
+    {
+        idx = BossMobGuiInfo::getIndexFromDimension(pMinecraft->localplayers[m_iPad]->dimension);
+    }
+
+    SetDragonLabel(BossMobGuiInfo::name[idx]);
 	SetSelectedLabel(L"");
 
 	for(unsigned int i = 0; i < CHAT_LINES_COUNT; ++i)
 	{
 		m_labelChatText[i].init(L"");
+		IggyValueSetBooleanRS(m_labelChatText[i].getIggyValuePath(), 0, "m_bUseHtmlText", true);
 	}
 	m_labelJukebox.init(L"");
+	IggyValueSetBooleanRS(m_labelJukebox.getIggyValuePath(), 0, "m_bUseHtmlText", true);
 
 	int iGuiScale;	
-	Minecraft *pMinecraft = Minecraft::GetInstance();
+
 	if(pMinecraft->localplayers[m_iPad] == nullptr || pMinecraft->localplayers[m_iPad]->m_iScreenSection == C4JRender::VIEWPORT_TYPE_FULLSCREEN)
 	{
 		iGuiScale=app.GetGameSettings(m_iPad,eGameSetting_UISize);
@@ -655,6 +669,23 @@ void UIScene_HUD::SetHorseJumpBarProgress(float progress)
 	}
 }
 
+void UIScene_HUD::SetHardcoreMode(bool bHardcore)
+{
+	IggyDataValue result;
+	IggyDataValue value[1];
+	value[0].type = IGGY_DATATYPE_boolean;
+	value[0].boolval = bHardcore;
+	IggyResult out = IggyPlayerCallMethodRS ( getMovie() , &result, IggyPlayerRootPath( getMovie() ), m_funcSetHardcore , 1 , value );
+
+	// When hardcore state changes, invalidate SetHealth's dirty check
+	// so hearts are redrawn with the correct frame set on the next tick
+	if(bHardcore != m_lastHealthHardcore)
+	{
+		m_lastHealthHardcore = bHardcore;
+		m_lastMaxHealth = -1;
+	}
+}
+
 void UIScene_HUD::SetHealthAbsorb(int healthAbsorb)
 {
 	if(m_iCurrentHealthAbsorb != healthAbsorb)
@@ -761,16 +792,31 @@ void UIScene_HUD::render(S32 width, S32 height, C4JRender::eViewportType viewpor
 void UIScene_HUD::handleTimerComplete(int id)
 {
 	Minecraft *pMinecraft = Minecraft::GetInstance();
+	bool isChatOpen = (dynamic_cast<ChatScreen*>(pMinecraft->getScreen()) != nullptr);
 	
 	bool anyVisible = false;
 	if(pMinecraft->localplayers[m_iPad]!= nullptr)
 	{
 		Gui *pGui = pMinecraft->gui;
-		//DWORD messagesToDisplay = min( CHAT_LINES_COUNT, pGui->getMessagesCount(m_iPad) );
-		for( unsigned int i = 0; i < CHAT_LINES_COUNT; ++i )
+		DWORD totalMessages = pGui->getMessagesCount(m_iPad);
+		DWORD messagesToDisplay = min( CHAT_LINES_COUNT, totalMessages);
+		DWORD maxScroll = max(0, totalMessages - messagesToDisplay);
+
+		bool canScroll = messagesToDisplay < totalMessages;
+		int startIndex = (canScroll && isChatOpen ? ChatScreen::getChatIndex() : 0);
+
+		if (startIndex > maxScroll) {
+			ChatScreen::correctChatIndex(maxScroll);
+			startIndex = maxScroll;
+		}
+
+		//app.DebugPrintf("handleTimerComplete: %d | %d | %d\n", maxScroll, startIndex, totalMessages);
+
+		for( unsigned int i = 0; i < messagesToDisplay; ++i )
 		{
-			float opacity = pGui->getOpacity(m_iPad, i);
-			if( opacity > 0 )
+			unsigned int msgIndex = startIndex + i;
+			float opacity = pGui->getOpacity(m_iPad, msgIndex);
+			if( opacity > 0 || isChatOpen)
 			{
 #if 0 // def _WINDOWS64 // Use Iggy chat until Gui::render has visual parity
 				// Chat drawn by Gui::render with color codes. Hides Iggy chat to avoid double chats.
@@ -778,9 +824,10 @@ void UIScene_HUD::handleTimerComplete(int id)
 				m_labelChatText[i].setOpacity(0);
 				m_labelChatText[i].setLabel(L"");
 #else
-				m_controlLabelBackground[i].setOpacity(opacity);
-				m_labelChatText[i].setOpacity(opacity);
-				m_labelChatText[i].setLabel( pGui->getMessagesCount(m_iPad) ? pGui->getMessage(m_iPad,i) : L"" );
+
+				m_controlLabelBackground[i].setOpacity((isChatOpen ? 1 : opacity));
+				m_labelChatText[i].setOpacity((isChatOpen ? 1 : opacity));
+				m_labelChatText[i].setLabel(pGui->getMessage(m_iPad, msgIndex));
 #endif
 				anyVisible = true;
 			}

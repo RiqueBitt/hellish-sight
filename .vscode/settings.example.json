@@ -78,16 +78,14 @@
 	"**/Minecraft.Client/PSVitaMedia/Media": true,
 	"**/Minecraft.Client/PSVitaMedia/Tutorial": true,
 	"**/Minecraft.Client/PSVitaMedia/Minecraft.Client.self": true,
-	"**/Minecraft.Client/redist64": true
-	"**/Minecraft.Client/sce_sys": true
-	"**/Minecraft.Client/TROPDIR": true
+	"**/Minecraft.Client/redist64": true,
+	"**/Minecraft.Client/sce_sys": true,
+	"**/Minecraft.Client/TROPDIR": true,
 	"**/Minecraft.Client/Windows64/4JLibs/libs": true,
 	"**/Minecraft.Client/Windows64/GameConfig/Minecraft.spa": true,
 	"**/Minecraft.Client/Windows64/GameHDD": true,
 	"**/Minecraft.Client/Windows64/Iggy/lib": true,
 	"**/Minecraft.Client/Windows64Media": true,
-	"**/Minecraft.Client/Windows64Media/4J_strings.h": false,
-	"**/Minecraft.Client/Windows64Media/strings.h": false,
 	"**/Minecraft.Client/x64": true,
 	"**/Minecraft.Client/Xbox/4JLibs/libs": true,
 	"**/Minecraft.Client/Xbox/4JLibs/Media": true,
@@ -110,7 +108,7 @@
 	"**/Minecraft.Client/thumbnailTest256.png": true,
 	"**/Minecraft.Client/thumbnailTest1028.png": true,
 	"**/Minecraft.World/x64_Debug": true,
-	"**/Minecraft.World/x64_Release": true
+	"**/Minecraft.World/x64_Release": true,
 	"**/x64": true
   }
 }

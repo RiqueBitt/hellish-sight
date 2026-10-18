@@ -3,6 +3,9 @@ using namespace std;
 
 #include "Packet.h"
 
+#define CreatePayloadKey(identifier, action) identifier L"|" action
+#define CreateVanillaPayloadKey(action) CreatePayloadKey(L"MC", action)
+
 class CustomPayloadPacket : public Packet, public enable_shared_from_this<CustomPayloadPacket>
 {
 public:
@@ -16,6 +19,30 @@ public:
 	static const wstring SET_ADVENTURE_COMMAND_PACKET;
 	static const wstring SET_BEACON_PACKET;
 	static const wstring SET_ITEM_NAME_PACKET;
+
+	// neoLegacy-defined custom packets
+	static const wstring UPDATE_RECIPE_REGISTRY;
+	static const wstring UPDATE_CREATIVE_REGISTRY;
+
+	// Security: stream cipher handshake channels
+	static const wstring CIPHER_KEY_CHANNEL;   // server->client: carries 32-byte key (16 AES key + 16 IV)
+	static const wstring CIPHER_ACK_CHANNEL;   // client->server: ack (empty payload)
+	static const wstring CIPHER_ON_CHANNEL;    // server->client: activation signal (empty payload)
+
+	// Security: identity token channels
+	static const wstring IDENTITY_TOKEN_ISSUE;      // server->client: issue new 32-byte token
+	static const wstring IDENTITY_TOKEN_CHALLENGE;   // server->client: request stored token
+	static const wstring IDENTITY_TOKEN_RESPONSE;    // client->server: present stored token
+
+	// Fork extensions: server capability and player lifecycle
+	static const wstring FORK_HELLO_CHANNEL;         // server->client: identifies fork server (empty payload)
+	static const wstring FORK_PLAYER_LEAVE_CHANNEL;  // server->client: player disconnected (payload: UTF gamertag)
+
+	// Fixes for MP related crashes
+	//static const wstring QUICK_EQUIP_PACKET;
+	//static const wstring QUICK_EQUIP_SERVER_PACKET;
+
+	static const wstring ENCHANTMENT_LIST_PACKET;
 
 	wstring identifier;
 	int length;

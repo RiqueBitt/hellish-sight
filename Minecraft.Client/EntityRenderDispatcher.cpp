@@ -1,18 +1,18 @@
 #include "stdafx.h"
 #include "EntityRenderDispatcher.h"
-#include "..\Minecraft.World\net.minecraft.world.entity.projectile.h"
-#include "..\Minecraft.World\net.minecraft.world.entity.animal.h"
-#include "..\Minecraft.World\net.minecraft.world.entity.monster.h"
-#include "..\Minecraft.World\net.minecraft.world.entity.item.h"
-#include "..\Minecraft.World\net.minecraft.world.entity.global.h"
-#include "..\Minecraft.World\net.minecraft.world.entity.player.h"
-#include "..\Minecraft.World\net.minecraft.world.entity.boss.enderdragon.h"
-#include "..\Minecraft.World\net.minecraft.world.entity.npc.h"
-#include "..\Minecraft.World\net.minecraft.world.entity.h"
-#include "..\Minecraft.World\net.minecraft.world.level.h"
-#include "..\Minecraft.World\net.minecraft.world.level.tile.h"
-#include "..\Minecraft.World\net.minecraft.world.item.h"
-#include "..\Minecraft.World\net.minecraft.world.item.alchemy.h"
+#include "../Minecraft.World/net.minecraft.world.entity.projectile.h"
+#include "../Minecraft.World/net.minecraft.world.entity.animal.h"
+#include "../Minecraft.World/net.minecraft.world.entity.monster.h"
+#include "../Minecraft.World/net.minecraft.world.entity.item.h"
+#include "../Minecraft.World/net.minecraft.world.entity.global.h"
+#include "../Minecraft.World/net.minecraft.world.entity.player.h"
+#include "../Minecraft.World/net.minecraft.world.entity.boss.enderdragon.h"
+#include "../Minecraft.World/net.minecraft.world.entity.npc.h"
+#include "../Minecraft.World/net.minecraft.world.entity.h"
+#include "../Minecraft.World/net.minecraft.world.level.h"
+#include "../Minecraft.World/net.minecraft.world.level.tile.h"
+#include "../Minecraft.World/net.minecraft.world.item.h"
+#include "../Minecraft.World/net.minecraft.world.item.alchemy.h"
 #include "SpiderRenderer.h"
 #include "PigRenderer.h"
 #include "SheepRenderer.h"
@@ -24,7 +24,6 @@
 #include "PlayerRenderer.h"
 #include "GhastRenderer.h"
 #include "SquidRenderer.h"
-#include "MobRenderer.h"
 #include "GiantMobRenderer.h"
 #include "EntityRenderer.h"
 #include "PaintingRenderer.h"
@@ -44,7 +43,7 @@
 #include "ExperienceOrbRenderer.h"
 #include "SilverfishRenderer.h"
 #include "MushroomCowRenderer.h"
-#include "SnowmanRenderer.h"
+#include "SnowManRenderer.h"
 #include "LavaSlimeRenderer.h"
 #include "VillagerRenderer.h"
 #include "EnderDragonRenderer.h"
@@ -82,6 +81,13 @@
 #include "ZombieRenderer.h"
 #include "BatRenderer.h"
 #include "CaveSpiderRenderer.h"
+#include "RabbitRenderer.h"
+
+#include "ArmorStandRenderer.h"
+#include "EndermiteRenderer.h"
+#include "GuardianRenderer.h"
+#include "GuardianModel.h"
+#include "MobRenderer.h"
 
 double EntityRenderDispatcher::xOff = 0.0;
 double EntityRenderDispatcher::yOff = 0.0;
@@ -124,6 +130,9 @@ EntityRenderDispatcher::EntityRenderDispatcher()
 	renderers[eTYPE_VILLAGER] = new VillagerRenderer();
 	renderers[eTYPE_VILLAGERGOLEM] = new VillagerGolemRenderer();
 	renderers[eTYPE_BAT] = new BatRenderer();
+	renderers[eTYPE_GUARDIAN] = new GuardianRenderer(new GuardianModel(), 0.5f);
+	renderers[eTYPE_ELDER_GUARDIAN] = new GuardianRenderer(new GuardianModel(), 0.5f);
+	
 
 	renderers[eTYPE_MOB] = new MobRenderer(new HumanoidModel(), 0.5f);
 
@@ -131,6 +140,9 @@ EntityRenderDispatcher::EntityRenderDispatcher()
 	renderers[eTYPE_ENDER_CRYSTAL] = new EnderCrystalRenderer();
 
 	renderers[eTYPE_WITHERBOSS] = new WitherBossRenderer();
+
+	renderers[eTYPE_RABBIT] = new RabbitRenderer();
+	
 
 	renderers[eTYPE_ENTITY] = new DefaultRenderer();
 	renderers[eTYPE_PAINTING] = new PaintingRenderer();        
@@ -167,6 +179,9 @@ EntityRenderDispatcher::EntityRenderDispatcher()
 	renderers[eTYPE_HORSE] = new HorseRenderer(new ModelHorse(), .75f);
 
 	renderers[eTYPE_LIGHTNINGBOLT] = new LightningBoltRenderer();
+
+	renderers[eTYPE_ARMORSTAND] = new ArmorStandRenderer();
+	renderers[eTYPE_ENDERMITE] = new EndermiteRenderer();
 	glDisable(GL_LIGHTING);
 
 	for( auto& it : renderers )
@@ -174,7 +189,9 @@ EntityRenderDispatcher::EntityRenderDispatcher()
 		it.second->init(this);
 	}
 
-	isGuiRender = false;	// 4J added
+	isGuiRender = false;		// 4J added
+	isInventoryRender = false;
+
 }
 
 EntityRenderer *EntityRenderDispatcher::getRenderer(eINSTANCEOF e)
@@ -187,7 +204,7 @@ EntityRenderer *EntityRenderDispatcher::getRenderer(eINSTANCEOF e)
 	{
 		app.DebugPrintf("Couldn't find renderer for entity of type %d\n", e);
 		// New renderer mapping required in above table
-		__debugbreak();
+		DEBUG_BREAK();
 	}
 	/* 4J - not doing this hierarchical search anymore. We need to explicitly add renderers for any eINSTANCEOF type that we want to be able to render
 	if (it == renderers.end() && e != Entity::_class)

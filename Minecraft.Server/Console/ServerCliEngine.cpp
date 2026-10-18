@@ -4,35 +4,37 @@
 
 #include "ServerCliParser.h"
 #include "ServerCliRegistry.h"
-#include "commands\IServerCliCommand.h"
-#include "commands\ban\CliCommandBan.h"
-#include "commands\ban-ip\CliCommandBanIp.h"
-#include "commands\ban-list\CliCommandBanList.h"
-#include "commands\defaultgamemode\CliCommandDefaultGamemode.h"
-#include "commands\enchant\CliCommandEnchant.h"
-#include "commands\experience\CliCommandExperience.h"
-#include "commands\gamemode\CliCommandGamemode.h"
-#include "commands\give\CliCommandGive.h"
-#include "commands\help\CliCommandHelp.h"
-#include "commands\kill\CliCommandKill.h"
-#include "commands\list\CliCommandList.h"
-#include "commands\pardon\CliCommandPardon.h"
-#include "commands\pardon-ip\CliCommandPardonIp.h"
-#include "commands\stop\CliCommandStop.h"
-#include "commands\time\CliCommandTime.h"
-#include "commands\tp\CliCommandTp.h"
-#include "commands\weather\CliCommandWeather.h"
-#include "commands\whitelist\CliCommandWhitelist.h"
-#include "..\Common\StringUtils.h"
-#include "..\ServerShutdown.h"
-#include "..\ServerLogger.h"
-#include "..\..\Minecraft.Client\MinecraftServer.h"
-#include "..\..\Minecraft.Client\PlayerList.h"
-#include "..\..\Minecraft.Client\ServerPlayer.h"
-#include "..\..\Minecraft.World\CommandDispatcher.h"
-#include "..\..\Minecraft.World\CommandSender.h"
-#include "..\..\Minecraft.World\LevelSettings.h"
-#include "..\..\Minecraft.World\StringHelpers.h"
+#include "commands/IServerCliCommand.h"
+#include "commands/ban/CliCommandBan.h"
+#include "commands/ban-ip/CliCommandBanIp.h"
+#include "commands/ban-list/CliCommandBanList.h"
+#include "commands/defaultgamemode/CliCommandDefaultGamemode.h"
+#include "commands/enchant/CliCommandEnchant.h"
+#include "commands/experience/CliCommandExperience.h"
+#include "commands/gamemode/CliCommandGamemode.h"
+#include "commands/give/CliCommandGive.h"
+#include "commands/help/CliCommandHelp.h"
+#include "commands/kill/CliCommandKill.h"
+#include "commands/list/CliCommandList.h"
+#include "commands/pardon/CliCommandPardon.h"
+#include "commands/pardon-ip/CliCommandPardonIp.h"
+#include "commands/stop/CliCommandStop.h"
+#include "commands/time/CliCommandTime.h"
+#include "commands/tp/CliCommandTp.h"
+#include "commands/weather/CliCommandWeather.h"
+#include "commands/whitelist/CliCommandWhitelist.h"
+#include "commands/revoketoken/CliCommandRevokeToken.h"
+#include "../Common/StringUtils.h"
+#include "../ServerShutdown.h"
+#include "../ServerLogger.h"
+#include "../FourKitBridge.h"
+#include "../../Minecraft.Client/MinecraftServer.h"
+#include "../../Minecraft.Client/PlayerList.h"
+#include "../../Minecraft.Client/ServerPlayer.h"
+#include "../../Minecraft.World/CommandDispatcher.h"
+#include "../../Minecraft.World/CommandSender.h"
+#include "../../Minecraft.World/LevelSettings.h"
+#include "../../Minecraft.World/StringHelpers.h"
 
 #include <stdlib.h>
 #include <unordered_set>
@@ -100,6 +102,7 @@ namespace ServerRuntime
 		m_registry->Register(std::unique_ptr<IServerCliCommand>(new CliCommandPardonIp()));
 		m_registry->Register(std::unique_ptr<IServerCliCommand>(new CliCommandBanList()));
 		m_registry->Register(std::unique_ptr<IServerCliCommand>(new CliCommandWhitelist()));
+		m_registry->Register(std::unique_ptr<IServerCliCommand>(new CliCommandRevokeToken()));
 		m_registry->Register(std::unique_ptr<IServerCliCommand>(new CliCommandTp()));
 		m_registry->Register(std::unique_ptr<IServerCliCommand>(new CliCommandTime()));
 		m_registry->Register(std::unique_ptr<IServerCliCommand>(new CliCommandWeather()));
@@ -161,6 +164,10 @@ namespace ServerRuntime
 		IServerCliCommand *command = m_registry->FindMutable(parsed.tokens[0]);
 		if (command == NULL)
 		{
+			if (FourKitBridge::HandleConsoleCommand(normalizedLine))
+			{
+				return true;
+			}
 			LogWarn("Unknown command: " + parsed.tokens[0]);
 			return false;
 		}
@@ -207,6 +214,38 @@ namespace ServerRuntime
 			}
 
 			m_registry->SuggestCommandNames(prefix, linePrefix, out);
+
+			char buf[4096];
+            int len = 0;
+            int count = FourKitBridge::GetPluginCommandHelp(buf, sizeof(buf), &len);
+            if (count > 0 && len > 0)
+            {
+                const char *ptr = buf;
+                const char *end = buf + len;
+                for (int i = 0; i < count && ptr < end; ++i)
+                {
+                    std::string usage(ptr);
+                    ptr += usage.size() + 1;
+                    if (ptr >= end)
+                    {
+                        break;
+                    }
+                    std::string description(ptr);
+                    ptr += description.size() + 1;
+
+                    std::string name = usage;
+                    if (!name.empty() && name[0] == '/')
+                    {
+                        name = name.substr(1);
+                    }
+
+                    if (name.size() >= prefix.size() &&
+                        name.compare(0, prefix.size(), prefix) == 0)
+                    {
+                        out->push_back(linePrefix + name);
+                    }
+                }
+            }
 		}
 		else
 		{

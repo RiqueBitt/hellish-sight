@@ -1,7 +1,7 @@
 #include "stdafx.h"
 #include "UI.h"
 #include "UIScene_SkinSelectMenu.h"
-#include "..\..\..\Minecraft.World\StringHelpers.h"
+#include "../../../Minecraft.World/StringHelpers.h"
 #ifdef __ORBIS__
 #include <error_dialog.h>
 #elif defined __PSVITA__
@@ -24,6 +24,16 @@ const WCHAR *UIScene_SkinSelectMenu::wchDefaultNamesA[]=
 	L"Prisoner Steve",
 	L"Cyclist Steve",
 	L"Boxer Steve",
+	L"Developer Steve",
+	L"Alex",
+	L"Tuxedo Alex",
+	L"Boxer Alex",
+	L"Prisoner Alex",
+	L"Tennis Alex",
+	L"Cyclist Alex",
+	L"Athlete Alex",
+	L"Swedish Alex",
+	L"Developer Alex",
 };
 
 UIScene_SkinSelectMenu::UIScene_SkinSelectMenu(int iPad, void *initData, UILayer *parentLayer) : UIScene(iPad, parentLayer)
@@ -993,6 +1003,36 @@ TEXTURE_NAME UIScene_SkinSelectMenu::getTextureId(int skinIndex)
 	case eDefaultSkins_Skin7:
 		texture = TN_MOB_CHAR7;
 		break;
+	case eDefaultSkins_Skin8:
+		texture = TN_MOB_CHAR8;
+		break;
+	case eDefaultSkins_Skin9:
+		texture = TN_MOB_CHAR9;
+		break;
+	case eDefaultSkins_Skin10:
+		texture = TN_MOB_CHAR10;
+		break;
+	case eDefaultSkins_Skin11:
+		texture = TN_MOB_CHAR11;
+		break;
+	case eDefaultSkins_Skin12:
+		texture = TN_MOB_CHAR12;
+		break;
+	case eDefaultSkins_Skin13:
+		texture = TN_MOB_CHAR13;
+		break;
+	case eDefaultSkins_Skin14:
+		texture = TN_MOB_CHAR14;
+		break;
+	case eDefaultSkins_Skin15:
+		texture = TN_MOB_CHAR15;
+		break;
+	case eDefaultSkins_Skin16:
+		texture = TN_MOB_CHAR16;
+		break;
+	case eDefaultSkins_Skin17:
+		texture = TN_MOB_CHAR17;
+		break;
 	};
 
 	return texture;
@@ -1127,15 +1167,6 @@ void UIScene_SkinSelectMenu::handlePackIndexChanged()
 	updatePackDisplay();
 }
 
-std::wstring fakeWideToRealWide(const wchar_t* original)
-{
-	const char* name = reinterpret_cast<const char*>(original);
-	int len = MultiByteToWideChar(CP_UTF8, 0, name, -1, nullptr, 0);
-	std::wstring wName(len, 0);
-	MultiByteToWideChar(CP_UTF8, 0, name, -1, &wName[0], len);
-	return wName.c_str();
-}
-
 void UIScene_SkinSelectMenu::updatePackDisplay()
 {
 	m_currentPackCount = app.m_dlcManager.getPackCount(DLCManager::e_DLCType_Skin) + SKIN_SELECT_MAX_DEFAULTS;
@@ -1143,18 +1174,16 @@ void UIScene_SkinSelectMenu::updatePackDisplay()
 	if(m_packIndex >= SKIN_SELECT_MAX_DEFAULTS)
 	{
 		DLCPack *thisPack = app.m_dlcManager.getPack(m_packIndex - SKIN_SELECT_MAX_DEFAULTS, DLCManager::e_DLCType_Skin);
-		// Fix the incorrect string type on title to display correctly
-		setCentreLabel(fakeWideToRealWide(thisPack->getName().c_str()));
-		//setCentreLabel(thisPack->getName().c_str());
+		setCentreLabel(thisPack->getName().c_str());
 	}
 	else
 	{
 		switch(m_packIndex)
 		{
-		case SKIN_SELECT_PACK_DEFAULT:				
+		case SKIN_SELECT_PACK_DEFAULT:
 			setCentreLabel(app.GetString(IDS_NO_SKIN_PACK));
 			break;
-		case SKIN_SELECT_PACK_FAVORITES:				
+		case SKIN_SELECT_PACK_FAVORITES:
 			setCentreLabel(app.GetString(IDS_FAVORITES_SKIN_PACK));
 			break;
 		}
@@ -1164,18 +1193,16 @@ void UIScene_SkinSelectMenu::updatePackDisplay()
 	if(nextPackIndex >= SKIN_SELECT_MAX_DEFAULTS)
 	{
 		DLCPack *thisPack = app.m_dlcManager.getPack(nextPackIndex - SKIN_SELECT_MAX_DEFAULTS, DLCManager::e_DLCType_Skin);
-		// Fix the incorrect string type on title to display correctly
-		setRightLabel(fakeWideToRealWide(thisPack->getName().c_str()));
-		//setRightLabel(thisPack->getName().c_str());
+		setRightLabel(thisPack->getName().c_str());
 	}
 	else
 	{
 		switch(nextPackIndex)
 		{
-		case SKIN_SELECT_PACK_DEFAULT:				
+		case SKIN_SELECT_PACK_DEFAULT:
 			setRightLabel(app.GetString(IDS_NO_SKIN_PACK));
 			break;
-		case SKIN_SELECT_PACK_FAVORITES:				
+		case SKIN_SELECT_PACK_FAVORITES:
 			setRightLabel(app.GetString(IDS_FAVORITES_SKIN_PACK));
 			break;
 		}
@@ -1185,18 +1212,16 @@ void UIScene_SkinSelectMenu::updatePackDisplay()
 	if(previousPackIndex >= SKIN_SELECT_MAX_DEFAULTS)
 	{
 		DLCPack *thisPack = app.m_dlcManager.getPack(previousPackIndex - SKIN_SELECT_MAX_DEFAULTS, DLCManager::e_DLCType_Skin);
-		// Fix the incorrect string type on title to display correctly
-		setLeftLabel(fakeWideToRealWide(thisPack->getName().c_str()));
-		//setLeftLabel(thisPack->getName().c_str());
+		setLeftLabel(thisPack->getName().c_str());
 	}
 	else
 	{
 		switch(previousPackIndex)
 		{
-		case SKIN_SELECT_PACK_DEFAULT:				
+		case SKIN_SELECT_PACK_DEFAULT:
 			setLeftLabel(app.GetString(IDS_NO_SKIN_PACK));
 			break;
-		case SKIN_SELECT_PACK_FAVORITES:				
+		case SKIN_SELECT_PACK_FAVORITES:
 			setLeftLabel(app.GetString(IDS_FAVORITES_SKIN_PACK));
 			break;
 		}

@@ -26,6 +26,7 @@ mono_crash.*
 [Rr]elease/
 [Rr]eleases/
 x64/
+x64_*/
 x86/
 [Ww][Ii][Nn]32/
 [Aa][Rr][Mm]/
@@ -395,6 +396,7 @@ FodyWeavers.xsd
 
 # JetBrains Rider
 *.sln.iml
+.idea/*
 
 ### VisualStudio Patch ###
 # Additional files built by Visual Studio
@@ -414,3 +416,30 @@ build/
 tmp*/
 _server_asset_probe/
 server-data/
+
+# Nix
+result
+result-*
+.direnv/
+.xwin-cache/
+
+.xwin
+# Tools build artifacts and intermediates
+tools/*.class
+tools/*.swf
+tools/staging/
+tools/server-monitor/
+
+
+# Nix
+result
+result-*
+.direnv/
+.xwin-cache/
+.xwin/
+
+# macOS
+.DS_Store
+
+# Doxygen page
+doxygen_pages/

@@ -2,8 +2,8 @@
 #include "Windows64_UIController.h"
 
 // Temp
-#include "..\Minecraft.h"
-#include "..\Textures.h"
+#include "../Minecraft.h"
+#include "../Textures.h"
 
 #define _ENABLEIGGY
 
@@ -24,7 +24,7 @@ void ConsoleUIController::init(ID3D11Device *dev, ID3D11DeviceContext *ctx, ID3D
 	{
 		app.DebugPrintf("Failed to initialise GDraw!\n");
 #ifndef _CONTENT_PACKAGE
-		__debugbreak();
+		DEBUG_BREAK();
 #endif
 		app.FatalLoadError();
 	}

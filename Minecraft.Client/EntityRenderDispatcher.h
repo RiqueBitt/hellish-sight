@@ -1,7 +1,7 @@
 #pragma once
 #include "EntityRenderer.h"
-#include "..\Minecraft.World\Entity.h"
-#include "..\Minecraft.World\JavaIntHash.h"
+#include "../Minecraft.World/Entity.h"
+#include "../Minecraft.World/JavaIntHash.h"
 class font;
 using namespace std;
 
@@ -32,6 +32,8 @@ public:
     float playerRotX;
     Options *options;
 	bool isGuiRender;		// 4J added
+    bool isInventoryRender;
+
 
     double xPlayer, yPlayer, zPlayer;
 

@@ -3,7 +3,7 @@ set -euo pipefail
 
 SCRIPT_DIR="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)"
 COMPOSE_FILE="${SCRIPT_DIR}/docker-compose.dedicated-server.ghcr.yml"
-SERVICE_NAME="minecraft-lce-dedicated-server"
+SERVICE_NAME="lce-revelations-dedicated-server"
 PERSIST_DIR="${SCRIPT_DIR}/server-data"
 
 if [[ ! -f "${COMPOSE_FILE}" ]]; then

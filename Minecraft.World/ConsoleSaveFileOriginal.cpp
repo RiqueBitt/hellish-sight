@@ -4,13 +4,35 @@
 #include "File.h"
 #include <xuiapp.h>
 #include "compression.h"
-#include "..\Minecraft.Client\Minecraft.h"
-#include "..\Minecraft.Client\MinecraftServer.h"
-#include "..\Minecraft.Client\ServerLevel.h"
-#include "..\Minecraft.World\net.minecraft.world.level.h"
-#include "..\Minecraft.World\LevelData.h"
-#include "..\Minecraft.Client\Common\GameRules\LevelGenerationOptions.h"
-#include "..\Minecraft.World\net.minecraft.world.level.chunk.storage.h"
+#include "../Minecraft.Client/Minecraft.h"
+#include "../Minecraft.Client/MinecraftServer.h"
+#include "../Minecraft.Client/ServerLevel.h"
+#include "../Minecraft.World/net.minecraft.world.level.h"
+#include "../Minecraft.World/LevelData.h"
+#include "../Minecraft.Client/Common/GameRules/LevelGenerationOptions.h"
+#include "../Minecraft.World/net.minecraft.world.level.chunk.storage.h"
+
+#ifdef MINECRAFT_SERVER_BUILD
+#include <thread>
+#include <atomic>
+#include <mutex>
+
+static std::atomic<bool> s_bgSaveActive{false};
+static std::mutex s_bgSaveMutex;
+
+struct BackgroundSaveResult
+{
+	ConsoleSaveFile *owner = nullptr;
+	PBYTE thumbData = nullptr;
+	DWORD thumbSize = 0;
+	BYTE textMeta[88] = {};
+	int textMetaBytes = 0;
+	bool pending = false;
+};
+static BackgroundSaveResult s_bgResult;
+#endif
+
+
 
 
 #ifdef _XBOX
@@ -68,7 +90,7 @@ ConsoleSaveFileOriginal::ConsoleSaveFileOriginal(const wstring &fileName, LPVOID
 	if( pagesCommitted != 0 )
 	{
 #ifndef _CONTENT_PACKAGE
-		__debugbreak();
+		DEBUG_BREAK();
 #endif
 	}
 
@@ -79,7 +101,7 @@ ConsoleSaveFileOriginal::ConsoleSaveFileOriginal(const wstring &fileName, LPVOID
 	{
 #ifndef _CONTENT_PACKAGE
 		// Out of physical memory
-		__debugbreak();
+		DEBUG_BREAK();
 #endif
 	}
 	pagesCommitted = pagesRequired;
@@ -184,7 +206,7 @@ ConsoleSaveFileOriginal::ConsoleSaveFileOriginal(const wstring &fileName, LPVOID
 						if( pvRet == nullptr )
 						{
 							// Out of physical memory
-							__debugbreak();
+							DEBUG_BREAK();
 						}
 						pagesCommitted = pagesRequired;
 					}
@@ -200,11 +222,17 @@ ConsoleSaveFileOriginal::ConsoleSaveFileOriginal(const wstring &fileName, LPVOID
 
 		header.ReadHeader( pvSaveMem, plat );
 
+		if (bLevelGenBaseSave)
+		{
+			header.AddFile(L"region_format_16");
+		}
 	}
 	else
 	{
 		// Clear the first 8 bytes that reference the header
 		header.WriteHeader( pvSaveMem );
+
+		header.AddFile(L"region_format_16");
 	}
 }
 
@@ -475,7 +503,7 @@ void ConsoleSaveFileOriginal::finalizeWrite()
 		void *pvRet = VirtualAlloc(pvHeap, pagesRequired * CSF_PAGE_SIZE, COMMIT_ALLOCATION, PAGE_READWRITE);
 		if( pvRet == NULL )
 		{
-			__debugbreak();
+			DEBUG_BREAK();
 		}
 		pagesCommitted = pagesRequired;
 	}
@@ -509,7 +537,7 @@ void ConsoleSaveFileOriginal::MoveDataBeyond(FileEntry *file, DWORD nNumberOfByt
 		if( pvRet == nullptr )
 		{
 			// Out of physical memory
-			__debugbreak();
+			DEBUG_BREAK();
 		}
 		pagesCommitted = pagesRequired;
 	}
@@ -672,6 +700,84 @@ void ConsoleSaveFileOriginal::Flush(bool autosave, bool updateThumbnail )
 	float fSecsPerTick = 1.0f / static_cast<float>(qwTicksPerSec.QuadPart);
 
 	unsigned int fileSize = header.GetFileSize();
+
+#ifdef MINECRAFT_SERVER_BUILD
+	// on the server we dont want to block the tick thread doing compression!!!
+	// sna[pshot pvSaveMem while we still hold the lock then hand it off to a background thread
+	byte *snap = new (std::nothrow) byte[fileSize];
+	if (snap)
+	{
+		// copy the save buffer while we still own the lock so nothing can write to it mid-copy
+		QueryPerformanceCounter(&qwTime);
+		memcpy(snap, pvSaveMem, fileSize);
+		QueryPerformanceCounter(&qwNewTime);
+		app.DebugPrintf("snapshot %u bytes in %.3f sec\n", fileSize,
+						(qwNewTime.QuadPart - qwTime.QuadPart) * fSecsPerTick);
+
+		PBYTE thumb = nullptr;
+		DWORD thumbSz = 0;
+		app.GetSaveThumbnail(&thumb, &thumbSz);
+
+		BYTE meta[88];
+		ZeroMemory(meta, 88);
+		int64_t seed = 0;
+		bool hasSeed = false;
+		if (MinecraftServer *sv = MinecraftServer::getInstance(); sv && sv->levels[0])
+		{
+			seed = sv->levels[0]->getLevelData()->getSeed();
+			hasSeed = true;
+		}
+		int metaLen = app.CreateImageTextData(meta, seed, hasSeed,
+											  app.GetGameHostOption(eGameHostOption_All), Minecraft::GetInstance()->getCurrentTexturePackId());
+
+		// telemetry
+		INT uid = 0;
+		StorageManager.GetSaveUniqueNumber(&uid);
+		TelemetryManager->RecordLevelSaveOrCheckpoint(ProfileManager.GetPrimaryPad(), uid, fileSize);
+
+		ReleaseSaveAccess();
+		s_bgSaveActive.store(true, std::memory_order_release);
+
+		std::thread([snap, fileSize, thumb, thumbSz, meta, metaLen, this]() {
+			Compression::UseDefaultThreadStorage();
+			unsigned int compLen = fileSize + 8;
+			byte *buf = static_cast<byte *>(StorageManager.AllocateSaveData(compLen));
+			if (!buf)
+			{
+				// FAIL!! attempt precalc
+				compLen = 0;
+				Compression::getCompression()->Compress(nullptr, &compLen, snap, fileSize);
+				compLen += 8;
+				buf = static_cast<byte *>(StorageManager.AllocateSaveData(compLen));
+			}
+			if (buf)
+			{
+				// COM,PRESS
+				Compression::getCompression()->Compress(buf + 8, &compLen, snap, fileSize);
+				ZeroMemory(buf, 8);
+				memcpy(buf + 4, &fileSize, sizeof(fileSize));
+
+				// store the result so flushPendingBackgroundSave() can pick it up on the main thread next tick
+				// StorageManager isnt thread safe so we cant call SetSaveImages or SaveSaveData from here. Bwoomp
+				std::lock_guard<std::mutex> lk(s_bgSaveMutex);
+				s_bgResult.owner = this;
+				s_bgResult.thumbData = thumb;
+				s_bgResult.thumbSize = thumbSz;
+				memcpy(s_bgResult.textMeta, meta, sizeof(meta));
+				s_bgResult.textMetaBytes = metaLen;
+				s_bgResult.pending = true;
+			}
+			else
+			{
+				app.DebugPrintf("save buf alloc failed\n");
+				s_bgSaveActive.store(false, std::memory_order_release);
+			}
+			delete[] snap;
+		}).detach();
+		return;
+	}
+	app.DebugPrintf("snapshot alloc failed (%u bytes)\n", fileSize);
+#endif
 
 	// Assume that the compression will make it smaller so initially attempt to allocate the current file size
 	// We add 4 bytes to the start so that we can signal compressed data
@@ -837,6 +943,55 @@ void ConsoleSaveFileOriginal::Flush(bool autosave, bool updateThumbnail )
 int ConsoleSaveFileOriginal::SaveSaveDataCallback(LPVOID lpParam,bool bRes)
 {
 	ConsoleSaveFile *pClass=static_cast<ConsoleSaveFile *>(lpParam);
+
+#ifdef _WINDOWS64
+	// 4J Added: After save completes, capture the save folder name for hardcore world deletion
+	if (bRes && app.GetCurrentSaveFolderName().empty())
+	{
+		// Try 1: Ask the library for the folder name
+		char szSaveFolder[MAX_SAVEFILENAME_LENGTH] = {};
+		if (StorageManager.GetSaveUniqueFilename(szSaveFolder) && szSaveFolder[0] != '\0')
+		{
+			wchar_t wFolder[MAX_SAVEFILENAME_LENGTH] = {};
+			mbstowcs(wFolder, szSaveFolder, MAX_SAVEFILENAME_LENGTH - 1);
+			app.SetCurrentSaveFolderName(wFolder);
+			app.DebugPrintf("SaveSaveDataCallback: captured save folder '%s'\n", szSaveFolder);
+		}
+		// Try 2: Scan GameHDD for the newest folder -- right after save, it's guaranteed to be ours
+		if (app.GetCurrentSaveFolderName().empty())
+		{
+			WIN32_FIND_DATAW fd;
+			HANDLE hFind = FindFirstFileW(L"Windows64\\GameHDD\\*", &fd);
+			if (hFind != INVALID_HANDLE_VALUE)
+			{
+				FILETIME newestTime = {};
+				wchar_t newestFolder[MAX_PATH] = {};
+				do
+				{
+					if ((fd.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY) &&
+						wcscmp(fd.cFileName, L".") != 0 && wcscmp(fd.cFileName, L"..") != 0)
+					{
+						if (CompareFileTime(&fd.ftLastWriteTime, &newestTime) > 0)
+						{
+							newestTime = fd.ftLastWriteTime;
+							wcscpy_s(newestFolder, MAX_PATH, fd.cFileName);
+						}
+					}
+				} while (FindNextFileW(hFind, &fd));
+				FindClose(hFind);
+				if (newestFolder[0] != L'\0')
+				{
+					app.SetCurrentSaveFolderName(newestFolder);
+					app.DebugPrintf("SaveSaveDataCallback: captured save folder via scan '%ls'\n", newestFolder);
+				}
+			}
+		}
+	}
+#endif
+
+#ifdef MINECRAFT_SERVER_BUILD
+	s_bgSaveActive.store(false, std::memory_order_release);
+#endif
 
 	return 0;
 }
@@ -1085,3 +1240,25 @@ void *ConsoleSaveFileOriginal::getWritePointer(FileEntry *file)
 {
 	return static_cast<char *>(pvSaveMem) + file->currentFilePointer;;
 }
+
+#ifdef MINECRAFT_SERVER_BUILD
+void ConsoleSaveFileOriginal::flushPendingBackgroundSave()
+{
+	std::lock_guard<std::mutex> lk(s_bgSaveMutex);
+	if (!s_bgResult.pending)
+		return;
+
+	StorageManager.SetSaveImages(
+		s_bgResult.thumbData, s_bgResult.thumbSize,
+		nullptr, 0, s_bgResult.textMeta, s_bgResult.textMetaBytes);
+	StorageManager.SaveSaveData(&ConsoleSaveFileOriginal::SaveSaveDataCallback, s_bgResult.owner);
+
+	s_bgResult.pending = false;
+	// the actual write isnt done until SaveSaveDataCallback fires
+}
+
+bool ConsoleSaveFileOriginal::hasPendingBackgroundSave()
+{
+	return s_bgSaveActive.load(std::memory_order_acquire);
+}
+#endif

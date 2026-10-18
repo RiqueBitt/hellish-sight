@@ -1,6 +1,6 @@
 #pragma once
 #include "LocalPlayer.h"
-#include "..\Minecraft.World\SharedConstants.h"
+#include "../Minecraft.World/SharedConstants.h"
 
 class ClientConnection;
 class Minecraft;
@@ -35,7 +35,7 @@ public:
 	void sendPosition();
 
 	using Player::drop;
-    virtual shared_ptr<ItemEntity> drop();
+    virtual shared_ptr<ItemEntity> drop(bool dropStack = false);
 protected:
 	virtual void reallyDrop(shared_ptr<ItemEntity> itemEntity);
 public:

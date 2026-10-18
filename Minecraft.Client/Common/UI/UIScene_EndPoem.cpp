@@ -2,9 +2,9 @@
 #include "UI.h"
 #include "UIScene_EndPoem.h"
 #include "UIBitmapFont.h"
-#include "..\..\Minecraft.h"
-#include "..\..\MultiplayerLocalPlayer.h"
-#include "..\..\..\Minecraft.World\StringHelpers.h"
+#include "../../Minecraft.h"
+#include "../../MultiPlayerLocalPlayer.h"
+#include "../../../Minecraft.World/StringHelpers.h"
 
 UIScene_EndPoem::UIScene_EndPoem(int iPad, void *initData, UILayer *parentLayer) : UIScene(iPad, parentLayer)
 {
@@ -50,13 +50,18 @@ UIScene_EndPoem::UIScene_EndPoem(int iPad, void *initData, UILayer *parentLayer)
 	Minecraft *pMinecraft = Minecraft::GetInstance();
 
 	wstring playerName = L"";
-	if(pMinecraft->localplayers[ui.GetWinUserIndex()] != nullptr)
+	unsigned int winIdx = ui.GetWinUserIndex();
+	if(winIdx < XUSER_MAX_COUNT && pMinecraft->localplayers[winIdx] != nullptr)
 	{
-		playerName = escapeXML( pMinecraft->localplayers[ui.GetWinUserIndex()]->getDisplayName() );
+		playerName = escapeXML( pMinecraft->localplayers[winIdx]->getDisplayName() );
+	}
+	else if(pMinecraft->localplayers[ProfileManager.GetPrimaryPad()] != nullptr)
+	{
+		playerName = escapeXML( pMinecraft->localplayers[ProfileManager.GetPrimaryPad()]->getDisplayName() );
 	}
 	else
 	{
-		playerName = escapeXML( pMinecraft->localplayers[ProfileManager.GetPrimaryPad()]->getDisplayName() );
+		playerName = L"Player";
 	}
 	noNoiseString = replaceAll(noNoiseString,L"{*PLAYER*}",playerName);
 

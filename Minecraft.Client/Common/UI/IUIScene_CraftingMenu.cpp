@@ -1,9 +1,9 @@
 #include "stdafx.h"
 
-#include "..\..\..\Minecraft.World\net.minecraft.world.item.crafting.h"
-#include "..\..\..\Minecraft.World\net.minecraft.world.level.tile.h"
-#include "..\..\..\Minecraft.World\net.minecraft.stats.h"
-#include "..\..\LocalPlayer.h"
+#include "../../../Minecraft.World/net.minecraft.world.item.crafting.h"
+#include "../../../Minecraft.World/net.minecraft.world.level.tile.h"
+#include "../../../Minecraft.World/net.minecraft.stats.h"
+#include "../../LocalPlayer.h"
 #include "IUIScene_CraftingMenu.h"
 
 #include "UI.h"
@@ -315,14 +315,18 @@ bool IUIScene_CraftingMenu::handleKeyDown(int iPad, int iAction, bool bRepeat)
 						case Tile::workBench_Id:		m_pPlayer->awardStat(GenericStats::buildWorkbench(),		GenericStats::param_buildWorkbench());		break;
 						case Item::pickAxe_wood_Id:		m_pPlayer->awardStat(GenericStats::buildPickaxe(),			GenericStats::param_buildPickaxe());		break;
 						case Tile::furnace_Id:			m_pPlayer->awardStat(GenericStats::buildFurnace(),			GenericStats::param_buildFurnace());		break;
-						case Item::hoe_wood_Id:			m_pPlayer->awardStat(GenericStats::buildHoe(),				GenericStats::param_buildHoe());			break;
+						//case Item::hoe_wood_Id:			m_pPlayer->awardStat(GenericStats::buildHoe(),				GenericStats::param_buildHoe());			break;
 						case Item::bread_Id:			m_pPlayer->awardStat(GenericStats::makeBread(),				GenericStats::param_makeBread());			break;
 						case Item::cake_Id:				m_pPlayer->awardStat(GenericStats::bakeCake(),				GenericStats::param_bakeCake());			break;
 						case Item::pickAxe_stone_Id:	m_pPlayer->awardStat(GenericStats::buildBetterPickaxe(),	GenericStats::param_buildBetterPickaxe());	break;
-						case Item::sword_wood_Id:		m_pPlayer->awardStat(GenericStats::buildSword(),			GenericStats::param_buildSword());			break;
+						//case Item::sword_wood_Id:		m_pPlayer->awardStat(GenericStats::buildSword(),			GenericStats::param_buildSword());			break;
 						case Tile::dispenser_Id:		m_pPlayer->awardStat(GenericStats::dispenseWithThis(),		GenericStats::param_dispenseWithThis());	break;
 						case Tile::enchantTable_Id:		m_pPlayer->awardStat(GenericStats::enchantments(),			GenericStats::param_enchantments());		break;
 						case Tile::bookshelf_Id:		m_pPlayer->awardStat(GenericStats::bookcase(),				GenericStats::param_bookcase());			break;
+						}
+						switch (pTempItemInst->getItem()->getBaseItemType()) {
+						case Item::eBaseItemType_hoe:		m_pPlayer->awardStat(GenericStats::buildHoe(), GenericStats::param_buildHoe());			break;
+						case Item::eBaseItemType_sword:		m_pPlayer->awardStat(GenericStats::buildSword(), GenericStats::param_buildSword());		break;
 						}
 
 						// We've used some ingredients from our inventory, so update the recipes we can make
@@ -912,7 +916,7 @@ void IUIScene_CraftingMenu::UpdateHighlight()
 
 		// special case for the torch coal/charcoal
 		int id=pTempItemInstAdditional->getDescriptionId();
-		LPCWSTR itemstring;
+		wstring itemstring;
 
 		switch(id)
 		{
@@ -941,11 +945,15 @@ void IUIScene_CraftingMenu::UpdateHighlight()
 			}
 			break;
 		default:
-			itemstring=app.GetString(id  );
+			if (pTempItemInstAdditional->hasCustomHoverName()) {
+				itemstring = pTempItemInstAdditional->getHoverName();
+			} else {
+				itemstring = app.GetString(id);
+			}
 			break;
 		}
 
-		setItemText(itemstring);
+		setItemText(itemstring.c_str());
 	}
 	else
 	{

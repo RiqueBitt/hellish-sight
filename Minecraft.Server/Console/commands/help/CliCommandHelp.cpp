@@ -2,8 +2,13 @@
 
 #include "CliCommandHelp.h"
 
-#include "..\..\ServerCliEngine.h"
-#include "..\..\ServerCliRegistry.h"
+#include "../../ServerCliEngine.h"
+#include "../../ServerCliRegistry.h"
+#include "../../ServerCliEngine.h"
+#include "../../ServerCliRegistry.h"
+#include "../../../FourKitBridge.h"
+
+#include <cstring>
 
 namespace ServerRuntime
 {
@@ -40,6 +45,34 @@ namespace ServerRuntime
 			row += commands[i]->Description();
 			engine->LogInfo(row);
 		}
+
+		char buf[4096];
+		int len = 0;
+		int count = FourKitBridge::GetPluginCommandHelp(buf, sizeof(buf), &len);
+		if (count > 0 && len > 0)
+		{
+			engine->LogInfo("Plugin commands:");
+			const char *ptr = buf;
+			const char *end = buf + len;
+			for (int i = 0; i < count && ptr < end; ++i)
+			{
+				std::string usage(ptr);
+				ptr += usage.size() + 1;
+				if (ptr >= end) break;
+				std::string description(ptr);
+				ptr += description.size() + 1;
+
+				std::string row = "  ";
+				row += usage;
+				if (!description.empty())
+				{
+					row += " - ";
+					row += description;
+				}
+				engine->LogInfo(row);
+			}
+		}
+
 		return true;
 	}
 }

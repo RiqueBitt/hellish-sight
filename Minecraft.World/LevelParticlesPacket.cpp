@@ -1,4 +1,4 @@
-#include "stdafx.h"
+﻿#include "stdafx.h"
 #include "PacketListener.h"
 #include "LevelParticlesPacket.h"
 
@@ -15,7 +15,7 @@ LevelParticlesPacket::LevelParticlesPacket()
 	this->count = 0;
 }
 
-LevelParticlesPacket::LevelParticlesPacket(const wstring &name, float x, float y, float z, float xDist, float yDist, float zDist, float maxSpeed, int count)
+LevelParticlesPacket::LevelParticlesPacket(const wstring& name, float x, float y, float z, float xDist, float yDist, float zDist, float maxSpeed, int count)
 {
 	this->name = name;
 	this->x = x;
@@ -28,7 +28,7 @@ LevelParticlesPacket::LevelParticlesPacket(const wstring &name, float x, float y
 	this->count = count;
 }
 
-void LevelParticlesPacket::read(DataInputStream *dis)
+void LevelParticlesPacket::read(DataInputStream* dis)
 {
 	name = readUtf(dis, 64);
 	x = dis->readFloat();
@@ -41,7 +41,7 @@ void LevelParticlesPacket::read(DataInputStream *dis)
 	count = dis->readInt();
 }
 
-void LevelParticlesPacket::write(DataOutputStream *dos)
+void LevelParticlesPacket::write(DataOutputStream* dos)
 {
 	writeUtf(name, dos);
 	dos->writeFloat(x);
@@ -99,7 +99,7 @@ int LevelParticlesPacket::getCount()
 	return count;
 }
 
-void LevelParticlesPacket::handle(PacketListener *listener)
+void LevelParticlesPacket::handle(PacketListener* listener)
 {
 	listener->handleParticleEvent(shared_from_this());
 }

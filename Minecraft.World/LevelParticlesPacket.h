@@ -17,10 +17,10 @@ private:
 
 public:
 	LevelParticlesPacket();
-	LevelParticlesPacket(const wstring &name, float x, float y, float z, float xDist, float yDist, float zDist, float maxSpeed, int count);
+	LevelParticlesPacket(const wstring& name, float x, float y, float z, float xDist, float yDist, float zDist, float maxSpeed, int count);
 
-	void read(DataInputStream *dis);
-	void write(DataOutputStream *dos);
+	void read(DataInputStream* dis);
+	void write(DataOutputStream* dos);
 	wstring getName();
 	double getX();
 	double getY();
@@ -30,7 +30,7 @@ public:
 	float getZDist();
 	float getMaxSpeed();
 	int getCount();
-	void handle(PacketListener *listener);
+	void handle(PacketListener* listener);
 	int getEstimatedSize();
 
 public:

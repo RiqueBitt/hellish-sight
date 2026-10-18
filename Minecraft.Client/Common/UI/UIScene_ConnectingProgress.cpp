@@ -1,7 +1,16 @@
 #include "stdafx.h"
 #include "UI.h"
 #include "UIScene_ConnectingProgress.h"
-#include "..\..\Minecraft.h"
+#include "../../Minecraft.h"
+#ifdef _WINDOWS64
+#include "../../Windows64/Network/WinsockNetLayer.h"
+
+static int ConnectingProgress_OnRejectedDialogOK(LPVOID, int iPad, const C4JStorage::EMessageResult)
+{
+	ui.NavigateBack(iPad);
+	return 0;
+}
+#endif
 
 UIScene_ConnectingProgress::UIScene_ConnectingProgress(int iPad, void *_initData, UILayer *parentLayer) : UIScene(iPad, parentLayer)
 {
@@ -43,6 +52,12 @@ UIScene_ConnectingProgress::UIScene_ConnectingProgress(int iPad, void *_initData
 	m_cancelFuncParam = param->cancelFuncParam;
 	m_removeLocalPlayer = false;
 	m_showingButton = false;
+#ifdef _WINDOWS64
+	WinsockNetLayer::eJoinState initState = WinsockNetLayer::GetJoinState();
+	m_asyncJoinActive = (initState == WinsockNetLayer::eJoinState_Connecting ||
+						 initState == WinsockNetLayer::eJoinState_Success);
+	m_asyncJoinFailed = false;
+#endif
 }
 
 UIScene_ConnectingProgress::~UIScene_ConnectingProgress()
@@ -53,6 +68,18 @@ UIScene_ConnectingProgress::~UIScene_ConnectingProgress()
 
 void UIScene_ConnectingProgress::updateTooltips()
 {
+#ifdef _WINDOWS64
+	if (m_asyncJoinActive)
+	{
+		ui.SetTooltips(m_iPad, -1, IDS_TOOLTIPS_BACK);
+		return;
+	}
+	if (m_asyncJoinFailed)
+	{
+		ui.SetTooltips(m_iPad, IDS_TOOLTIPS_SELECT, -1);
+		return;
+	}
+#endif
 	// 4J-PB - removing the option of cancel join, since it didn't work anyway
 	//ui.SetTooltips( m_iPad, -1, m_showTooltips?IDS_TOOLTIPS_CANCEL_JOIN:-1);
 	ui.SetTooltips( m_iPad, -1, -1);
@@ -61,6 +88,61 @@ void UIScene_ConnectingProgress::updateTooltips()
 void UIScene_ConnectingProgress::tick()
 {
 	UIScene::tick();
+
+#ifdef _WINDOWS64
+	if (m_asyncJoinActive)
+	{
+		WinsockNetLayer::eJoinState state = WinsockNetLayer::GetJoinState();
+		switch (state)
+		{
+		case WinsockNetLayer::eJoinState_Connecting:
+		{
+			int attempt = WinsockNetLayer::GetJoinAttempt();
+			int maxAttempts = WinsockNetLayer::GetJoinMaxAttempts();
+			wchar_t buf[128];
+			if (attempt > 1)
+				swprintf_s(buf, L"Connecting... (attempt %d/%d)", attempt, maxAttempts);
+			else
+				swprintf_s(buf, L"Connecting...");
+			m_labelTitle.setLabel(buf);
+			break;
+		}
+		case WinsockNetLayer::eJoinState_Success:
+			m_asyncJoinActive = false;
+			m_labelTitle.setLabel(L"Joining world...");
+			break;
+		case WinsockNetLayer::eJoinState_Cancelled:
+			m_asyncJoinActive = false;
+			navigateBack();
+			break;
+		case WinsockNetLayer::eJoinState_Rejected:
+		{
+			m_asyncJoinActive = false;
+			DisconnectPacket::eDisconnectReason reason = WinsockNetLayer::GetJoinRejectReason();
+			int reasonStringId = IDS_CONNECTION_LOST_SERVER;
+			if (reason == DisconnectPacket::eDisconnect_ServerFull)
+				reasonStringId = IDS_DISCONNECTED_SERVER_FULL;
+			else if (reason == DisconnectPacket::eDisconnect_Kicked)
+				reasonStringId = IDS_DISCONNECTED_KICKED;
+
+			UINT uiIDA[1];
+			uiIDA[0] = IDS_CONFIRM_OK;
+			ui.RequestErrorMessage(IDS_CONNECTION_FAILED, reasonStringId, uiIDA, 1, m_iPad, ConnectingProgress_OnRejectedDialogOK, nullptr);
+			break;
+		}
+		case WinsockNetLayer::eJoinState_Failed:
+			m_asyncJoinActive = false;
+			m_asyncJoinFailed = true;
+			m_labelTitle.setLabel(app.GetString(IDS_CONNECTION_FAILED));
+			m_buttonConfirm.setVisible(true);
+			m_showingButton = true;
+			updateTooltips();
+			break;
+		default:
+			break;
+		}
+	}
+#endif
 
 	if( m_removeLocalPlayer )
 	{
@@ -94,6 +176,7 @@ void UIScene_ConnectingProgress::handleGainFocus(bool navBack)
 
 void UIScene_ConnectingProgress::handleLoseFocus()
 {
+	if (!m_runFailTimer) return;
 	int millisecsLeft = getTimer(0)->targetTime - System::currentTimeMillis();
 	int millisecsTaken = getTimer(0)->duration - millisecsLeft;
 	app.DebugPrintf("\n");
@@ -207,6 +290,18 @@ void UIScene_ConnectingProgress::handleInput(int iPad, int key, bool repeat, boo
 
 		switch(key)
 		{
+#ifdef _WINDOWS64
+		case ACTION_MENU_CANCEL:
+			if (pressed && m_asyncJoinActive)
+			{
+				m_asyncJoinActive = false;
+				WinsockNetLayer::CancelJoinGame();
+				navigateBack();
+				handled = true;
+				return;
+			}
+			break;
+#endif
 // 4J-PB - Removed the option to cancel join - it didn't work anyway
 // 		case ACTION_MENU_CANCEL:
 // 			{
@@ -250,6 +345,13 @@ void UIScene_ConnectingProgress::handlePress(F64 controlId, F64 childId)
 	case eControl_Confirm:
 		if(m_showingButton)
 		{
+#ifdef _WINDOWS64
+			if (m_asyncJoinFailed)
+			{
+				navigateBack();
+				break;
+			}
+#endif
 			if( m_iPad != ProfileManager.GetPrimaryPad() && g_NetworkManager.IsInSession() )
 			{
 				// The connection failed if we see the button, so the temp player should be removed and the viewports updated again

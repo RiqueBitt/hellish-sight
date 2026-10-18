@@ -7,7 +7,7 @@ class SharedConstants
 	public:
 		static void staticCtor();
 		static const wstring VERSION_STRING;
-		static const int NETWORK_PROTOCOL_VERSION = 78;
+		static const int NETWORK_PROTOCOL_VERSION = 79;
 		static const bool INGAME_DEBUG_OUTPUT = false;
 		
 		// NOT texture resolution. How many sub-blocks each block face is made up of.
@@ -20,7 +20,8 @@ class SharedConstants
 		static wstring readAcceptableChars();
 
 	public:
-		static const int maxChatLength = 100;
+		static const int maxChatLength = 255;
+		static const int maxVisibleLength = 100; //to be changed
 		static wstring acceptableLetters;
 
 		static const int ILLEGAL_FILE_CHARACTERS_LENGTH = 15;

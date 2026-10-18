@@ -1,7 +1,7 @@
 #include "stdafx.h"
-#include "..\Minecraft.World\net.minecraft.world.h"
-#include "..\Minecraft.World\net.minecraft.world.level.tile.h"
-#include "..\Minecraft.World\net.minecraft.world.item.h"
+#include "../Minecraft.World/net.minecraft.world.h"
+#include "../Minecraft.World/net.minecraft.world.level.tile.h"
+#include "../Minecraft.World/net.minecraft.world.item.h"
 #include "Minecraft.h"
 #include "LevelRenderer.h"
 #include "EntityRenderDispatcher.h"
@@ -214,7 +214,7 @@ Icon *TextureMap::registerIcon(const wstring &name)
 	{
 		app.DebugPrintf("Don't register nullptr\n");
 #ifndef _CONTENT_PACKAGE
-		__debugbreak();
+		DEBUG_BREAK();
 #endif
 		//new RuntimeException("Don't register null!").printStackTrace();
 	}

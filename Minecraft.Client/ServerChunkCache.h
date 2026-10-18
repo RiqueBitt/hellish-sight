@@ -1,10 +1,10 @@
 #pragma once
-#include "..\Minecraft.World\net.minecraft.world.level.h"
-#include "..\Minecraft.World\File.h"
-#include "..\Minecraft.World\net.minecraft.world.level.storage.h"
-#include "..\Minecraft.World\JavaIntHash.h"
-#include "..\Minecraft.World\RandomLevelSource.h"
-#include "..\Minecraft.World\C4JThread.h"
+#include "../Minecraft.World/net.minecraft.world.level.h"
+#include "../Minecraft.World/File.h"
+#include "../Minecraft.World/net.minecraft.world.level.storage.h"
+#include "../Minecraft.World/JavaIntHash.h"
+#include "../Minecraft.World/RandomLevelSource.h"
+#include "../Minecraft.World/C4JThread.h"
 using namespace std;
 class ServerLevel;
 
@@ -62,6 +62,10 @@ public:
 
 #endif
 	virtual ChunkTable *getChunkTable() { return &m_table; }	// Hellish Sight
+	virtual LevelChunk **getCache() { return cache; }		// 4J added
+#ifdef MINECRAFT_SERVER_BUILD
+	void regenerateChunk(int x, int z);
+#endif
 
 	// 4J-JEV Added; Remove chunk from the toDrop queue.
 #ifdef _LARGE_WORLDS	

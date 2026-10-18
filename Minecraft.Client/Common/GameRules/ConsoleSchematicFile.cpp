@@ -1,16 +1,16 @@
 #include "stdafx.h"
 #include <vector>
-#include "..\..\..\Minecraft.World\com.mojang.nbt.h"
-#include "..\..\..\Minecraft.World\System.h"
+#include "../../../Minecraft.World/com.mojang.nbt.h"
+#include "../../../Minecraft.World/System.h"
 #include "ConsoleSchematicFile.h"
-#include "..\..\..\Minecraft.World\InputOutputStream.h"
-#include "..\..\..\Minecraft.World\net.minecraft.world.level.h"
-#include "..\..\..\Minecraft.World\net.minecraft.world.level.chunk.h"
-#include "..\..\..\Minecraft.World\net.minecraft.world.level.tile.entity.h"
-#include "..\..\..\Minecraft.World\net.minecraft.world.entity.h"
-#include "..\..\..\Minecraft.World\net.minecraft.world.entity.item.h"
-#include "..\..\..\Minecraft.World\net.minecraft.world.phys.h"
-#include "..\..\..\Minecraft.World\compression.h"
+#include "../../../Minecraft.World/InputOutputStream.h"
+#include "../../../Minecraft.World/net.minecraft.world.level.h"
+#include "../../../Minecraft.World/net.minecraft.world.level.chunk.h"
+#include "../../../Minecraft.World/net.minecraft.world.level.tile.entity.h"
+#include "../../../Minecraft.World/net.minecraft.world.entity.h"
+#include "../../../Minecraft.World/net.minecraft.world.entity.item.h"
+#include "../../../Minecraft.World/net.minecraft.world.phys.h"
+#include "../../../Minecraft.World/compression.h"
 
 ConsoleSchematicFile::ConsoleSchematicFile()
 {
@@ -122,7 +122,7 @@ void ConsoleSchematicFile::load(DataInputStream *dis)
 				{
 #ifndef _CONTENT_PACKAGE
 					app.DebugPrintf("ConsoleSchematicFile has read a nullptr tile entity\n");
-					__debugbreak();
+					DEBUG_BREAK();
 #endif
 				}
 				else
@@ -635,7 +635,7 @@ void ConsoleSchematicFile::generateSchematicFile(DataOutputStream *dos, Level *l
 	}
 
 #ifndef _CONTENT_PACKAGE
-	if(p!=blockCount) __debugbreak();
+	if(p!=blockCount) DEBUG_BREAK();
 #endif
 
 	// We don't know how this will compress - just make a fixed length buffer to initially decompress into

@@ -111,6 +111,9 @@ bool DamageSource::isBypassInvul()
 	return _bypassInvul;
 }
 
+bool DamageSource::isBypassMagic() {
+    return _bypassInvul;            
+}
 
 //DamageSource::DamageSource(const wstring &msgId)
 DamageSource::DamageSource(ChatPacket::EChatPacketMessage msgId, ChatPacket::EChatPacketMessage msgWithItemId)
@@ -124,6 +127,7 @@ DamageSource::DamageSource(ChatPacket::EChatPacketMessage msgId, ChatPacket::ECh
 	_isProjectile = false;
 	_isMagic = false;
 	_isExplosion = false;
+	_isCritical = false;
 
 	//this->msgId = msgId;
 	m_msgId = msgId;
@@ -153,7 +157,15 @@ DamageSource *DamageSource::bypassInvul()
 	_bypassInvul = true;
 	return this;
 }
-
+bool DamageSource::isCritical()
+{
+	return _isCritical;
+}
+DamageSource *DamageSource::setIsCritical()
+{
+	_isCritical = true;
+	return this;
+}
 DamageSource *DamageSource::setIsFire()
 {
 	isFireSource = true;
@@ -205,6 +217,33 @@ bool DamageSource::isFire()
 {
 	return isFireSource;
 }
+bool DamageSource::isFireProjectile() {
+    return _isProjectile;           
+}
+DamageSource* DamageSource::setIsFireProjectile() {
+    _isProjectile = true;           
+    return this;
+}
+bool DamageSource::isCreativePlayer() const
+{
+    
+    shared_ptr<Entity> entity = const_cast<DamageSource*>(this)->getEntity();
+    
+    if (entity != nullptr)
+    {
+        
+        shared_ptr<Player> player = dynamic_pointer_cast<Player>(entity);
+        
+        if (player != nullptr)
+        {
+            
+            return player->abilities.instabuild; 
+        }
+    }
+    
+    return false;
+}
+
 
 ChatPacket::EChatPacketMessage DamageSource::getMsgId()
 {

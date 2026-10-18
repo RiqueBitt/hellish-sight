@@ -3,7 +3,7 @@
 #include "net.minecraft.world.level.levelgen.h"
 #include "net.minecraft.world.level.h"
 #include "net.minecraft.world.level.storage.h"
-#include "dimension.h"
+#include "Dimension.h"
 #include "BiomeSource.h"
 #include "FixedBiomeSource.h"
 #include "OldChunkStorage.h"
@@ -11,8 +11,8 @@
 #include "NormalDimension.h"
 #include "TheEndDimension.h"
 #include "net.minecraft.world.level.tile.h"
-#include "..\Minecraft.Client\Minecraft.h"
-#include "..\Minecraft.Client\Common\Colours\ColourTable.h"
+#include "../Minecraft.Client/Minecraft.h"
+#include "../Minecraft.Client/Common/Colours/ColourTable.h"
 
 const float Dimension::MOON_BRIGHTNESS_PER_PHASE[8] = {1.0f, 0.75f, 0.5f, 0.25f, 0, 0.25f, 0.5f, 0.75f};
 
@@ -170,7 +170,12 @@ Vec3 *Dimension::getFogColor(float td, float a) const
 	if (br < 0.0f) br = 0.0f;
 	if (br > 1.0f) br = 1.0f;
 
-	unsigned int baseFogColour = Minecraft::GetInstance()->getColourTable()->getColor( eMinecraftColour_Default_Fog_Colour );
+	unsigned int baseFogColour = 0x808080; // Gray default
+	Minecraft* pMc = Minecraft::GetInstance();
+	if (pMc && pMc->getColourTable())
+	{
+		baseFogColour = pMc->getColourTable()->getColor(eMinecraftColour_Default_Fog_Colour);
+	}
 	float r = ((baseFogColour >> 16) & 0xff) / 255.0f;
 	float g = ((baseFogColour >> 8) & 0xff) / 255.0f;
 	float b = ((baseFogColour) & 0xff) / 255.0f;

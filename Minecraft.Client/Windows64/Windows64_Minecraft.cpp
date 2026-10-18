@@ -3,59 +3,69 @@
 
 #include "stdafx.h"
 
+#include <dxgi1_4.h>  // IDXGISwapChain3 for SetColorSpace1
+
 #include <assert.h>
 #include <iostream>
 #include <ShellScalingApi.h>
 #include <shellapi.h>
-#include "GameConfig\Minecraft.spa.h"
-#include "..\MinecraftServer.h"
-#include "..\LocalPlayer.h"
-#include "..\..\Minecraft.World\ItemInstance.h"
-#include "..\..\Minecraft.World\MapItem.h"
-#include "..\..\Minecraft.World\Recipes.h"
-#include "..\..\Minecraft.World\Recipy.h"
-#include "..\..\Minecraft.World\Language.h"
-#include "..\..\Minecraft.World\StringHelpers.h"
-#include "..\..\Minecraft.World\AABB.h"
-#include "..\..\Minecraft.World\Vec3.h"
-#include "..\..\Minecraft.World\Level.h"
-#include "..\..\Minecraft.World\net.minecraft.world.level.tile.h"
+#include "GameConfig/Minecraft.spa.h"
+#include "../MinecraftServer.h"
+#include "../LocalPlayer.h"
+#include "../../Minecraft.World/ItemInstance.h"
+#include "../../Minecraft.World/MapItem.h"
+#include "../../Minecraft.World/Recipes.h"
+#include "../../Minecraft.World/Recipy.h"
+#include "../../Minecraft.World/Language.h"
+#include "../../Minecraft.World/StringHelpers.h"
+#include "../../Minecraft.World/AABB.h"
+#include "../../Minecraft.World/Vec3.h"
+#include "../../Minecraft.World/Level.h"
+#include "../../Minecraft.World/net.minecraft.world.level.tile.h"
 
-#include "..\ClientConnection.h"
-#include "..\Minecraft.h"
-#include "..\ChatScreen.h"
+#include "../ClientConnection.h"
+#include "../Minecraft.h"
+#include "../ChatScreen.h"
 #include "KeyboardMouseInput.h"
-#include "..\User.h"
-#include "..\..\Minecraft.World\Socket.h"
-#include "..\..\Minecraft.World\ThreadName.h"
-#include "..\..\Minecraft.Client\StatsCounter.h"
-#include "..\ConnectScreen.h"
-//#include "Social\SocialManager.h"
-//#include "Leaderboards\LeaderboardManager.h"
-//#include "XUI\XUI_Scene_Container.h"
+#include "../User.h"
+#include "../../Minecraft.World/Socket.h"
+#include "../../Minecraft.World/ThreadName.h"
+#include "../../Minecraft.Client/StatsCounter.h"
+#include "../ConnectScreen.h"
+//#include "Social/SocialManager.h"
+//#include "Leaderboards/LeaderboardManager.h"
+//#include "XUI/XUI_Scene_Container.h"
 //#include "NetworkManager.h"
-#include "..\..\Minecraft.Client\Tesselator.h"
-#include "..\..\Minecraft.Client\Options.h"
-#include "..\Gui.h"
-#include "Sentient\SentientManager.h"
-#include "..\..\Minecraft.World\IntCache.h"
-#include "..\Textures.h"
-#include "..\Settings.h"
+#include "../../Minecraft.Client/Tesselator.h"
+#include "../../Minecraft.Client/Options.h"
+#include "../Gui.h"
+#include "Sentient/SentientManager.h"
+#include "../../Minecraft.World/IntCache.h"
+#include "../Textures.h"
+#include "../Settings.h"
 #include "Resource.h"
-#include "..\..\Minecraft.World\compression.h"
-#include "..\..\Minecraft.World\OldChunkStorage.h"
+#include "../../Minecraft.World/compression.h"
+#include "../../Minecraft.World/OldChunkStorage.h"
 #include "Common/PostProcesser.h"
-#include "..\GameRenderer.h"
-#include "Network\WinsockNetLayer.h"
+#include "../GameRenderer.h"
+#include "Network/WinsockNetLayer.h"
 #include "Windows64_Xuid.h"
 #include "Common/UI/UI.h"
+#include "stb_image_write.h"
 
 // Forward-declare the internal Renderer class and its global instance from 4J_Render_PC_d.lib.
 // C4JRender (RenderManager) is a stateless wrapper — all D3D state lives in InternalRenderManager.
 class Renderer;
 extern Renderer InternalRenderManager;
 
-#include "Xbox/resource.h"
+#include "Xbox/Resource.h"
+
+// request use of dedicated GPU from AMD and Nvidia drivers
+extern "C"
+{
+	__declspec(dllexport) int AmdPowerXpressRequestHighPerformance = 1;
+	__declspec(dllexport) unsigned long NvOptimusEnablement = 0x00000001;
+}
 
 #ifdef _MSC_VER
 #pragma comment(lib, "legacy_stdio_definitions.lib")
@@ -139,47 +149,57 @@ static void CopyWideArgToAnsi(LPCWSTR source, char* dest, size_t destSize)
 	dest[destSize - 1] = 0;
 }
 
-// ---------- Persistent options (options.txt next to exe) ----------
-static void GetOptionsFilePath(char *out, size_t outSize)
+// ---------- Persistent options (options.dat next to exe) ----------
+static void GetOptionsFilePath(char *out, DWORD outSize)
 {
-	GetModuleFileNameA(nullptr, out, static_cast<DWORD>(outSize));
-	char *p = strrchr(out, '\\');
-	if (p) *(p + 1) = '\0';
-	strncat_s(out, outSize, "options.txt", _TRUNCATE);
+    GetModuleFileNameA(nullptr, out, outSize);
+    char *p = strrchr(out, '\\');
+    if (p) *(p + 1) = '\0';
+    strncat_s(out, outSize, "settings.dat", _TRUNCATE);
 }
 
 static void SaveFullscreenOption(bool fullscreen)
 {
-	char path[MAX_PATH];
-	GetOptionsFilePath(path, sizeof(path));
-	FILE *f = nullptr;
-	if (fopen_s(&f, path, "w") == 0 && f)
-	{
-		fprintf(f, "fullscreen=%d\n", fullscreen ? 1 : 0);
-		fclose(f);
-	}
+    GAME_SETTINGS settings = {};
+    
+    char path[MAX_PATH] = {};
+    GetOptionsFilePath(path, MAX_PATH);
+    FILE *f = nullptr;
+    if (fopen_s(&f, path, "rb") == 0 && f)
+    {
+        fread(&settings, sizeof(GAME_SETTINGS), 1, f);
+        fclose(f);
+    }
+
+    if (fullscreen)
+        settings.uiBitmaskValues |= (1UL << 25);
+    else
+        settings.uiBitmaskValues &= ~(1UL << 25);
+
+	if (fopen_s(&f, path, "wb") == 0 && f)
+    {
+        fwrite(&settings, sizeof(GAME_SETTINGS), 1, f);
+        fclose(f);
+    }
 }
 
 static bool LoadFullscreenOption()
 {
-	char path[MAX_PATH];
+    char path[MAX_PATH] = {};
 	GetOptionsFilePath(path, sizeof(path));
-	FILE *f = nullptr;
-	if (fopen_s(&f, path, "r") == 0 && f)
-	{
-		char line[256];
-		while (fgets(line, sizeof(line), f))
-		{
-			int val = 0;
-			if (sscanf_s(line, "fullscreen=%d", &val) == 1)
-			{
-				fclose(f);
-				return val != 0;
-			}
-		}
-		fclose(f);
-	}
-	return false;
+    
+    FILE *f = nullptr;
+    if (fopen_s(&f, path, "rb") != 0 || !f)
+        return false;
+    
+    GAME_SETTINGS current = {};
+    bool ok = (fread(&current, sizeof(GAME_SETTINGS), 1, f) == 1);
+    fclose(f);
+    
+    if (!ok)
+        return false;
+
+    return (current.uiBitmaskValues & (1UL << 25)) != 0;
 }
 // ------------------------------------------------------------------
 
@@ -209,6 +229,7 @@ static Win64LaunchOptions ParseLaunchOptions()
 	Win64LaunchOptions options = {};
 	options.screenMode = 0;
 
+	g_Win64MultiplayerQuitOnDisconnect = false;
 	g_Win64MultiplayerJoin = false;
 	g_Win64MultiplayerPort = WIN64_NET_DEFAULT_PORT;
 
@@ -228,6 +249,10 @@ static Win64LaunchOptions ParseLaunchOptions()
 		if (_wcsicmp(argv[i], L"-name") == 0 && (i + 1) < argc)
 		{
 			CopyWideArgToAnsi(argv[++i], g_Win64Username, sizeof(g_Win64Username));
+		}
+		else if (_wcsicmp(argv[i], L"-quitondisconnect") == 0)
+		{
+			g_Win64MultiplayerQuitOnDisconnect = true;
 		}
 		else if (_wcsicmp(argv[i], L"-ip") == 0 && (i + 1) < argc)
 		{
@@ -469,9 +494,90 @@ D3D_FEATURE_LEVEL       g_featureLevel = D3D_FEATURE_LEVEL_11_0;
 ID3D11Device*           g_pd3dDevice = nullptr;
 ID3D11DeviceContext*    g_pImmediateContext = nullptr;
 IDXGISwapChain*         g_pSwapChain = nullptr;
+bool                    g_bVSync = false;
+static bool             g_bPendingExclusiveFullscreen = false;
+static bool             g_bPendingExclusiveFullscreenValue = false;
+
+// Captures the D3D11 back buffer and saves it as a PNG screenshot.
+// Returns true on success and sets outFilename to the saved filename.
+static bool TakeScreenshot(wstring& outFilename)
+{
+	if (!g_pSwapChain || !g_pd3dDevice || !g_pImmediateContext)
+		return false;
+
+	ID3D11Texture2D* pBackBuffer = nullptr;
+	HRESULT hr = g_pSwapChain->GetBuffer(0, __uuidof(ID3D11Texture2D), (void**)&pBackBuffer);
+	if (FAILED(hr))
+		return false;
+
+	D3D11_TEXTURE2D_DESC desc;
+	pBackBuffer->GetDesc(&desc);
+	desc.Usage = D3D11_USAGE_STAGING;
+	desc.BindFlags = 0;
+	desc.CPUAccessFlags = D3D11_CPU_ACCESS_READ;
+	desc.MiscFlags = 0;
+
+	bool success = false;
+	ID3D11Texture2D* pStaging = nullptr;
+	hr = g_pd3dDevice->CreateTexture2D(&desc, nullptr, &pStaging);
+	if (SUCCEEDED(hr))
+	{
+		g_pImmediateContext->CopyResource(pStaging, pBackBuffer);
+
+		wchar_t exePath[MAX_PATH];
+		GetModuleFileNameW(NULL, exePath, MAX_PATH);
+		wchar_t* lastSlash = wcsrchr(exePath, L'\\');
+		if (lastSlash) *(lastSlash + 1) = L'\0';
+		wstring screenshotDirPath = wstring(exePath) + L"screenshots";
+		CreateDirectoryW(screenshotDirPath.c_str(), NULL);
+
+		SYSTEMTIME st;
+		GetLocalTime(&st);
+		wchar_t filename[128];
+		swprintf_s(filename, L"%04d-%02d-%02d_%02d.%02d.%02d.png",
+			st.wYear, st.wMonth, st.wDay, st.wHour, st.wMinute, st.wSecond);
+		wstring screenshotPath = screenshotDirPath + L"\\" + filename;
+
+		D3D11_MAPPED_SUBRESOURCE mapped;
+		hr = g_pImmediateContext->Map(pStaging, 0, D3D11_MAP_READ, 0, &mapped);
+		if (SUCCEEDED(hr))
+		{
+			unsigned char* rgba = new unsigned char[desc.Width * desc.Height * 4];
+			for (UINT row = 0; row < desc.Height; row++)
+			{
+				unsigned char* src = (unsigned char*)mapped.pData + row * mapped.RowPitch;
+				unsigned char* dst = rgba + row * desc.Width * 4;
+				memcpy(dst, src, desc.Width * 4);
+				for (UINT x = 0; x < desc.Width; x++)
+					dst[x * 4 + 3] = 0xFF;
+			}
+			g_pImmediateContext->Unmap(pStaging, 0);
+
+			string narrowPath(screenshotPath.begin(), screenshotPath.end());
+			int writeResult = stbi_write_png(narrowPath.c_str(), desc.Width, desc.Height, 4, rgba, desc.Width * 4);
+			delete[] rgba;
+
+			if (writeResult)
+			{
+				outFilename = filename;
+				success = true;
+			}
+		}
+		pStaging->Release();
+	}
+	pBackBuffer->Release();
+	return success;
+}
+
 ID3D11RenderTargetView* g_pRenderTargetView = nullptr;
 ID3D11DepthStencilView* g_pDepthStencilView = nullptr;
 ID3D11Texture2D*		g_pDepthStencilBuffer = nullptr;
+static const float kClearColorWhite[4] = { 1.0f, 1.0f, 1.0f, 1.0f };
+static const float kClearColorBlack[4] = { 0.0f, 0.0f, 0.0f, 1.0f };
+
+// True when the swap chain is in DXGI exclusive fullscreen. Lets ResizeD3D
+// skip its destroy-and-recreate path, which would break exclusive ownership.
+static bool g_bDxgiExclusiveFullscreen = false;
 
 //
 //  FUNCTION: WndProc(HWND, UINT, WPARAM, LPARAM)
@@ -508,7 +614,7 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 			break;
 
 		default:
-			return DefWindowProc(hWnd, message, wParam, lParam);
+			return DefWindowProcW(hWnd, message, wParam, lParam);
 		}
 		break;
 	case WM_PAINT:
@@ -565,7 +671,7 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 		else if (vk == VK_MENU)
 			vk = (lParam & (1 << 24)) ? VK_RMENU : VK_LMENU;
 		g_KBMInput.OnKeyDown(vk);
-		return DefWindowProc(hWnd, message, wParam, lParam);
+		return DefWindowProcW(hWnd, message, wParam, lParam);
 	}
 	case WM_KEYUP:
 	case WM_SYSKEYUP:
@@ -663,7 +769,7 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 		}
 		break;
 	default:
-		return DefWindowProc(hWnd, message, wParam, lParam);
+		return DefWindowProcW(hWnd, message, wParam, lParam);
 	}
 	return 0;
 }
@@ -675,23 +781,23 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 //
 ATOM MyRegisterClass(HINSTANCE hInstance)
 {
-	WNDCLASSEX wcex;
+	WNDCLASSEXW wcex;
 
-	wcex.cbSize = sizeof(WNDCLASSEX);
+	wcex.cbSize = sizeof(WNDCLASSEXW);
 
 	wcex.style			= CS_HREDRAW | CS_VREDRAW;
 	wcex.lpfnWndProc	= WndProc;
 	wcex.cbClsExtra		= 0;
 	wcex.cbWndExtra		= 0;
 	wcex.hInstance		= hInstance;
-	wcex.hIcon			= LoadIcon(hInstance, "Minecraft");
+	wcex.hIcon			= LoadIconW(hInstance, L"Minecraft");
 	wcex.hCursor		= LoadCursor(nullptr, IDC_ARROW);
 	wcex.hbrBackground	= (HBRUSH)(COLOR_WINDOW+1);
-	wcex.lpszMenuName	= "Minecraft";
-	wcex.lpszClassName	= "MinecraftClass";
+	wcex.lpszMenuName	= L"Minecraft";
+	wcex.lpszClassName	= L"MinecraftClass";
 	wcex.hIconSm		= LoadIcon(wcex.hInstance, MAKEINTRESOURCE(IDI_MINECRAFTWINDOWS));
 
-	return RegisterClassEx(&wcex);
+	return RegisterClassExW(&wcex);
 }
 
 //
@@ -711,8 +817,8 @@ BOOL InitInstance(HINSTANCE hInstance, int nCmdShow)
 	RECT wr = {0, 0, g_rScreenWidth, g_rScreenHeight};    // set the size, but not the position
 	AdjustWindowRect(&wr, WS_OVERLAPPEDWINDOW, FALSE);    // adjust the size
 
-	g_hWnd = CreateWindow(	"MinecraftClass",
-		"Minecraft",
+	g_hWnd = CreateWindowW(	L"MinecraftClass",
+		L"Minecraft: neoLegacy",
 		WS_OVERLAPPEDWINDOW,
 		CW_USEDEFAULT,
 		0,
@@ -728,8 +834,7 @@ BOOL InitInstance(HINSTANCE hInstance, int nCmdShow)
 		return FALSE;
 	}
 
-	ShowWindow(g_hWnd, (nCmdShow != SW_HIDE) ? SW_SHOWMAXIMIZED : nCmdShow);
-	UpdateWindow(g_hWnd);
+
 
 	return TRUE;
 }
@@ -819,14 +924,25 @@ HRESULT InitDevice()
 	};
 	UINT numFeatureLevels = ARRAYSIZE( featureLevels );
 
+	// Use the legacy bitblt DISCARD swap model (SwapEffect left as default 0).
+	// DXGI_SWAP_EFFECT_FLIP_DISCARD gives lower latency and tearing support, but
+	// takes exclusive ownership of the HWND — which makes window resize via
+	// CreateSwapChain fail with E_ACCESSDENIED and ResizeBuffers fail with
+	// DXGI_ERROR_INVALID_CALL (the closed-source 4J Renderer holds hidden
+	// backbuffer refs we can't release).  Bitblt DISCARD has no HWND lock, so
+	// the "destroy old, create new" resize path in ResizeD3D() works cleanly.
+	// VSync toggle still works via the SyncInterval parameter on Present().
+	// RefreshRate=0/0 so DXGI matches the current display mode. Hardcoding a
+	// rate would force a mode switch on SetFullscreenState, which can produce
+	// "input signal out of range" errors on high-refresh monitors.
 	DXGI_SWAP_CHAIN_DESC sd;
 	ZeroMemory( &sd, sizeof( sd ) );
 	sd.BufferCount = 1;
 	sd.BufferDesc.Width = width;
 	sd.BufferDesc.Height = height;
 	sd.BufferDesc.Format = DXGI_FORMAT_R8G8B8A8_UNORM;
-	sd.BufferDesc.RefreshRate.Numerator = 60;
-	sd.BufferDesc.RefreshRate.Denominator = 1;
+	sd.BufferDesc.RefreshRate.Numerator = 0;
+	sd.BufferDesc.RefreshRate.Denominator = 0;
 	sd.BufferUsage = DXGI_USAGE_RENDER_TARGET_OUTPUT | DXGI_USAGE_SHADER_INPUT;
 	sd.OutputWindow = g_hWnd;
 	sd.SampleDesc.Count = 1;
@@ -908,7 +1024,7 @@ void Render()
 	const float ClearColor[4] = { 0.0f, 0.125f, 0.3f, 1.0f }; //red,green,blue,alpha
 
 	g_pImmediateContext->ClearRenderTargetView( g_pRenderTargetView, ClearColor );
-	g_pSwapChain->Present( 0, 0 );
+	g_pSwapChain->Present(0, 0);
 }
 
 //--------------------------------------------------------------------------------------
@@ -919,6 +1035,9 @@ static bool ResizeD3D(int newW, int newH)
 	if (newW <= 0 || newH <= 0) return false;
 	if (!g_pSwapChain) return false;
 	if (!g_bResizeReady) return false;
+	// In exclusive fullscreen the swap chain must not be recreated.
+	if (g_bDxgiExclusiveFullscreen)
+		return false;
 
 	int bbW = newW;
 	int bbH = newH;
@@ -983,14 +1102,15 @@ static bool ResizeD3D(int newW, int newH)
 
 	gdraw_D3D11_PreReset();
 
-	// Get IDXGIFactory from the existing device BEFORE destroying the old swap chain.
-	// If anything fails before we have a new swap chain, we abort without destroying
-	// the old one — leaving the Renderer in a valid (old-size) state.
+	// Get IDXGIFactory from the existing device BEFORE destroying the old swap
+	// chain.  If anything fails before we have a new swap chain, we abort
+	// without destroying the old one — leaving the Renderer in a valid
+	// (old-size) state.
 	IDXGISwapChain* pOldSwapChain = g_pSwapChain;
 	bool success = false;
 	HRESULT hr;
 
-	IDXGIDevice* dxgiDevice = NULL;
+	IDXGIDevice*  dxgiDevice  = NULL;
 	IDXGIAdapter* dxgiAdapter = NULL;
 	IDXGIFactory* dxgiFactory = NULL;
 	hr = g_pd3dDevice->QueryInterface(__uuidof(IDXGIDevice), (void**)&dxgiDevice);
@@ -1002,15 +1122,21 @@ static bool ResizeD3D(int newW, int newH)
 	dxgiDevice->Release();
 	if (FAILED(hr)) goto postReset;
 
-	// Create new swap chain at backbuffer size
+	// Create a brand-new swap chain at the target size and swap it in.
+	// Must use the SAME swap-chain config as InitDevice (legacy bitblt
+	// DISCARD model), otherwise DXGI may return E_ACCESSDENIED.  The
+	// Renderer's old RTV/SRV/DSV are intentionally NOT released here — they
+	// become orphaned with the old swap chain (tiny leak, but avoids
+	// fighting unknown refs inside the closed-source Renderer library).
 	{
 		DXGI_SWAP_CHAIN_DESC sd = {};
 		sd.BufferCount = 1;
 		sd.BufferDesc.Width = bbW;
 		sd.BufferDesc.Height = bbH;
 		sd.BufferDesc.Format = DXGI_FORMAT_R8G8B8A8_UNORM;
-		sd.BufferDesc.RefreshRate.Numerator = 60;
-		sd.BufferDesc.RefreshRate.Denominator = 1;
+		// RefreshRate=0/0 matches InitDevice; see comment there.
+		sd.BufferDesc.RefreshRate.Numerator = 0;
+		sd.BufferDesc.RefreshRate.Denominator = 0;
 		sd.BufferUsage = DXGI_USAGE_RENDER_TARGET_OUTPUT | DXGI_USAGE_SHADER_INPUT;
 		sd.OutputWindow = g_hWnd;
 		sd.SampleDesc.Count = 1;
@@ -1027,14 +1153,11 @@ static bool ResizeD3D(int newW, int newH)
 		}
 
 		// New swap chain created successfully — NOW destroy the old one.
-		// The Renderer's internal RTV/SRV still reference the old backbuffer —
-		// those COM objects become orphaned (tiny leak, harmless). We DON'T
-		// release them because unknown code may also hold refs.
 		pOldSwapChain->Release();
 		g_pSwapChain = pNewSwapChain;
 	}
 
-	// Patch Renderer's swap chain pointer
+	// Patch Renderer's swap chain pointer to the new raw swap chain.
 	*ppRM_SC = g_pSwapChain;
 
 	// Create render target views from new backbuffer
@@ -1220,6 +1343,110 @@ void ToggleFullscreen()
 		g_KBMInput.SetWindowFocused(true);
 }
 
+// Called from UI thread — defers the actual transition to the main game loop
+void SetExclusiveFullscreen(bool enabled)
+{
+	if (enabled == g_isFullscreen)
+		return;
+	g_bPendingExclusiveFullscreen = true;
+	g_bPendingExclusiveFullscreenValue = enabled;
+}
+
+// Enter or leave true DXGI exclusive fullscreen. With our bitblt swap chain,
+// Present(SyncInterval=0) in exclusive mode produces real screen tearing via
+// direct scanout (DWM is out of the pipeline). Flip mode with ALLOW_TEARING
+// would also work but is blocked by the 4J Renderer's deferred context refs
+// on the backbuffer, which DXGI's ResizeBuffers cannot release.
+static void ApplyExclusiveFullscreen(bool enabled)
+{
+	if (!g_pSwapChain)
+		return;
+
+	LONG styleBefore = GetWindowLong(g_hWnd, GWL_STYLE);
+
+	if (enabled)
+	{
+		// Grow the window to cover the monitor first. This fires WM_SIZE which
+		// runs ResizeD3D and recreates the backbuffer at monitor-native size.
+		// Otherwise a small windowed backbuffer would enter exclusive fullscreen
+		// at that smaller size and DXGI would scale it to fill the monitor,
+		// producing a filtered / washed-out look.
+		HMONITOR hMon = MonitorFromWindow(g_hWnd, MONITOR_DEFAULTTOPRIMARY);
+		MONITORINFO mi = {};
+		mi.cbSize = sizeof(mi);
+		if (GetMonitorInfo(hMon, &mi))
+		{
+			int monW = mi.rcMonitor.right - mi.rcMonitor.left;
+			int monH = mi.rcMonitor.bottom - mi.rcMonitor.top;
+			SetWindowLong(g_hWnd, GWL_STYLE, (styleBefore & ~WS_OVERLAPPEDWINDOW) | WS_VISIBLE);
+			SetWindowPos(g_hWnd, HWND_TOP,
+				mi.rcMonitor.left, mi.rcMonitor.top, monW, monH,
+				SWP_NOOWNERZORDER | SWP_FRAMECHANGED);
+
+			// ResizeTarget pins the display mode to the backbuffer size with
+			// no scaling. Microsoft's pattern is ResizeTarget then
+			// SetFullscreenState then ResizeTarget again (see below).
+			DXGI_MODE_DESC targetMode = {};
+			targetMode.Width = monW;
+			targetMode.Height = monH;
+			targetMode.Format = DXGI_FORMAT_R8G8B8A8_UNORM;
+			targetMode.ScanlineOrdering = DXGI_MODE_SCANLINE_ORDER_UNSPECIFIED;
+			targetMode.Scaling = DXGI_MODE_SCALING_UNSPECIFIED;
+			g_pSwapChain->ResizeTarget(&targetMode);
+		}
+	}
+
+	HRESULT hr = g_pSwapChain->SetFullscreenState(enabled ? TRUE : FALSE, nullptr);
+	if (FAILED(hr))
+		return;
+
+	g_bDxgiExclusiveFullscreen = enabled;
+
+	if (enabled)
+	{
+		// Explicitly declare sRGB. Default for R8G8B8A8_UNORM but some drivers
+		// behave differently if the color space is never set.
+		IDXGISwapChain3* pSwapChain3 = nullptr;
+		if (SUCCEEDED(g_pSwapChain->QueryInterface(__uuidof(IDXGISwapChain3), (void**)&pSwapChain3)) && pSwapChain3)
+		{
+			UINT colorSpaceSupport = 0;
+			pSwapChain3->CheckColorSpaceSupport(DXGI_COLOR_SPACE_RGB_FULL_G22_NONE_P709, &colorSpaceSupport);
+			if (colorSpaceSupport & DXGI_SWAP_CHAIN_COLOR_SPACE_SUPPORT_FLAG_PRESENT)
+				pSwapChain3->SetColorSpace1(DXGI_COLOR_SPACE_RGB_FULL_G22_NONE_P709);
+			pSwapChain3->Release();
+		}
+
+		// Second ResizeTarget per Microsoft's recommendation to make the mode stick.
+		HMONITOR hMon2 = MonitorFromWindow(g_hWnd, MONITOR_DEFAULTTOPRIMARY);
+		MONITORINFO mi2 = {};
+		mi2.cbSize = sizeof(mi2);
+		if (GetMonitorInfo(hMon2, &mi2))
+		{
+			DXGI_MODE_DESC targetMode2 = {};
+			targetMode2.Width = mi2.rcMonitor.right - mi2.rcMonitor.left;
+			targetMode2.Height = mi2.rcMonitor.bottom - mi2.rcMonitor.top;
+			targetMode2.Format = DXGI_FORMAT_R8G8B8A8_UNORM;
+			targetMode2.ScanlineOrdering = DXGI_MODE_SCANLINE_ORDER_UNSPECIFIED;
+			targetMode2.Scaling = DXGI_MODE_SCALING_UNSPECIFIED;
+			g_pSwapChain->ResizeTarget(&targetMode2);
+		}
+		g_isFullscreen = true;
+	}
+	else
+	{
+		// Force a real decorated windowed state on exit. DXGI would otherwise
+		// restore whatever state the window had before SetFullscreenState,
+		// which may still be borderless.
+		SetWindowLong(g_hWnd, GWL_STYLE, WS_OVERLAPPEDWINDOW | WS_VISIBLE);
+		const int w = 1280, h = 720;
+		const int sw = GetSystemMetrics(SM_CXSCREEN);
+		const int sh = GetSystemMetrics(SM_CYSCREEN);
+		SetWindowPos(g_hWnd, HWND_TOP, (sw - w) / 2, (sh - h) / 2, w, h,
+			SWP_NOOWNERZORDER | SWP_FRAMECHANGED);
+		g_isFullscreen = false;
+	}
+}
+
 //--------------------------------------------------------------------------------------
 // Clean up the objects we've created
 //--------------------------------------------------------------------------------------
@@ -1238,8 +1465,9 @@ void CleanupDevice()
 static Minecraft* InitialiseMinecraftRuntime()
 {
 	app.loadMediaArchive();
-
-	RenderManager.Initialise(g_pd3dDevice, g_pSwapChain);
+	// @CDevJoud: No need to call this method as it gets called once in `InitDevice()`
+	// Calling it again and it results of 20MB of memory leak!
+	//RenderManager.Initialise(g_pd3dDevice, g_pSwapChain);
 
 	app.loadStringTable();
 	ui.init(g_pd3dDevice, g_pImmediateContext, g_pRenderTargetView, g_pDepthStencilView, g_rScreenWidth, g_rScreenHeight);
@@ -1513,6 +1741,32 @@ int APIENTRY _tWinMain(_In_ HINSTANCE hInstance,
 	const Win64LaunchOptions launchOptions = ParseLaunchOptions();
 	ApplyScreenMode(launchOptions.screenMode);
 
+	// load resolution from resolution.txt
+	char resPath[MAX_PATH] = {};
+	_snprintf_s(resPath, sizeof(resPath), _TRUNCATE, "%sresolution.txt", exePath);
+	FILE *fRes = nullptr;
+	if (fopen_s(&fRes, resPath, "r") == 0 && fRes)
+	{
+		char resBuf[128] = {};
+		if (fgets(resBuf, sizeof(resBuf), fRes))
+		{
+			int w = 0, h = 0;
+			if (sscanf_s(resBuf, "%dx%d", &w, &h) == 2 && w > 0 && h > 0)
+			{
+				g_rScreenWidth = w;
+				g_rScreenHeight = h;
+				g_iScreenWidth = w;
+				g_iScreenHeight = h;
+			}
+			else
+			{
+				if (strstr(resBuf, "1080")) { g_rScreenWidth = 1920; g_rScreenHeight = 1080; g_iScreenWidth = 1920; g_iScreenHeight = 1080; }
+				else if (strstr(resBuf, "720")) { g_rScreenWidth = 1280; g_rScreenHeight = 720; g_iScreenWidth = 1280; g_iScreenHeight = 720; }
+			}
+		}
+		fclose(fRes);
+	}
+
 	// Ensure uid.dat exists from startup (before any multiplayer/login path).
 	Win64Xuid::ResolvePersistentXuid();
 
@@ -1607,11 +1861,15 @@ int APIENTRY _tWinMain(_In_ HINSTANCE hInstance,
 		CleanupDevice();
 		return 0;
 	}
+	// Restore fullscreen state from previous session. Route through the
+	// deferred exclusive fullscreen path so the main loop applies it on the
+	// first tick (safer than transitioning during init).
 
-	// Restore fullscreen state from previous session
-	if (LoadFullscreenOption() && !g_isFullscreen || launchOptions.fullscreen)
+	bool FullScreenEnabled = LoadFullscreenOption();
+	if (FullScreenEnabled && !g_isFullscreen)
 	{
-		ToggleFullscreen();
+		g_bPendingExclusiveFullscreen = true;
+		g_bPendingExclusiveFullscreenValue = true;
 	}
 
 #if 0
@@ -1699,6 +1957,20 @@ int APIENTRY _tWinMain(_In_ HINSTANCE hInstance,
 		hr = XuiTimersRun();
 	}
 #endif
+
+	// @CDevJoud The window should only be shown after the engine/game
+	// initialization has fully completed.
+	//
+	// Showing the window too early especially on low end devices,
+	// may cause windows to display a "Not Responding" state while
+	// initialization is still in progress.
+	//
+	// This creates an unprofessional first impression for the player.
+	// Instead, initialize all engine systems first, then display the
+	// window once everything is ready.
+	ShowWindow(g_hWnd, (nCmdShow != SW_HIDE) ? SW_SHOWMAXIMIZED : nCmdShow);
+	UpdateWindow(g_hWnd);
+
 	MSG msg = {0};
 	while( WM_QUIT != msg.message && !app.m_bShutdown)
 	{
@@ -1720,7 +1992,14 @@ int APIENTRY _tWinMain(_In_ HINSTANCE hInstance,
 			continue;
 		}
 
+		const float* clearColor = app.GetGameStarted() ? kClearColorBlack : kClearColorWhite;
+		RenderManager.SetClearColour(clearColor);
 		RenderManager.StartFrame();
+		if (!app.GetGameStarted())
+		{
+			RenderManager.SetClearColour(kClearColorWhite); // set intro scene background to white
+			RenderManager.Clear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+		}
 #if 0
 		if(pMinecraft->soundEngine->isStreamingWavebankReady() &&
 			!pMinecraft->soundEngine->isPlayingStreamingGameMusic() &&
@@ -1751,19 +2030,25 @@ int APIENTRY _tWinMain(_In_ HINSTANCE hInstance,
 				InputManager.GetJoypadStick_RX(0, false) != 0.0f ||
 				InputManager.GetJoypadStick_RY(0, false) != 0.0f;
 
-			if (controllerUsed)
+			if (controllerUsed) {
 				g_KBMInput.SetKBMActive(false);
-			else if (g_KBMInput.HasAnyInput())
+				if (ui.FindScene(eUIScene_BookMenu) != nullptr) ui.FindScene(eUIScene_BookMenu)->KBMUpdate(false);
+			}
+			else if (g_KBMInput.HasAnyInput()) {
 				g_KBMInput.SetKBMActive(true);
+				if (ui.FindScene(eUIScene_BookMenu) != nullptr) ui.FindScene(eUIScene_BookMenu)->KBMUpdate(true);
+			}
+				
 		}
 		else
 		{
 			g_KBMInput.SetKBMActive(true);
+			if (ui.FindScene(eUIScene_BookMenu) != nullptr) ui.FindScene(eUIScene_BookMenu)->KBMUpdate(true);
 		}
 
 		if (!g_KBMInput.IsMouseGrabbed())
 		{
-			if (!g_KBMInput.IsKBMActive())
+			if (!g_KBMInput.IsKBMActive() && ui.FindScene(eUIScene_AchievementsMenu) == nullptr)
 				g_KBMInput.SetCursorHiddenForUI(true);
 			else if (!g_KBMInput.IsScreenCursorHidden())
 				g_KBMInput.SetCursorHiddenForUI(false);
@@ -1896,8 +2181,25 @@ int APIENTRY _tWinMain(_In_ HINSTANCE hInstance,
 
 		RenderManager.Set_matrixDirty();
 #endif
-		// Present the frame.
-		RenderManager.Present();
+		// Present the frame. RenderManager.Present() hardcodes SyncInterval=1,
+		// so when VSync is off we bypass it for uncapped frames. In DXGI
+		// exclusive fullscreen this produces real tearing via direct scanout.
+		// Force VSync on the main menu regardless of user setting: an uncapped
+		// simple menu scene drives the GPU to thousands of FPS and causes coil
+		// whine on many cards.
+		const bool forceVSyncForMenu = !app.GetGameStarted();
+		if (!g_bVSync && !forceVSyncForMenu && g_pSwapChain)
+		{
+			HRESULT hrPresent = g_pSwapChain->Present(0, 0);
+			// If the direct Present fails (e.g. during fullscreen transition),
+			// fall back to the library's VSync'd Present for this frame.
+			if (FAILED(hrPresent))
+				RenderManager.Present();
+		}
+		else
+		{
+			RenderManager.Present();
+		}
 
 		ui.CheckMenuDisplayed();
 
@@ -1919,6 +2221,20 @@ int APIENTRY _tWinMain(_In_ HINSTANCE hInstance,
 			else if (shouldCapture && !g_KBMInput.IsMouseGrabbed() && GetFocus() == g_hWnd && !altToggleSuppressCapture)
 			{
 				g_KBMInput.SetMouseGrabbed(true);
+			}
+		}
+
+		// F2 takes a screenshot (works in any context)
+		if (g_KBMInput.IsKeyPressed(KeyboardMouseInput::KEY_SCREENSHOT))
+		{
+			wstring filename;
+			if (TakeScreenshot(filename))
+			{
+				if (pMinecraft->gui && pMinecraft->player)
+				{
+					wstring msg = L"Saved screenshot to " + filename;
+					pMinecraft->gui->addMessage(msg, ProfileManager.GetPrimaryPad());
+				}
 			}
 		}
 
@@ -1953,6 +2269,16 @@ int APIENTRY _tWinMain(_In_ HINSTANCE hInstance,
 						f3ComboUsed = true;
 					}
 					break;
+				case 'B':
+					std::wstring version = std::wstring(VER_BRANCHVERSION_STR_W) + L"/" + std::wstring(VER_PRODUCTVERSION_STR_W);
+					Screen::setClipboard(version);
+					if (pMinecraft->gui && app.GetGameStarted())
+					{
+						const int primaryPad = ProfileManager.GetPrimaryPad();
+						pMinecraft->gui->addMessage(L"Copied version to clipboard", primaryPad);
+					}
+					f3ComboUsed = true;
+					break;
 			}
 		}
 
@@ -1973,10 +2299,18 @@ int APIENTRY _tWinMain(_In_ HINSTANCE hInstance,
         }
 #endif
 
-		// toggle fullscreen
+		// toggle fullscreen (DXGI exclusive via ApplyExclusiveFullscreen)
 		if (g_KBMInput.IsKeyPressed(KeyboardMouseInput::KEY_FULLSCREEN))
 		{
-			ToggleFullscreen();
+			ApplyExclusiveFullscreen(!g_bDxgiExclusiveFullscreen);
+			app.SetGameSettings(ProfileManager.GetPrimaryPad(), eGameSetting_ExclusiveFullscreen, g_bDxgiExclusiveFullscreen ? 1 : 0);
+		}
+
+		// Apply deferred exclusive fullscreen toggle
+		if (g_bPendingExclusiveFullscreen)
+		{
+			g_bPendingExclusiveFullscreen = false;
+			ApplyExclusiveFullscreen(g_bPendingExclusiveFullscreenValue);
 		}
 
 		// TAB opens game info menu. - Vvis :3 - Updated by detectiveren

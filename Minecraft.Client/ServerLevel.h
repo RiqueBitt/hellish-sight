@@ -1,11 +1,14 @@
 #pragma once
-#include "..\Minecraft.World\net.minecraft.world.level.h"
-#include "..\Minecraft.World\JavaIntHash.h"
+#include "../Minecraft.World/net.minecraft.world.level.h"
+#include "../Minecraft.World/JavaIntHash.h"
+#include "../Minecraft.World/ArrayWithLength.h"
+#include "ParticleType.h"
 class ServerChunkCache;
 class MinecraftServer;
 class Node;
 class EntityTracker;
 class PlayerChunkMap;
+class ArrayWithLength;
 using namespace std;
 
 class ServerLevel : public Level
@@ -135,12 +138,21 @@ private:
 	// 4J - added for implementation of finite limit to number of item entities, tnt and falling block entities
 public:
 
-	static const int MAX_HANGING_ENTITIES = 400;
-	static const int MAX_ITEM_ENTITIES = 200;
-	static const int MAX_ARROW_ENTITIES = 200;
-	static const int MAX_EXPERIENCEORB_ENTITIES = 50;
-	static const int MAX_PRIMED_TNT = 20;
-	static const int MAX_FALLING_TILE = 20;
+	static const int MAX_HANGING_ENTITIES = 800;
+	static const int MAX_ITEM_ENTITIES = 400;
+	static const int MAX_ARROW_ENTITIES = 400;
+	static const int MAX_EXPERIENCEORB_ENTITIES = 100;
+	static const int MAX_PRIMED_TNT = 40;
+	static const int MAX_FALLING_TILE = 40;
+
+	//static const int MAX_HANGING_ENTITIES = 400;
+	//static const int MAX_ITEM_ENTITIES = 200;
+	//static const int MAX_ARROW_ENTITIES = 200;
+	//static const int MAX_EXPERIENCEORB_ENTITIES = 50;
+	//static const int MAX_PRIMED_TNT = 20;
+	//static const int MAX_FALLING_TILE = 20;
+
+
 
 	int							m_primedTntCount;
 	int							m_fallingTileCount;
@@ -180,5 +192,6 @@ public:
 
 	static C4JThread*			m_updateThread;
 	static int 	runUpdate(void* lpParam);
-
+	virtual void sendParticles(const ParticleType* type, bool longDistance, double x, double y, double z, int count, double dx, double dy, double dz, double speed, arrayWithLength<int> data);
+	virtual void sendParticles(const ParticleType* type, double x, double y, double z, int count, double dx, double dy, double dz, double speed, arrayWithLength<int> data);
 };

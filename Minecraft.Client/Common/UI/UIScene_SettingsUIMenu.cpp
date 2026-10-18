@@ -1,4 +1,5 @@
 #include "stdafx.h"
+#include "../App_enums.h"
 #include "UI.h"
 #include "UIScene_SettingsUIMenu.h"
 
@@ -15,6 +16,9 @@ UIScene_SettingsUIMenu::UIScene_SettingsUIMenu(int iPad, void *initData, UILayer
 	m_checkboxDisplayAnimatedCharacter.init(app.GetString(IDS_CHECKBOX_ANIMATED_CHARACTER),eControl_DisplayAnimatedCharacter,(app.GetGameSettings(m_iPad,eGameSetting_AnimatedCharacter)!=0));
 	m_checkboxSplitscreen.init(app.GetString(IDS_CHECKBOX_VERTICAL_SPLIT_SCREEN),eControl_Splitscreen,(app.GetGameSettings(m_iPad,eGameSetting_SplitScreenVertical)!=0));
 	m_checkboxShowSplitscreenGamertags.init(app.GetString(IDS_CHECKBOX_DISPLAY_SPLITSCREENGAMERTAGS),eControl_ShowSplitscreenGamertags,(app.GetGameSettings(m_iPad,eGameSetting_DisplaySplitscreenGamertags)!=0));
+	m_checkboxShowClassicCrafting.init(app.GetString(IDS_CHECKBOX_CLASSICCRAFTING), eControl_ShowClassicCrafting, (app.GetGameSettings(m_iPad, eGameSetting_ClassicCrafting) != 0));
+	// label is hardcoded for now (no IDS_* yet)
+	m_checkboxHideLoadCreateJoinSaveSizeBar.init(L"Hide world disk space bar", eControl_HideSaveSizeBar, (app.GetGameSettings(m_iPad, eGameSetting_HideSaveSizeBar) != 0));
 
 	WCHAR TempString[256];
 
@@ -104,6 +108,9 @@ void UIScene_SettingsUIMenu::handleInput(int iPad, int key, bool repeat, bool pr
 			app.SetGameSettings(m_iPad,eGameSetting_DisplaySplitscreenGamertags,m_checkboxShowSplitscreenGamertags.IsChecked()?1:0);
 			app.SetGameSettings(m_iPad,eGameSetting_DeathMessages,m_checkboxDisplayDeathMessages.IsChecked()?1:0);
 			app.SetGameSettings(m_iPad,eGameSetting_AnimatedCharacter,m_checkboxDisplayAnimatedCharacter.IsChecked()?1:0);
+			app.SetGameSettings(m_iPad, eGameSetting_ClassicCrafting, m_checkboxShowClassicCrafting.IsChecked() ? 1 : 0);
+			app.SetGameSettings(m_iPad, eGameSetting_HideSaveSizeBar, m_checkboxHideLoadCreateJoinSaveSizeBar.IsChecked() ? 1 : 0);
+
 
 			// if the splitscreen vertical/horizontal has changed, need to update the scenes
 			if(app.GetGameSettings(m_iPad,eGameSetting_SplitScreenVertical)!=(m_checkboxSplitscreen.IsChecked()?1:0))

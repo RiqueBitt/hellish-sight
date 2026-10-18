@@ -2,21 +2,21 @@
 using namespace std;
 #include <vector>
 #include <qnet.h>
-#include "..\..\..\Minecraft.World\C4JThread.h"
+#include "../../../Minecraft.World/C4JThread.h"
 #include "NetworkPlayerInterface.h"
 #ifdef _XBOX
-#include "..\..\Xbox\Network\PlatformNetworkManagerXbox.h"
+#include "../../Xbox/Network/PlatformNetworkManagerXbox.h"
 #elif defined __PS3__ || defined __ORBIS__ || defined __PSVITA__
-#include "..\..\Common\Network\Sony\PlatformNetworkManagerSony.h"
+#include "../../Common/Network/Sony/PlatformNetworkManagerSony.h"
 #elif defined _DURANGO
-#include "..\..\Durango\Network\PlatformNetworkManagerDurango.h"
+#include "../../Durango/Network/PlatformNetworkManagerDurango.h"
 #else
 #include "PlatformNetworkManagerStub.h"
 #endif
 #include "SessionInfo.h"
 
 #ifdef __ORBIS__
-#include "..\..\Orbis\Network\PsPlusUpsellWrapper_Orbis.h"
+#include "../../Orbis/Network/PsPlusUpsellWrapper_Orbis.h"
 #endif
 
 class ClientConnection;
@@ -47,7 +47,8 @@ public:
 	{
 		JOINGAME_SUCCESS,
 		JOINGAME_FAIL_GENERAL,
-		JOINGAME_FAIL_SERVER_FULL
+		JOINGAME_FAIL_SERVER_FULL,
+		JOINGAME_PENDING
 	} eJoinGameResult;
 
 	void			Initialise();
@@ -213,6 +214,7 @@ private:
 	int GetJoiningReadyPercentage();
 	bool m_bLastDisconnectWasLostRoomOnly;
 	bool m_bFullSessionMessageOnNextSessionChange;
+	bool m_bCancelRequested;
 #if defined __PS3__ || defined __PSVITA__ || defined __ORBIS__
 	bool m_bSignedOutofPSN;
 #endif

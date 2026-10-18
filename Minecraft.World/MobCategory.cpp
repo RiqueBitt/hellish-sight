@@ -58,6 +58,24 @@ int MobCategory::getMaxInstancesPerLevel()	// 4J added
 	return m_maxPerLevel;
 }
 
+void MobCategory::setMaxInstancesPerLevel(int max)
+{
+	m_maxPerLevel = max;
+}
+
+int MobCategory::maxAnimalsWithBreeding()      { return (creature->getMaxInstancesPerLevel() + 20)*2; }
+int MobCategory::maxChickensWithBreeding()     { return (creature_chicken->getMaxInstancesPerLevel() + 8)*2; }
+int MobCategory::maxMushroomCowsWithBreeding() { return (creature_mushroomcow->getMaxInstancesPerLevel() + 20)*2; }
+int MobCategory::maxWolvesWithBreeding()       { return (creature_wolf->getMaxInstancesPerLevel() + 8)*2; }
+
+int MobCategory::maxAnimalsWithSpawnEgg()      { return (maxAnimalsWithBreeding() + 20)*2; }
+int MobCategory::maxChickensWithSpawnEgg()     { return (maxChickensWithBreeding() + 10)*2; }
+int MobCategory::maxWolvesWithSpawnEgg()       { return (maxWolvesWithBreeding() + 10)*2; }
+int MobCategory::maxMonstersWithSpawnEgg()     { return (monster->getMaxInstancesPerLevel() + 20)*2; }
+int MobCategory::maxMushroomCowsWithSpawnEgg() { return (maxMushroomCowsWithBreeding() + 8)*2; }
+int MobCategory::maxSquidsWithSpawnEgg()       { return (waterCreature->getMaxInstancesPerLevel() + 8)*2; }
+int MobCategory::maxAmbientWithSpawnEgg()      { return (ambient->getMaxInstancesPerLevel() + 8)*2; }
+
 Material *MobCategory::getSpawnPositionMaterial()
 {
 	return (Material *) spawnPositionMaterial;

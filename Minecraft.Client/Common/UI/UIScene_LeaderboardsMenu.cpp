@@ -1,9 +1,9 @@
 #include "stdafx.h"
 #include "UI.h"
 #include "UIScene_LeaderboardsMenu.h"
-#include "..\Leaderboards\LeaderboardManager.h"
-#include "..\..\..\Minecraft.World\net.minecraft.world.level.tile.h"
-#include "..\..\..\Minecraft.World\net.minecraft.world.item.h"
+#include "../Leaderboards/LeaderboardManager.h"
+#include "../../../Minecraft.World/net.minecraft.world.level.tile.h"
+#include "../../../Minecraft.World/net.minecraft.world.item.h"
 
 #define PLAYER_ONLINE_TIMER_ID 0
 #define PLAYER_ONLINE_TIMER_TIME 100
@@ -424,6 +424,10 @@ void UIScene_LeaderboardsMenu::handleInput(int iPad, int key, bool repeat, bool 
 
 void UIScene_LeaderboardsMenu::ReadStats(int startIndex)
 {
+	// load before so real stats cant get overwritten afterwards
+	m_labelInfo.setLabel(app.GetString(IDS_LEADERBOARD_LOADING));
+	m_labelInfo.setVisible(true);
+
 	//If startIndex == -1, then use default values
 	if( startIndex == -1 )
 	{
@@ -490,10 +494,6 @@ void UIScene_LeaderboardsMenu::ReadStats(int startIndex)
 		}
 		break;
 	}
-
-	//Show the loading message
-	m_labelInfo.setLabel(app.GetString(IDS_LEADERBOARD_LOADING));
-	m_labelInfo.setVisible(true);
 }
 
 bool UIScene_LeaderboardsMenu::OnStatsReadComplete(LeaderboardManager::eStatsReturn retIn, int numResults, LeaderboardManager::ViewOut results)

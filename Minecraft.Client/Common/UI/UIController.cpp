@@ -1,22 +1,27 @@
 #include "stdafx.h"
 #include "Host\RubyLauncherHost.h"
 #include "UIController.h"
+#include <ChatScreen.h>
 #include "UI.h"
 #include "UIScene.h"
 #include "UIControl_Slider.h"
 #include "UIControl_TexturePackList.h"
-#include "..\..\..\Minecraft.World\StringHelpers.h"
-#include "..\..\LocalPlayer.h"
-#include "..\..\DLCTexturePack.h"
-#include "..\..\TexturePackRepository.h"
-#include "..\..\Minecraft.h"
-#include "..\..\..\Minecraft.World\net.minecraft.world.entity.boss.enderdragon.h"
-#include "..\..\EnderDragonRenderer.h"
-#include "..\..\MultiPlayerLocalPlayer.h"
+#include "UIControl_CheckBox.h"
+#include "UIControl_AchievementsList.h"
+#include "UIScene_AchievementsMenu.h"
+#include "../../../Minecraft.World/StringHelpers.h"
+#include "../../LocalPlayer.h"
+#include "../../DLCTexturePack.h"
+#include "../../TexturePackRepository.h"
+#include "../../Minecraft.h"
+#include "../../../Minecraft.World/net.minecraft.world.entity.boss.enderdragon.h"
+#include "../../EnderDragonRenderer.h"
+#include "../../MultiPlayerLocalPlayer.h"
 #include "UIFontData.h"
+#include "UIUnicodeBitmapFont.h"
 #include "UISplitScreenHelpers.h"
 #ifdef _WINDOWS64
-#include "..\..\Windows64\KeyboardMouseInput.h"
+#include "../../Windows64/KeyboardMouseInput.h"
 #endif
 #ifdef __PSVITA__
 #include <message_dialog.h>
@@ -28,7 +33,7 @@
 
 //#define ENABLE_IGGY_EXPLORER
 #ifdef ENABLE_IGGY_EXPLORER
-#include "Windows64\Iggy\include\iggyexpruntime.h"
+#include "Windows64/Iggy/include/iggyexpruntime.h"
 #endif
 
 //#define ENABLE_IGGY_PERFMON
@@ -38,18 +43,18 @@
 #define PM_ORIGIN_Y 34
 
 #ifdef __ORBIS__
-#include "Orbis\Iggy\include\iggyperfmon.h"
-#include "Orbis\Iggy\include\iggyperfmon_orbis.h"
+#include "Orbis/Iggy/include/iggyperfmon.h"
+#include "Orbis/Iggy/include/iggyperfmon_orbis.h"
 #elif defined _DURANGO
-#include "Durango\Iggy\include\iggyperfmon.h"
+#include "Durango/Iggy/include/iggyperfmon.h"
 #elif defined __PS3__
-#include "PS3\Iggy\include\iggyperfmon.h"
-#include "PS3\Iggy\include\iggyperfmon_ps3.h"
+#include "PS3/Iggy/include/iggyperfmon.h"
+#include "PS3/Iggy/include/iggyperfmon_ps3.h"
 #elif defined __PSVITA__
-#include "PSVita\Iggy\include\iggyperfmon.h"
-#include "PSVita\Iggy\include\iggyperfmon_psp2.h"
+#include "PSVita/Iggy/include/iggyperfmon.h"
+#include "PSVita/Iggy/include/iggyperfmon_psp2.h"
 #elif defined __WINDOWS64
-#include "Windows64\Iggy\include\iggyperfmon.h"
+#include "Windows64/Iggy/include/iggyperfmon.h"
 #endif
 
 #endif
@@ -194,6 +199,7 @@ UIController::UIController()
 	m_mcTTFFont = nullptr;
 	m_moj7 = nullptr;
 	m_moj11 = nullptr;
+	m_unicodeBitmapFont = nullptr;
 
 	// 4J-JEV: It's important that these remain the same, unless updateCurrentLanguage is going to be called.
 	m_eCurrentFont = m_eTargetFont = eFont_NotLoaded;
@@ -307,6 +313,14 @@ void UIController::postInit()
 	IggySetCustomDrawCallback(&UIController::CustomDrawCallback, this);
 	IggySetAS3ExternalFunctionCallbackUTF16 ( &UIController::ExternalFunctionCallback, this );
 	IggySetTextureSubstitutionCallbacks ( &UIController::TextureSubstitutionCreateCallback , &UIController::TextureSubstitutionDestroyCallback, this );
+
+	// Load a unicode bitmap font as Iggy's global fallback for characters not
+	// covered by the Mojangles bitmap font (CJK, Thai, Arabic, Korean, etc.).
+	// Uses the same glyph page PNGs as the legacy Font class, with matching
+	// Mojangles metrics for correct vertical alignment.
+	m_unicodeBitmapFont = new UIUnicodeBitmapFont("Mojangles_Unicode_Bitmap", SFontData::Mojangles_7);
+	m_unicodeBitmapFont->registerFont();
+	IggyFontSetFallbackFontUTF8("Mojangles_Unicode_Bitmap", -1, IGGY_FONTFLAG_none);
 
 	SetupFont();
 	//
@@ -422,10 +436,28 @@ void UIController::SetupFont()
 	else if (m_eTargetFont != eFont_NotLoaded)
 	{
 		m_mcTTFFont = createFont(m_eTargetFont);
+		if (m_mcTTFFont == nullptr || !m_mcTTFFont->isLoaded())
+		{
+			if (m_mcTTFFont != nullptr)
+			{
+				delete m_mcTTFFont;
+				m_mcTTFFont = nullptr;
+			}
 
-		app.DebugPrintf("[Iggy] Set font indirect to '%hs'.\n", m_mcTTFFont->getFontName().c_str());
-		IggyFontSetIndirectUTF8( "Mojangles7",	-1, IGGY_FONTFLAG_all, m_mcTTFFont->getFontName().c_str(), -1, IGGY_FONTFLAG_none );
-		IggyFontSetIndirectUTF8( "Mojangles11",	-1, IGGY_FONTFLAG_all, m_mcTTFFont->getFontName().c_str(), -1, IGGY_FONTFLAG_none );
+			app.DebugPrintf("Failed to load font %i. Falling back to bitmaps.\n", nextLanguage);
+			m_eTargetFont = eFont_Bitmap;
+
+			if (m_moj7 == nullptr) m_moj7 = new UIBitmapFont(SFontData::Mojangles_7);
+			if (m_moj11 == nullptr) m_moj11 = new UIBitmapFont(SFontData::Mojangles_11);
+			m_moj7->registerFont();
+			m_moj11->registerFont();
+		}
+		else
+		{
+			app.DebugPrintf("[Iggy] Set font indirect to '%hs'.\n", m_mcTTFFont->getFontName().c_str());
+			IggyFontSetIndirectUTF8( "Mojangles7",	-1, IGGY_FONTFLAG_all, m_mcTTFFont->getFontName().c_str(), -1, IGGY_FONTFLAG_none );
+			IggyFontSetIndirectUTF8( "Mojangles11",	-1, IGGY_FONTFLAG_all, m_mcTTFFont->getFontName().c_str(), -1, IGGY_FONTFLAG_none );
+		}
 	}
 	else
 	{
@@ -582,6 +614,21 @@ void UIController::loadSkins()
 	m_iggyLibraries[eLibrary_HUD] = loadSkin(L"skinHDHud.swf", L"skinHDHud.swf");
 	m_iggyLibraries[eLibrary_Tooltips] = loadSkin(L"skinHDTooltips.swf", L"skinHDTooltips.swf");
 	m_iggyLibraries[eLibrary_Default] = loadSkin(L"skinHD.swf", L"skinHD.swf");
+
+	//Load skins specifcally edited for use on achievements, if we
+	//used these as skin.swf and skinInGame.swf it breaks some other things
+	m_iggyLibraries[eLibrary_LCDefault] = loadSkin(L"skinLC.swf", L"skinLC.swf");
+	m_iggyLibraries[eLibrary_LCInGame] = loadSkin(L"skinInGameLC.swf", L"skinInGameLC.swf");
+	m_iggyLibraries[eLibrary_LCGraphics] = loadSkin(L"skinGraphicsLC.swf", L"skinGraphicsLC.swf");
+	m_iggyLibraries[eLibrary_LCLabels] = loadSkin(L"skinLabelsLC.swf", L"skinLabelsLC.swf");
+
+	// Some 1080p menu ports (such as LoadCreateJoin) may import DR-specific HD
+	// libraries by distinct names. Load them opportunistically when present so
+	// those SWFs can resolve their imports without replacing the normal Windows
+	// skin set.
+	m_iggyLibraries[eLibraryDR_GraphicsDefault] = loadSkin(L"skinHDGraphicsDR.swf", L"skinHDGraphicsDR.swf");
+	m_iggyLibraries[eLibraryDR_Labels] = loadSkin(L"skinHDLabelsDR.swf", L"skinHDLabelsDR.swf");
+	m_iggyLibraries[eLibraryDR_Default] = loadSkin(L"skinHDDR.swf", L"skinHDDR.swf");
 
 #elif defined _DURANGO
 	m_iggyLibraries[eLibrary_Platform] = loadSkin(L"skinHDDurango.swf", L"platformskinHD.swf");
@@ -793,6 +840,7 @@ void UIController::tickInput()
 		{
 #ifdef _WINDOWS64
             m_mouseClickConsumedByScene = false;
+			UIControl* currHitCtrl = NULL;
             if (!g_KBMInput.IsMouseGrabbed() && g_KBMInput.IsKBMActive())
             {
                 UIScene *pScene = nullptr;
@@ -926,7 +974,8 @@ void UIController::tickInput()
 								UIControl::eUIControlType type = ctrl->getControlType();
 								if (type != UIControl::eButton && type != UIControl::eTextInput &&
 									type != UIControl::eCheckBox && type != UIControl::eSlider &&
-									type != UIControl::eButtonList && type != UIControl::eTexturePackList)
+									type != UIControl::eButtonList && type != UIControl::eTexturePackList && type != UIControl::ePageFlip
+									&& type != UIControl::eAchievementList)
 									continue;
 
 								// If the scene has an active panel (e.g. tab menus),
@@ -953,12 +1002,34 @@ void UIController::tickInput()
 									{
 										// ButtonList manages focus internally via Flash —
 										// pass mouse coords so it can highlight the right item.
+										S32 adjustedMouseY = static_cast<S32>(sceneMouseY);
+										if (pScene->getSceneType() == eUIScene_LoadCreateJoinMenu)
+										{
+											const S32 visibleRows = 7;
+											const S32 rowHeight = (visibleRows > 0) ? (ch / visibleRows) : 0;
+											if (rowHeight > 0)
+												adjustedMouseY -= rowHeight;
+										}
 										static_cast<UIControl_ButtonList*>(ctrl)->SetTouchFocus(
-											static_cast<S32>(sceneMouseX), static_cast<S32>(sceneMouseY), false);
+											static_cast<S32>(sceneMouseX), adjustedMouseY, false);
 										hitControlId = -1;
 										hitArea = INT_MAX;
 										hitCtrl = NULL;
+										hitCtrl = ctrl;
 										break; // ButtonList takes priority
+									}
+									if (type == UIControl::eAchievementList)
+									{
+										auto t = (UIScene_AchievementsMenu*)pScene;
+										static_cast<UIControl_AchievementsList*>(ctrl)->SetTouchFocus(
+											static_cast<S32>(sceneMouseX - cx), static_cast<S32>(sceneMouseY - cy), false);
+										/*static_cast<UIControl_AchievementsList*>(ctrl)->SetTouchFocus(
+											static_cast<S32>(t->aX), static_cast<S32>(t->aY), false);*/
+										hitControlId = -1;
+										hitArea = INT_MAX;
+										hitCtrl = NULL;
+										hitCtrl = ctrl;
+										break;
 									}
 									if (type == UIControl::eTexturePackList)
 									{
@@ -1006,6 +1077,8 @@ void UIController::tickInput()
 									}
 								}
 							}
+							currHitCtrl = hitCtrl;
+							UpdateCursorIcon(currHitCtrl);
 						}
 					}
 
@@ -1079,8 +1152,11 @@ void UIController::tickInput()
 
 								if (sceneMouseX >= cx && sceneMouseX <= cx + cw && sceneMouseY >= cy && sceneMouseY <= cy + ch)
 								{
-									m_mouseDraggingSliderScene = pScene->getSceneType();
-									m_mouseDraggingSliderId = pSlider->getId();
+									if (pScene->canMoveSlider(pSlider->getId()))
+									{
+										m_mouseDraggingSliderScene = pScene->getSceneType();
+										m_mouseDraggingSliderId = pSlider->getId();
+									}
 									break;
 								}
 							}
@@ -1090,7 +1166,7 @@ void UIController::tickInput()
 					if (leftDown && m_mouseDraggingSliderScene == pScene->getSceneType() && m_mouseDraggingSliderId >= 0)
 					{
 						UIControl_Slider *pSlider = FindSliderById(pScene, m_mouseDraggingSliderId);
-						if (pSlider && pSlider->getVisible())
+						if (pSlider && pSlider->getVisible() && pScene->canMoveSlider(m_mouseDraggingSliderId))
 						{
 							pSlider->UpdateControl();
 							S32 sliderX = pSlider->getXPos() + panelOffsetX;
@@ -1127,6 +1203,27 @@ void UIController::tickInput()
 			++m_accumulatedTicks;
 		}
 	}
+}
+
+void UIController::UpdateCursorIcon(UIControl *hitCtrl)
+{
+	// from WinUser.h
+	if (hitCtrl && (hitCtrl->getControlType() == UIControl::eButton || hitCtrl->getControlType() == UIControl::eButtonList))
+		g_KBMInput.SetCursorIcon(MAKEINTRESOURCEW(IDC_HAND));
+	else if (hitCtrl && (hitCtrl->getControlType() == UIControl::eSlider || hitCtrl->getControlType() == UIControl::eTexturePackList))
+		g_KBMInput.SetCursorIcon(MAKEINTRESOURCEW(IDC_SIZEWE));
+	else if (hitCtrl && hitCtrl->getControlType() == UIControl::eTextInput)
+		g_KBMInput.SetCursorIcon(MAKEINTRESOURCEW(IDC_IBEAM));
+	else if (hitCtrl && hitCtrl->getControlType() == UIControl::eCheckBox) // Show the cross sign shaped cursor only when the checkbox is disabled/grayed out
+	{
+		UIControl_CheckBox *pCheck = static_cast<UIControl_CheckBox *>(hitCtrl);
+		if (pCheck && !pCheck->IsEnabled())
+			g_KBMInput.SetCursorIcon(MAKEINTRESOURCEW(IDC_NO));
+		else
+			g_KBMInput.SetCursorIcon(MAKEINTRESOURCEW(IDC_HAND));
+	}
+	else
+		g_KBMInput.SetCursorIcon(MAKEINTRESOURCEW(IDC_ARROW));
 }
 
 void UIController::handleInput()
@@ -1422,14 +1519,23 @@ void UIController::handleKeyPress(unsigned int iPad, unsigned int key)
 			// hovering a horizontal list (e.g. TexturePackList), UP/DOWN otherwise.
 			if (pressed && g_KBMInput.IsKBMActive())
 			{
-				if (m_bMouseHoverHorizontalList)
-					key = (key == ACTION_MENU_OTHER_STICK_UP) ? ACTION_MENU_LEFT : ACTION_MENU_RIGHT;
-				else
-					key = (key == ACTION_MENU_OTHER_STICK_UP) ? ACTION_MENU_UP : ACTION_MENU_DOWN;
+				UIScene* pTopScene = GetTopScene(0); // using 0 as default pad for KBM
+				bool isJoinMenu = pTopScene && pTopScene->getSceneType() == eUIScene_JoinMenu;
+
+				if (!isJoinMenu)
+				{
+					if (m_bMouseHoverHorizontalList)
+						key = (key == ACTION_MENU_OTHER_STICK_UP) ? ACTION_MENU_LEFT : ACTION_MENU_RIGHT;
+					else
+						key = (key == ACTION_MENU_OTHER_STICK_UP) ? ACTION_MENU_UP : ACTION_MENU_DOWN;
+				}
 			}
 		}
 	}
 #endif
+
+	if (key == 4) ChatScreen::setWheelValue(1);
+	if (key == 5) ChatScreen::setWheelValue(-1);
 
 	if(pressed) app.DebugPrintf("Pressed %d\n",key);
 	if(released) app.DebugPrintf("Released %d\n",key);
@@ -1829,6 +1935,10 @@ GDrawTexture * RADLINK UIController::TextureSubstitutionCreateCallback ( void * 
 			Textures *t = Minecraft::GetInstance()->textures;
 			int id = t->getTexture(&image,C4JRender::TEXTURE_FORMAT_RxGyBzAw,false);
 
+			std::string result(texture_name, texture_name + wcslen(texture_name));
+
+			bool isSub = result.find("sub") != std::string::npos;
+
 			// 4J Stu - All our flash controls that allow replacing textures use a special 64x64 symbol
 			// Force this size here so that our images don't get scaled wildly
 	#if (defined __ORBIS__ || defined _DURANGO )
@@ -1842,11 +1952,15 @@ GDrawTexture * RADLINK UIController::TextureSubstitutionCreateCallback ( void * 
 	#if defined _WINDOWS64
             // Only set the size to 96x96 for 1080p on Windows
             UIScene *scene = uiController->GetTopScene(0);
-            if (scene->getSceneResolution() == UIScene::eSceneResolution_1080)
-            {
-                *width = 96;
-                *height = 96;
+			//Fix for icon size changing on Achievements
+			if (scene) {
+				if (scene->getSceneResolution() == UIScene::eSceneResolution_1080 && (scene->getSceneType() != eUIScene_PauseMenu && scene->getSceneType() != eUIScene_MainMenu && scene->getSceneType() != eUIScene_AchievementsMenu) && isSub == false)
+				{
+					*width = 96;
+					*height = 96;
+				}
 			}
+            
 	#endif
 
 			*destroy_callback_data = (void *)id;
@@ -1994,6 +2108,7 @@ bool UIController::NavigateToScene(int iPad, EUIScene scene, void *initData, EUI
 	SetMenuDisplayed(menuDisplayedPad,true);
 	bool success = m_groups[static_cast<int>(group)]->NavigateToScene(iPad, scene, initData, layer);
 	if(success && group == eUIGroup_Fullscreen) setFullscreenMenuDisplayed(true);
+	UpdateCursorIcon(nullptr);
 	LeaveCriticalSection(&m_navigationLock);
 
 	timer.PrintElapsedTime(L"Navigate to scene");
@@ -2033,6 +2148,7 @@ bool UIController::NavigateBack(int iPad, bool forceUsePad, EUIScene eScene, EUI
 		navComplete = m_groups[static_cast<int>(eUIGroup_Fullscreen)]->NavigateBack(iPad, eScene, eLayer);
 		if(!m_groups[static_cast<int>(eUIGroup_Fullscreen)]->GetMenuDisplayed()) SetMenuDisplayed(XUSER_INDEX_ANY,false);
 	}
+	UpdateCursorIcon(nullptr);
 	return navComplete;
 }
 
@@ -2067,10 +2183,13 @@ void UIController::NavigateToHomeMenu()
 	{
 		// need to stop the streaming audio - by playing streaming audio from the default texture pack now
 		// reset the streaming sounds back to the normal ones
-		pMinecraft->soundEngine->SetStreamingSounds(eStream_Overworld_Calm1,eStream_Overworld_piano3,
-			eStream_Nether1,eStream_Nether4,
-			eStream_end_dragon,eStream_end_end,
-			eStream_CD_1);
+	    pMinecraft->soundEngine->SetStreamingSounds(eStream_Overworld_Calm1,eStream_Overworld_piano3,
+            eStream_Nether1,eStream_Nether4,
+            eStream_end_dragon,eStream_end_end,
+            eStream_Overworld_Creative1,eStream_Overworld_Creative6,
+            eStream_Overworld_Menu1,eStream_Overworld_Menu4,
+            eStream_BattleMode1,eStream_BattleMode4,
+            eStream_CD_1);
 		pMinecraft->soundEngine->playStreaming(L"", 0, 0, 0, 1, 1);
 
 		// 		if(pDLCTexPack->m_pStreamedWaveBank!=nullptr)
@@ -2930,6 +3049,15 @@ void UIController::HidePressStart()
 {
 	ClearPressStart();
 	if(m_groups[static_cast<int>(eUIGroup_Fullscreen)]->getPressStartToPlay()) m_groups[static_cast<int>(eUIGroup_Fullscreen)]->getPressStartToPlay()->showPressStart(0, false);
+}
+
+void UIController::ShowAchievementToast(string achievementName, string achievementDescription, byteArray b, string achT)
+{
+	if (m_groups[static_cast<int>(eUIGroup_Fullscreen)]->getPressStartToPlay()) {
+		m_groups[static_cast<int>(eUIGroup_Fullscreen)]->getPressStartToPlay()->registerSubstitutionTexture(convStringToWstring(achT) + L"sub", b.data, b.length);
+		m_groups[static_cast<int>(eUIGroup_Fullscreen)]->getPressStartToPlay()->ShowAchievementToast(achievementName, achievementDescription, achT + "sub");
+	}
+	toastOn = true;
 }
 
 void UIController::ClearPressStart()

@@ -14,8 +14,8 @@ class SparseLightStorage;
 class CompressedTileStorage;
 class SparseDataStorage;
 
-#include "..\Minecraft.World\SmoothFloat.h"
-#include "..\Minecraft.World\C4JThread.h"
+#include "../Minecraft.World/SmoothFloat.h"
+#include "../Minecraft.World/C4JThread.h"
 #include "ResourceLocation.h"
 
 class GameRenderer
@@ -63,6 +63,13 @@ private:
     // roll modification
     float cameraRoll;
     float cameraRollO;
+
+	float m_yBob;
+	float m_yBobO;
+
+	float m_elytaCamShift;
+
+
 
 	// 4J - changes brought forward from 1.8.2
 	static const int NUM_LIGHT_TEXTURES = 4;// * 3;

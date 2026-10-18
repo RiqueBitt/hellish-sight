@@ -1,10 +1,10 @@
 #include "stdafx.h"
 #include "Particle.h"
 #include "Tesselator.h"
-#include "..\Minecraft.World\Random.h"
-#include "..\Minecraft.World\Mth.h"
-#include "..\Minecraft.World\JavaMath.h"
-#include "..\Minecraft.World\net.minecraft.world.h"
+#include "../Minecraft.World/Random.h"
+#include "../Minecraft.World/Mth.h"
+#include "../Minecraft.World/JavaMath.h"
+#include "../Minecraft.World/net.minecraft.world.h"
 
 /*
     protected int tex;
@@ -218,7 +218,7 @@ void Particle::setTex(Textures *textures, Icon *icon)
 	{
 #ifndef _CONTENT_PACKAGE
 		printf("Invalid call to Particle.setTex, use coordinate methods\n");
-		__debugbreak();
+		DEBUG_BREAK();
 #endif
 		//throw new RuntimeException("Invalid call to Particle.setTex, use coordinate methods");
 	}
@@ -230,7 +230,7 @@ void Particle::setMiscTex(int slotIndex)
 	{
 #ifndef _CONTENT_PACKAGE
 		printf("Invalid call to Particle.setMixTex\n");
-		__debugbreak();
+		DEBUG_BREAK();
 		//throw new RuntimeException("Invalid call to Particle.setMiscTex");
 #endif
 	}

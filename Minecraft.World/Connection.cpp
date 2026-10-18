@@ -1,10 +1,11 @@
+#include "Connection.h"
 #include "stdafx.h"
 #include "InputOutputStream.h"
 #include "Socket.h"
 #include "Connection.h"
 #include "ThreadName.h"
 #include "compression.h"
-#include "..\Minecraft.Client\PS3\PS3Extras\ShutdownManager.h"
+#include "../Minecraft.Client/PS3/PS3Extras/ShutdownManager.h"
 
 // This should always be enabled, except for debugging use
 #ifndef _DEBUG
@@ -32,6 +33,7 @@ void Connection::_init()
 	disconnectReason = DisconnectPacket::eDisconnect_None;
 	noInputTicks = 0;
 	estimatedRemaining = 0;
+	estimatedRemainingRaw = 0;
 	fakeLag = 0;
 	slowWriteDelay = 50;
 
@@ -145,6 +147,23 @@ void Connection::setListener(PacketListener *packetListener)
 	this->packetListener = packetListener;
 }
 
+void Connection::send(unsigned char* buffer, int size)
+{
+	if (quitting) 	return;
+
+	MemSect(15);
+	// 4J Jev, synchronized (&writeLock)
+	EnterCriticalSection(&writeLock);
+
+	estimatedRemaining += size;
+
+	outgoingRaw.push(std::make_pair(buffer, size));
+
+	// 4J Jev, end synchronized.
+	LeaveCriticalSection(&writeLock);
+	MemSect(0);
+}
+
 void Connection::send(shared_ptr<Packet> packet)
 {
 	if (quitting) 	return;
@@ -188,18 +207,15 @@ bool Connection::writeTick()
 	if(bufferedDos==nullptr || byteArrayDos==nullptr)
 		return didSomething;
 
+	EnterCriticalSection(&writeLock);
 	// try {
 	if (!outgoing.empty() && (fakeLag == 0 || System::currentTimeMillis() - outgoing.front()->createTime >= fakeLag))
 	{
 		shared_ptr<Packet> packet;
 
-		EnterCriticalSection(&writeLock);
-
 		packet = outgoing.front();
 		outgoing.pop();
 		estimatedRemaining -= packet->getEstimatedSize() + 1;
-
-		LeaveCriticalSection(&writeLock);
 
 		Packet::writePacket(packet, bufferedDos);
 		
@@ -232,19 +248,38 @@ bool Connection::writeTick()
 		didSomething = true;
 	}
 
+	if (!outgoingRaw.empty())
+	{
+		std::pair<unsigned char*, int> rawPacket;
+
+		rawPacket = outgoingRaw.front();
+		outgoingRaw.pop();
+		estimatedRemaining -= rawPacket.second;
+
+		for (int i = 0; i < rawPacket.second; i++) {
+			bufferedDos->writeByte(rawPacket.first[i]);
+		}
+
+		// 4J Stu - Changed this so that rather than writing to the network stream through a buffered stream we want to:
+		// a) Only push whole "game" packets to QNet, rather than amalgamated chunks of data that may include many packets, and partial packets
+		// b) To be able to change the priority and queue of a packet if required
+		//sos->writeWithFlags( baos->buf, 0, baos->size(), 0 );
+		//baos->reset();
+
+		int value = rawPacket.first[0];
+		writeSizes[value] += rawPacket.second;
+		didSomething = true;
+	}
+
 	if ((slowWriteDelay-- <= 0) && !outgoing_slow.empty() && (fakeLag == 0 || System::currentTimeMillis() - outgoing_slow.front()->createTime >= fakeLag))
 	{
 		shared_ptr<Packet> packet;
 
 		//synchronized (writeLock) {
 
-		EnterCriticalSection(&writeLock);
-
 		packet = outgoing_slow.front();
 		outgoing_slow.pop();
 		estimatedRemaining -= packet->getEstimatedSize() + 1;
-
-		LeaveCriticalSection(&writeLock);
 
 		// If the shouldDelay flag is still set at this point then we want to write it to QNet as a single packet with priority flags
 		// Otherwise just buffer the packet with other outgoing packets as the java game did
@@ -301,6 +336,9 @@ bool Connection::writeTick()
 		slowWriteDelay = 0;
 		didSomething = true;
 	}
+
+	LeaveCriticalSection(&writeLock);
+
 	/* 4J JEV, removed try/catch
 	} catch (Exception e) {
 	if (!disconnected) handleException(e);
@@ -645,12 +683,11 @@ int Connection::runWrite(void* lpParam)
 
 	while ((con->running || waitResult == WAIT_OBJECT_0 ) && ShutdownManager::ShouldRun(ShutdownManager::eConnectionWriteThreads))
 	{
-		while (con->writeTick())
-			;
+		while (con->writeTick());
 
 		//Sleep(100L);	
 		// TODO - 4J Stu - 1.8.2 changes these sleeps to 2L, but not sure whether we should do that as well	
-		waitResult = con->m_hWakeWriteThread->WaitForSignal(100L);
+		waitResult = con->m_hWakeWriteThread->WaitForSignal(50L); //was 100L, switch to 50L
 
 		if (con->bufferedDos != nullptr) con->bufferedDos->flush();
 		//if (con->byteArrayDos != nullptr) con->byteArrayDos->flush();

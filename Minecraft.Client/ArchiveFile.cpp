@@ -1,7 +1,7 @@
 #include "stdafx.h"
 
-#include "..\Minecraft.World\StringHelpers.h"
-#include "..\Minecraft.World\compression.h"
+#include "../Minecraft.World/StringHelpers.h"
+#include "../Minecraft.World/compression.h"
 
 #include "ArchiveFile.h"
 
@@ -104,7 +104,7 @@ byteArray ArchiveFile::getFile(const wstring &filename)
 		app.DebugPrintf("Couldn't find file in archive\n");
 		app.DebugPrintf("Failed to find file '%ls' in archive\n", filename.c_str());
 #ifndef _CONTENT_PACKAGE
-		__debugbreak();
+		DEBUG_BREAK();
 #endif
 		app.FatalLoadError();
 	}

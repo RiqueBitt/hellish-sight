@@ -5,9 +5,9 @@
 #include "GuiParticles.h"
 #include "Tesselator.h"
 #include "Textures.h"
-#include "..\Minecraft.World\SoundTypes.h"
+#include "../Minecraft.World/SoundTypes.h"
 #ifdef _WINDOWS64
-#include "Windows64\KeyboardMouseInput.h"
+#include "Windows64/KeyboardMouseInput.h"
 #endif
 
 
@@ -21,6 +21,18 @@ Screen::Screen()	// 4J added
 	font = nullptr;
 	particles = nullptr;
 	clickedButton = nullptr;
+}
+
+Screen::~Screen()
+{
+	delete particles;
+	particles = nullptr;
+
+	for (Button *button : buttons)
+	{
+		delete button;
+	}
+	buttons.clear();
 }
 
 void Screen::render(int xm, int ym, float a)
@@ -161,7 +173,7 @@ void Screen::updateEvents()
 	static bool s_arrowFirstRepeat[2] = { false, false };
 	const DWORD ARROW_REPEAT_DELAY_MS = 250;
 	const DWORD ARROW_REPEAT_INTERVAL_MS = 50;
-	DWORD now = GetTickCount();
+	DWORD now = GetTickCount64();
 
 	// Poll keyboard events (special keys that may not come through WM_CHAR, e.g. Escape, arrows)
 	for (int vk = 0; vk < 256; vk++)

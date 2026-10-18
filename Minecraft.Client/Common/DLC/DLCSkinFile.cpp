@@ -1,11 +1,11 @@
 #include "stdafx.h"
 #include "DLCManager.h"
 #include "DLCSkinFile.h"
-#include "..\..\ModelPart.h"
-#include "..\..\EntityRenderer.h"
-#include "..\..\EntityRenderDispatcher.h"
-#include "..\..\..\Minecraft.World\Player.h"
-#include "..\..\..\Minecraft.World\StringHelpers.h"
+#include "../../ModelPart.h"
+#include "../../EntityRenderer.h"
+#include "../../EntityRenderDispatcher.h"
+#include "../../../Minecraft.World/Player.h"
+#include "../../../Minecraft.World/StringHelpers.h"
 
 DLCSkinFile::DLCSkinFile(const wstring &path) : DLCFile(DLCManager::e_DLCType_Skin,path)
 {
@@ -15,7 +15,11 @@ DLCSkinFile::DLCSkinFile(const wstring &path) : DLCFile(DLCManager::e_DLCType_Sk
 	m_bIsFree = false;	
 	m_uiAnimOverrideBitmask=0L;
 }
-
+void DLCSkinFile::getSkinAdjustments(_SkinAdjustments* adj)
+{
+    
+    memcpy(adj, &m_skinAdjustments, sizeof(_SkinAdjustments));
+}
 void DLCSkinFile::addData(PBYTE pbData, DWORD dwBytes)
 {
 	app.AddMemoryTextureFile(m_path,pbData,dwBytes);

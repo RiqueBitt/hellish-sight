@@ -9,7 +9,7 @@
 #include "net.minecraft.world.phys.h"
 #include "net.minecraft.world.damagesource.h"
 #include "BasicTypeContainers.h"
-#include "..\Minecraft.Client\Textures.h"
+#include "../Minecraft.Client/Textures.h"
 #include "net.minecraft.world.entity.boss.enderdragon.h"
 #include "net.minecraft.world.level.pathfinder.h"
 #include "SharedConstants.h"
@@ -1118,15 +1118,6 @@ bool EnderDragon::hurt(shared_ptr<MultiEntityMobPart> MultiEntityMobPart, Damage
 		damage = damage / 4 + 1;
 	}
 
-	//float rot1 = yRot * PI / 180;
-	//float ss1 = sin(rot1);
-	//float cc1 = cos(rot1);
-
-	//xTarget = x + ss1 * 5 + (random->nextFloat() - 0.5f) * 2;
-	//yTarget = y + random->nextFloat() * 3 + 1;
-	//zTarget = z - cc1 * 5 + (random->nextFloat() - 0.5f) * 2;
-	//attackTarget = nullptr;
-
 	if ( source->getEntity() != nullptr && source->getEntity()->instanceof(eTYPE_PLAYER) || source->isExplosion() )
 	{
 		int healthBefore = getHealth();
@@ -1179,7 +1170,13 @@ bool EnderDragon::hurt(shared_ptr<MultiEntityMobPart> MultiEntityMobPart, Damage
 
 bool EnderDragon::hurt(DamageSource *source, float damage)
 {
-	return false;
+	if (source == DamageSource::outOfWorld)
+    {
+        setSynchedAction(e_EnderdragonAction_Sitting_Scanning, true);
+        reallyHurt(source, getMaxHealth() + 1);
+        return true;
+    }
+    return false;
 }
 
 bool EnderDragon::reallyHurt(DamageSource *source, float damage)

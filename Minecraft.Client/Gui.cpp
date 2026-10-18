@@ -3,31 +3,31 @@
 #include "ItemRenderer.h"
 #include "GameRenderer.h"
 #include "Options.h"
-#include "MultiplayerLocalPlayer.h"
+#include "MultiPlayerLocalPlayer.h"
 #include "Textures.h"
 #include "TextureAtlas.h"
 #include "GameMode.h"
 #include "Lighting.h"
 #include "ChatScreen.h"
 #include "MultiPlayerLevel.h"
-#include "..\Minecraft.World\JavaMath.h"
-#include "..\Minecraft.World\net.minecraft.world.entity.player.h"
-#include "..\Minecraft.World\net.minecraft.world.effect.h"
-#include "..\Minecraft.World\net.minecraft.world.food.h"
-#include "..\Minecraft.World\net.minecraft.world.item.h"
-#include "..\Minecraft.World\net.minecraft.world.level.h"
-#include "..\Minecraft.World\LevelData.h"
-#include "..\Minecraft.World\net.minecraft.world.level.tile.h"
-#include "..\Minecraft.World\System.h"
-#include "..\Minecraft.World\Language.h"
+#include "../Minecraft.World/JavaMath.h"
+#include "../Minecraft.World/net.minecraft.world.entity.player.h"
+#include "../Minecraft.World/net.minecraft.world.effect.h"
+#include "../Minecraft.World/net.minecraft.world.food.h"
+#include "../Minecraft.World/net.minecraft.world.item.h"
+#include "../Minecraft.World/net.minecraft.world.level.h"
+#include "../Minecraft.World/LevelData.h"
+#include "../Minecraft.World/net.minecraft.world.level.tile.h"
+#include "../Minecraft.World/System.h"
+#include "../Minecraft.World/Language.h"
 #include "EntityRenderDispatcher.h"
-#include "..\Minecraft.World\Dimension.h"
-#include "..\Minecraft.World\net.minecraft.world.entity.boss.enderdragon.h"
+#include "../Minecraft.World/Dimension.h"
+#include "../Minecraft.World/net.minecraft.world.entity.boss.enderdragon.h"
 #include "EnderDragonRenderer.h"
-#include "..\Minecraft.World\net.minecraft.h"
-#include "..\Minecraft.World\net.minecraft.world.h"
-#include "..\Minecraft.World\LevelChunk.h"
-#include "..\Minecraft.World\Biome.h"
+#include "../Minecraft.World/net.minecraft.h"
+#include "../Minecraft.World/net.minecraft.world.h"
+#include "../Minecraft.World/LevelChunk.h"
+#include "../Minecraft.World/Biome.h"
 #include <Common/UI/UI.h>
 #include "Client/Hud/ModHud.h"
 
@@ -500,11 +500,10 @@ void Gui::render(float a, bool mouseFree, int xMouse, int yMouse)
 
 					int y0 = 0;
 
-					// No hardcore on console
-					/*if (minecraft->level.getLevelData().isHardcore())
-					{
-						y0 = 5;
-					}*/
+					//if (minecraft->level->getLevelData()->isHardcore())
+					//{
+					//	y0 = 5;
+					//}
 
 					blit(xo, yo, 16 + bg * 9, 9 * y0, 9, 9);
 					if (blink)
@@ -712,8 +711,8 @@ void Gui::render(float a, bool mouseFree, int xMouse, int yMouse)
 				glEnable(GL_COLOR_MATERIAL);
 
 				// 4J - TomK now using safe zone values directly instead of the magic number calculation that lived here before (which only worked for medium scale, the other two were off!)
-				int xo = iSafezoneXHalf + 10;
-				int yo = iSafezoneTopYHalf + 10;
+				int xo = iSafezoneXHalf + 10; // TODO: fix relative scaling for atrocious aspect ratios
+				int yo = iSafezoneTopYHalf + 10; // TODO: fix relative scaling for atrocious aspect ratios
 
 #ifdef __PSVITA__
 				// align directly with corners, there are no safe zones on vita
@@ -723,8 +722,29 @@ void Gui::render(float a, bool mouseFree, int xMouse, int yMouse)
 
 				glPushMatrix();
 				glTranslatef(static_cast<float>(xo), static_cast<float>(yo), 50);
-				float ss = 12;
-				glScalef(-ss, ss, ss);
+				
+				// correct paper doll aspect ratio
+				float ss = 12.0f;
+				float aspectScaleX = 1.0f;
+				float aspectScaleY = 1.0f;
+
+				extern int g_rScreenWidth;
+				extern int g_rScreenHeight;
+
+				if (g_rScreenWidth > 0 && g_rScreenHeight > 0) {
+					float screenAspect = (float)g_rScreenWidth / (float)g_rScreenHeight;
+					const float targetAspect = 16.0f / 9.0f;
+					
+					// apply correction if window is not already at a 16:9 aspect ratio
+					if (fabs(screenAspect - targetAspect) > 0.01f) {
+						if (screenAspect > targetAspect)
+							aspectScaleX = targetAspect / screenAspect;
+						else
+							aspectScaleY = screenAspect / targetAspect;
+					}
+				}
+
+				glScalef(-ss * aspectScaleX, ss * aspectScaleY, ss);
 				glRotatef(180, 0, 0, 1);
 
 				float oyr = minecraft->player->yRot;
@@ -868,10 +888,11 @@ void Gui::render(float a, bool mouseFree, int xMouse, int yMouse)
 	//            font.draw(str, x + 1, y, 0xffffff);
 	//        }
 
+
 	lastTickA = a;
 	// 4J Stu - This is now displayed in a xui scene
 #if 0
-	// Jukebox CD message
+// Jukebox CD message
     if (overlayMessageTime > 0)
 	{
         float t = overlayMessageTime - a;
@@ -1079,7 +1100,7 @@ void Gui::render(float a, bool mouseFree, int xMouse, int yMouse)
         vector<wstring> lines;
 
         // Only show version/branch for player 0 to avoid cluttering each splitscreen viewport
-        if (iPad == 0)
+        if (iPad == 0 && ClientConstants::SHOW_VERSION_WATERMARK)
         {
             lines.push_back(ClientConstants::VERSION_STRING);
             lines.push_back(ClientConstants::BRANCH_STRING);
@@ -1087,6 +1108,7 @@ void Gui::render(float a, bool mouseFree, int xMouse, int yMouse)
 
         if (minecraft->options->renderDebug && minecraft->player != nullptr && minecraft->level != nullptr)
         {
+            lines.push_back(std::wstring(VER_BRANCHVERSION_STR_W) + L"/" + std::wstring(VER_PRODUCTVERSION_STR_W));
             lines.push_back(minecraft->fpsString);
             lines.push_back(L"E: " + std::to_wstring(minecraft->level->getAllEntities().size()));
             int renderDistance = app.GetGameSettings(iPad, eGameSetting_RenderDistance);
@@ -1185,6 +1207,7 @@ void Gui::render(float a, bool mouseFree, int xMouse, int yMouse)
                 wfeature[eTerrainFeature_Mineshaft] = L"Mineshaft: ";
                 wfeature[eTerrainFeature_Village] = L"Village: ";
                 wfeature[eTerrainFeature_Ravine] = L"Ravine: ";
+                wfeature[eTerrainFeature_OceanMonument] = L"Monument: ";
 
                 // maxW in font units: physical width divided by font scale
                 float maxW = (static_cast<float>(g_rScreenWidth) - debugLeft - 8) / fontScale;
@@ -1195,7 +1218,7 @@ void Gui::render(float a, bool mouseFree, int xMouse, int yMouse)
                 {
                     FEATURE_DATA *pFeatureData = app.m_vTerrainFeatures[i];
                     int type = pFeatureData->eTerrainFeature;
-                    if (type < eTerrainFeature_Stronghold || type > eTerrainFeature_Ravine) continue;
+                    if (type < eTerrainFeature_Stronghold || type > eTerrainFeature_OceanMonument) continue;
                     if (truncated[type]) continue;
 
                     wstring itemInfo = L"[" + std::to_wstring(pFeatureData->x * 16) + L", " + std::to_wstring(pFeatureData->z * 16) + L"] ";
@@ -1211,7 +1234,7 @@ void Gui::render(float a, bool mouseFree, int xMouse, int yMouse)
                 }
 
                 lines.push_back(L""); // Spacer
-                for (int i = eTerrainFeature_Stronghold; i <= static_cast<int>(eTerrainFeature_Ravine); i++)
+                for (int i = eTerrainFeature_Stronghold; i <= static_cast<int>(eTerrainFeature_OceanMonument); i++)
                 {
                     lines.push_back(wfeature[i]);
                 }
@@ -1222,7 +1245,20 @@ void Gui::render(float a, bool mouseFree, int xMouse, int yMouse)
 
 		// Disable the depth test so the text shows on top of the paperdoll
         glDisable(GL_DEPTH_TEST);
+#ifdef _WINDOWS64
+		float scaleWidth = (g_rScreenWidth / 1920.0f);
+		float scaleHeight = (g_rScreenHeight / 1080.0f);
 
+		float scale = min(scaleWidth, scaleHeight); //stop stretching
+
+		if (scale < 0.5f) scale = 0.5f; // force minimum scale
+        if (scale > 1.2f) // resolutions over 1296 pixels tall
+        {
+			scale = scale - 0.33f; // tame overscaling on 1440p
+		}
+			
+		glScalef(scale, scale, 1);
+#endif
         // Loop through the lines and draw them all on screen
         int yPos = debugTop;
         for (const auto &line : lines)
@@ -1231,6 +1267,9 @@ void Gui::render(float a, bool mouseFree, int xMouse, int yMouse)
             yPos += 10;
         }
 
+#ifdef _WINDOWS64
+		glScalef(1, 1, 1);
+#endif
 		// Restore the depth test
         glEnable(GL_DEPTH_TEST);
 
@@ -1435,9 +1474,43 @@ void Gui::clearMessages(int iPad)
 	}
 }
 
+int getVisibleMessageLength(const wstring& _string) {
+	int visibleMessageLength = 0;
+	bool inHtmlTag = false;
+
+	for (wchar_t _char : _string) {
+		if (_char == L'<') inHtmlTag = true;
+		if (_char == L'>') inHtmlTag = false;
+
+		if (!inHtmlTag) visibleMessageLength++;
+	}
+
+	return visibleMessageLength;
+}
+
+int getVisibleIndexToRaw(const wstring& _string, size_t target) {
+	int visibleMessageLength = 0;
+	bool inHtmlTag = false;
+
+	for (size_t i = 0; i < _string.size(); i++) {
+		if (_string[i] == L'<') inHtmlTag = true;
+		if (_string[i] == L'>') inHtmlTag = false;
+
+		if (!inHtmlTag) {
+			if (visibleMessageLength == target) return i;
+
+			visibleMessageLength++;
+		}
+	}
+	return _string.size();
+}
+
 
 void Gui::addMessage(const wstring& _string,int iPad,bool bIsDeathMessage)
 {
+	{ char buf[32]; sprintf_s(buf, "[CHAT] Display (pad=%d): ", iPad); OutputDebugStringA(buf); }
+	OutputDebugStringW(_string.c_str());
+	OutputDebugStringA("\n");
 	wstring string = _string;	// 4J - Take copy of input as it is const
 	//int iScale=1;
 
@@ -1515,29 +1588,25 @@ void Gui::addMessage(const wstring& _string,int iPad,bool bIsDeathMessage)
 		break;
 	}
 
-
-	while (string.length() > maximumChars)
+	while (getVisibleMessageLength(string) > maximumChars)
 	{
-        unsigned int i = 1;
-        while (i < string.length() && (i + 1) <= maximumChars)
-		{
-            i++;
-        }
-		size_t iLast=string.find_last_of(L" ",i);
+		size_t cutOffset = getVisibleIndexToRaw(string, maximumChars);
+
+		size_t iLast=string.find_last_of(L" ", cutOffset);
 		switch(XGetLanguage())
 		{
 			case XC_LANGUAGE_JAPANESE:
 			case XC_LANGUAGE_TCHINESE:
 			case XC_LANGUAGE_KOREAN:
-				iLast = maximumChars;
+				iLast = cutOffset;
 				break;
 			default:
-				iLast=string.find_last_of(L" ",i);
+				iLast=string.find_last_of(L" ", cutOffset);
 				break;
 		}
 
 		// if a space was found, include the space on this line
-		if(iLast!=i)
+		if(iLast!=cutOffset)
 		{
 			iLast++;
 		}
@@ -1589,6 +1658,13 @@ float Gui::getOpacity(int iPad, DWORD index)
 	return opacityPercentage;
 }
 
+//just like java functionality it overwrites the jukebox label
+void Gui::setActionBarMessage(wstring message)
+{
+	overlayMessageString = message;
+	overlayMessageTime = 20 * 4; //idk how long it should last, need to check java usage
+}
+
 float Gui::getJukeboxOpacity(int iPad)
 {
 	float t = overlayMessageTime - lastTickA;
@@ -1604,7 +1680,7 @@ void Gui::setNowPlaying(const wstring& string)
 //	overlayMessageString = L"Now playing: " + string;
 	overlayMessageString = app.GetString(IDS_NOWPLAYING) + string;
     overlayMessageTime = 20 * 3;
-    animateOverlayMessageColor = true;
+    animateOverlayMessageColor = true; //appears to be unused, @DrPerkyLegit plans to add in later pr
 }
 
 void Gui::displayClientMessage(int messageId, int iPad)

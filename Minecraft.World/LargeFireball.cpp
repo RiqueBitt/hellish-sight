@@ -29,7 +29,8 @@ void LargeFireball::onHit(HitResult *res)
 			res->entity->hurt(damageSource, 6);
 			delete damageSource;
 		}
-		level->explode(nullptr, x, y, z, explosionPower, true, level->getGameRules()->getBoolean(GameRules::RULE_MOBGRIEFING));
+		bool shouldEditBlocks = level->getGameRules()->getBoolean(GameRules::RULE_MOBGRIEFING);
+		level->explode(nullptr, x, y, z, explosionPower, shouldEditBlocks, shouldEditBlocks);
 		remove();
 	}
 }

@@ -1,8 +1,8 @@
 #include "stdafx.h"
 #include "UI.h"
 #include "UIControl.h"
-#include "..\..\..\Minecraft.World\StringHelpers.h"
-#include "..\..\..\Minecraft.World\JavaMath.h"
+#include "../../../Minecraft.World/StringHelpers.h"
+#include "../../../Minecraft.World/JavaMath.h"
 
 UIControl::UIControl()
 {
@@ -92,6 +92,18 @@ S32 UIControl::getXPos()
 S32 UIControl::getYPos()
 {
 	return m_y;
+}
+
+void UIControl::setXPos(S32 x)
+{
+	m_x = x;
+	IggyValueSetF64RS( getIggyValuePath(), m_nameXPos, nullptr, (F64)x );
+}
+
+void UIControl::setYPos(S32 y)
+{
+	m_y = y;
+	IggyValueSetF64RS( getIggyValuePath(), m_nameYPos, nullptr, (F64)y );
 }
 
 S32 UIControl::getWidth()

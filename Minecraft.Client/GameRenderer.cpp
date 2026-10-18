@@ -13,40 +13,42 @@
 #include "CreativeMode.h"
 #include "Lighting.h"
 #include "Options.h"
-#include "MultiplayerLocalPlayer.h"
+#include "MultiPlayerLocalPlayer.h"
 #include "GuiParticles.h"
 #include "MultiPlayerLevel.h"
 #include "Chunk.h"
-#include "..\Minecraft.World\net.minecraft.world.entity.h"
-#include "..\Minecraft.World\net.minecraft.world.entity.player.h"
-#include "..\Minecraft.World\net.minecraft.world.item.enchantment.h"
-#include "..\Minecraft.World\net.minecraft.world.level.h"
-#include "..\Minecraft.World\net.minecraft.world.level.material.h"
-#include "..\Minecraft.World\net.minecraft.world.level.tile.h"
-#include "..\Minecraft.World\net.minecraft.world.level.chunk.h"
-#include "..\Minecraft.World\net.minecraft.world.level.biome.h"
-#include "..\Minecraft.World\net.minecraft.world.level.dimension.h"
-#include "..\Minecraft.World\net.minecraft.world.phys.h"
-#include "..\Minecraft.World\System.h"
-#include "..\Minecraft.World\FloatBuffer.h"
-#include "..\Minecraft.World\ThreadName.h"
-#include "..\Minecraft.World\SparseLightStorage.h"
-#include "..\Minecraft.World\CompressedTileStorage.h"
-#include "..\Minecraft.World\SparseDataStorage.h"
-#include "..\Minecraft.World\JavaMath.h"
-#include "..\Minecraft.World\Facing.h"
-#include "..\Minecraft.World\MobEffect.h"
-#include "..\Minecraft.World\IntCache.h"
-#include "..\Minecraft.World\SmoothFloat.h"
-#include "..\Minecraft.World\MobEffectInstance.h"
-#include "..\Minecraft.World\Item.h"
+#include "../Minecraft.World/net.minecraft.world.entity.h"
+#include "../Minecraft.World/net.minecraft.world.entity.player.h"
+#include "../Minecraft.World/net.minecraft.world.item.enchantment.h"
+#include "../Minecraft.World/net.minecraft.world.level.h"
+#include "../Minecraft.World/net.minecraft.world.level.material.h"
+#include "../Minecraft.World/net.minecraft.world.level.tile.h"
+#include "../Minecraft.World/net.minecraft.world.level.chunk.h"
+#include "../Minecraft.World/net.minecraft.world.level.biome.h"
+#include "../Minecraft.World/net.minecraft.world.level.dimension.h"
+#include "../Minecraft.World/net.minecraft.world.phys.h"
+#include "../Minecraft.World/System.h"
+#include "../Minecraft.World/FloatBuffer.h"
+#include "../Minecraft.World/ThreadName.h"
+#include "../Minecraft.World/SparseLightStorage.h"
+#include "../Minecraft.World/CompressedTileStorage.h"
+#include "../Minecraft.World/SparseDataStorage.h"
+#include "../Minecraft.World/JavaMath.h"
+#include "../Minecraft.World/Facing.h"
+#include "../Minecraft.World/MobEffect.h"
+#include "../Minecraft.World/IntCache.h"
+#include "../Minecraft.World/SmoothFloat.h"
+#include "../Minecraft.World/MobEffectInstance.h"
+#include "../Minecraft.World/Item.h"
 #include "Camera.h"
-#include "..\Minecraft.World\SoundTypes.h"
+#include "../Minecraft.World/SoundTypes.h"
 #include "HumanoidModel.h"
-#include "..\Minecraft.World\Item.h"
-#include "..\Minecraft.World\compression.h"
-#include "PS3\PS3Extras\ShutdownManager.h"
+#include "../Minecraft.World/Item.h"
+#include "../Minecraft.World/compression.h"
+#include "PS3/PS3Extras/ShutdownManager.h"
 #include "BossMobGuiInfo.h"
+#include "../Minecraft.World/LivingEntity.h"
+
 
 #include "TexturePackRepository.h"
 #include "TexturePack.h"
@@ -96,6 +98,10 @@ GameRenderer::GameRenderer(Minecraft *mc)
 	fovOffsetO = 0;
 	cameraRoll = 0;
 	cameraRollO = 0;
+	m_yBob = 0.0f;
+	m_yBobO = 0.0f;
+	m_elytaCamShift = 0.0f;
+
 	for( int i = 0; i < 4; i++ )
 	{
 		fov[i] = 0.0f;
@@ -142,6 +148,7 @@ GameRenderer::GameRenderer(Minecraft *mc)
 	itemInHandRenderer = nullptr;
 
 	// 4J-PB - set up the local players iteminhand renderers here - needs to be done with lighting enabled so that the render geometry gets compiled correctly
+#ifndef MINECRAFT_SERVER_BUILD
 	glEnable(GL_LIGHTING);
 	mc->localitemInHandRenderers[0] = new ItemInHandRenderer(mc);//itemInHandRenderer;
 	mc->localitemInHandRenderers[1] = new ItemInHandRenderer(mc);
@@ -164,7 +171,9 @@ GameRenderer::GameRenderer(Minecraft *mc)
 	for(int i=0;i<NUM_LIGHT_TEXTURES;i++)
 		lightPixels[i] = intArray(16*16);
 #endif
+#endif
 
+#ifndef MINECRAFT_SERVER_BUILD
 #ifdef MULTITHREAD_ENABLE
 	m_updateEvents  = new C4JThread::EventArray(eUpdateEventCount, C4JThread::EventArray::e_modeAutoClear);
 	m_updateEvents->Set(eUpdateEventIsFinished);
@@ -176,6 +185,7 @@ GameRenderer::GameRenderer(Minecraft *mc)
 #endif// __PS3__
 	m_updateThread->SetProcessor(CPU_CORE_CHUNK_UPDATE);
 	m_updateThread->Run();
+#endif
 #endif
 }
 
@@ -196,6 +206,20 @@ void GameRenderer::tick(bool first)		// 4J - add bFirst
 	thirdTiltO = thirdTilt;
 	fovOffsetO = fovOffset;
 	cameraRollO = cameraRoll;
+
+	m_yBobO = m_yBob;
+
+	{
+		shared_ptr<Player> yBobPlayer = dynamic_pointer_cast<Player>(mc->cameraTargetPlayer);
+		float target = 0.0f;
+		if (yBobPlayer != nullptr && !yBobPlayer->onGround
+			&& !(yBobPlayer->abilities.mayfly && yBobPlayer->abilities.flying))
+		{
+
+			target = (float)(atan(-yBobPlayer->yd * 0.2) * 15.0);
+		}
+		m_yBob += (target - m_yBob) * 0.8f;
+	}
 
 	if (mc->options->smoothCamera)
 	{
@@ -228,14 +252,15 @@ void GameRenderer::tick(bool first)		// 4J - add bFirst
 	PIXEndNamedEvent();
 
 	darkenWorldAmountO = darkenWorldAmount;
-	if (BossMobGuiInfo::darkenWorld)
+    int idx = BossMobGuiInfo::getIndexFromDimension((int)mc->level->dimension);
+    if (BossMobGuiInfo::darkenWorld[idx])
 	{
 		darkenWorldAmount += 1.0f / (static_cast<float>(SharedConstants::TICKS_PER_SECOND) * 1);
 		if (darkenWorldAmount > 1)
 		{
 			darkenWorldAmount = 1;
 		}
-		BossMobGuiInfo::darkenWorld = false;
+		BossMobGuiInfo::darkenWorld[idx] = false;
 	}
 	else if (darkenWorldAmount > 0)
 	{
@@ -454,6 +479,11 @@ void GameRenderer::bobView(float a)
 	glRotatef((float) Mth::sin(b * PI) * bob * 3, 0, 0, 1);
 	glRotatef((float) abs(Mth::cos(b * PI - 0.2f) * bob) * 5, 1, 0, 0);
 	glRotatef((float) tilt, 1, 0, 0);
+
+	float yBobAngle = m_yBobO + (m_yBob - m_yBobO) * a;
+	if (fabsf(yBobAngle) > 0.001f)
+		glRotatef(yBobAngle, 1, 0, 0);
+
 }
 
 void GameRenderer::moveCameraToPlayer(float a)
@@ -467,7 +497,71 @@ void GameRenderer::moveCameraToPlayer(float a)
 	double z = player->zo + (player->z - player->zo) * a;
 
 
-	glRotatef(cameraRollO + (cameraRoll - cameraRollO) * a, 0, 0, 1);
+	{
+		shared_ptr<Player> elytraPlayer = dynamic_pointer_cast<Player>(player);
+		bool elytraFlying = (elytraPlayer != nullptr && elytraPlayer->isElytraFlying());
+		float targetShift = elytraFlying ? -1.22f : 0.0f;
+		m_elytaCamShift += (targetShift - m_elytaCamShift) * 0.15f;
+		if (fabsf(m_elytaCamShift) < 0.001f) m_elytaCamShift = 0.0f;
+
+
+		y += m_elytaCamShift;
+	}
+
+	
+	if (localplayer != nullptr && !player->isSleeping())
+	{
+		shared_ptr<Player> rollPlayer = dynamic_pointer_cast<Player>(player);
+		if (rollPlayer != nullptr && rollPlayer->isElytraFlying())
+		{
+	
+			double velX = rollPlayer->xd;
+			double velZ = rollPlayer->zd;
+			double horizVelSq = velX * velX + velZ * velZ;
+
+	
+			Vec3* look = rollPlayer->getLookAngle();
+			double horizLookSq = look->x * look->x + look->z * look->z;
+
+			float targetRoll = 0.0f;
+			if (horizVelSq > 1.0e-6 && horizLookSq > 1.0e-6)
+			{
+				double dot = velX * look->x + velZ * look->z;
+				double cosAngle = dot / sqrt(horizVelSq * horizLookSq);
+		
+				if (cosAngle > 1.0) cosAngle = 1.0;
+				if (cosAngle < -1.0) cosAngle = -1.0;
+
+	
+				double angle = acos(cosAngle) / 2.5;
+				if (angle > PI / 8.0) angle = PI / 8.0;
+
+
+				double cross = velX * look->z - velZ * look->x;
+				float sign = (cross < 0.0) ? -1.0f : 1.0f;
+
+	
+				targetRoll = sign * (float)(angle * (180.0 / PI));
+			}
+
+
+			cameraRoll += (targetRoll - cameraRoll) * 0.1f;
+		}
+		else
+		{
+	
+			if (fabsf(cameraRoll) > 0.01f)
+			{
+				cameraRoll += (0.0f - cameraRoll) * 0.15f;
+				if (fabsf(cameraRoll) < 0.01f) cameraRoll = 0.0f;
+			}
+		}
+
+
+		if (fabsf(cameraRoll) > 0.01f)
+			glRotatef(cameraRoll, 0, 0, 1);
+	}
+
 
 	if (player->isSleeping())
 	{
@@ -573,10 +667,12 @@ void GameRenderer::moveCameraToPlayer(float a)
 		}
 	}
 
-	glTranslatef(0, heightOffset, 0);
+
+	glTranslatef(0, heightOffset - m_elytaCamShift, 0);
+
 
 	x = player->xo + (player->x - player->xo) * a;
-	y = player->yo + (player->y - player->yo) * a - heightOffset;
+	y = player->yo + (player->y - player->yo) * a - heightOffset + m_elytaCamShift;
 	z = player->zo + (player->z - player->zo) * a;
 
 	isInClouds = mc->levelRenderer->isInCloud(x, y, z, a);
@@ -1545,7 +1641,19 @@ void GameRenderer::renderLevel(float a, int64_t until)
 			if (visibleWaterChunks > 0)
 			{
 				PIXBeginNamedEvent(0,"Fancy second pass - actual rendering");
-				levelRenderer->render(cameraEntity, 1, a, updateChunks);	// 4J - chanaged, used to be renderSameAsLast but we don't support that anymore
+				levelRenderer->renderChunksDirect(1, a);	// Lightweight path — skips redundant allChanged/resortChunks checks
+				PIXEndNamedEvent();
+			}
+
+			glBlendFunc(GL_ZERO, GL_ONE);
+			PIXBeginNamedEvent(0,"Third pass level render");
+			int visibleTopTransparentChunks = levelRenderer->render(cameraEntity, 2, a, updateChunks);
+			PIXEndNamedEvent();
+			glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+			if (visibleTopTransparentChunks > 0)
+			{
+				PIXBeginNamedEvent(0,"Third pass level direct render");
+				levelRenderer->renderChunksDirect(2, a);
 				PIXEndNamedEvent();
 			}
 
@@ -1555,6 +1663,9 @@ void GameRenderer::renderLevel(float a, int64_t until)
 		{
 			PIXBeginNamedEvent(0,"Second pass level render");
 			levelRenderer->render(cameraEntity, 1, a, updateChunks);
+			PIXEndNamedEvent();
+			PIXBeginNamedEvent(0,"Third pass level render");
+			levelRenderer->render(cameraEntity, 2, a, updateChunks);
 			PIXEndNamedEvent();
 		}
 
@@ -2112,7 +2223,7 @@ void GameRenderer::setupFog(int i, float alpha)
 
 	if (i == 999)
 	{
-		__debugbreak();
+		DEBUG_BREAK();
 		// 4J TODO
 		/*
 		glFog(GL_FOG_COLOR, getBuffer(0, 0, 0, 1));

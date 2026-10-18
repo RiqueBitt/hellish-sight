@@ -2,8 +2,8 @@
 
 #include "Access.h"
 
-#include "..\Common\StringUtils.h"
-#include "..\ServerLogger.h"
+#include "../Common/StringUtils.h"
+#include "../ServerLogger.h"
 
 #include <memory>
 #include <mutex>
@@ -27,6 +27,7 @@ namespace ServerRuntime
 				std::mutex writeLock;
 				std::shared_ptr<BanManager> banManager;
 				std::shared_ptr<WhitelistManager> whitelistManager;
+				std::shared_ptr<OpManager> opManager;
 				bool whitelistEnabled = false;
 			};
 
@@ -62,6 +63,18 @@ namespace ServerRuntime
 			{
 				std::lock_guard<std::mutex> stateLock(g_accessState.stateLock);
 				g_accessState.whitelistManager = whitelistManager;
+			}
+
+			static std::shared_ptr<OpManager> GetOpManagerSnapshot()
+			{
+				std::lock_guard<std::mutex> stateLock(g_accessState.stateLock);
+				return g_accessState.opManager;
+			}
+
+			static void PublishOpManagerSnapshot(const std::shared_ptr<OpManager> &opManager)
+			{
+				std::lock_guard<std::mutex> stateLock(g_accessState.stateLock);
+				g_accessState.opManager = opManager;
 			}
 		}
 
@@ -101,6 +114,7 @@ namespace ServerRuntime
 			// Build the replacement manager privately so readers keep using the last published snapshot during disk I/O.
 			std::shared_ptr<BanManager> banManager = std::make_shared<BanManager>(baseDirectory);
 			std::shared_ptr<WhitelistManager> whitelistManager = std::make_shared<WhitelistManager>(baseDirectory);
+			std::shared_ptr<OpManager> opManager = std::make_shared<OpManager>(baseDirectory);
 			if (!banManager->EnsureBanFilesExist())
 			{
 				LogError("access", "failed to ensure dedicated server ban files exist");
@@ -109,6 +123,11 @@ namespace ServerRuntime
 			if (!whitelistManager->EnsureWhitelistFileExists())
 			{
 				LogError("access", "failed to ensure dedicated server whitelist file exists");
+				return false;
+			}
+			if (!opManager->EnsureOpFileExists())
+			{
+				LogError("access", "failed to ensure dedicated server ops file exists");
 				return false;
 			}
 
@@ -122,15 +141,23 @@ namespace ServerRuntime
 				LogError("access", "failed to load dedicated server whitelist file");
 				return false;
 			}
+			if (!opManager->Reload())
+			{
+				LogError("access", "failed to load dedicated server ops file");
+				return false;
+			}
 
 			std::vector<BannedPlayerEntry> playerEntries;
 			std::vector<BannedIpEntry> ipEntries;
 			std::vector<WhitelistedPlayerEntry> whitelistEntries;
+			std::vector<OpPlayerEntry> opEntries;
 			banManager->SnapshotBannedPlayers(&playerEntries);
 			banManager->SnapshotBannedIps(&ipEntries);
 			whitelistManager->SnapshotWhitelistedPlayers(&whitelistEntries);
+			opManager->SnapshotOps(&opEntries);
 			PublishBanManagerSnapshot(banManager);
 			PublishWhitelistManagerSnapshot(whitelistManager);
+			PublishOpManagerSnapshot(opManager);
 			{
 				std::lock_guard<std::mutex> stateLock(g_accessState.stateLock);
 				g_accessState.whitelistEnabled = whitelistEnabled;
@@ -138,10 +165,11 @@ namespace ServerRuntime
 
 			LogInfof(
 				"access",
-				"loaded %u player bans, %u ip bans, and %u whitelist entries (whitelist=%s)",
+				"loaded %u player bans, %u ip bans, %u whitelist entries, and %u ops (whitelist=%s)",
 				(unsigned)playerEntries.size(),
 				(unsigned)ipEntries.size(),
 				(unsigned)whitelistEntries.size(),
+				(unsigned)opEntries.size(),
 				whitelistEnabled ? "enabled" : "disabled");
 			return true;
 		}
@@ -151,6 +179,7 @@ namespace ServerRuntime
 			std::lock_guard<std::mutex> writeLock(g_accessState.writeLock);
 			PublishBanManagerSnapshot(std::shared_ptr<BanManager>{});
 			PublishWhitelistManagerSnapshot(std::shared_ptr<WhitelistManager>{});
+			PublishOpManagerSnapshot(std::shared_ptr<OpManager>{});
 			std::lock_guard<std::mutex> stateLock(g_accessState.stateLock);
 			g_accessState.whitelistEnabled = false;
 		}
@@ -214,7 +243,9 @@ namespace ServerRuntime
 
 		bool IsInitialized()
 		{
-			return GetBanManagerSnapshot() != nullptr && GetWhitelistManagerSnapshot() != nullptr;
+			return GetBanManagerSnapshot() != nullptr
+				&& GetWhitelistManagerSnapshot() != nullptr
+				&& GetOpManagerSnapshot() != nullptr;
 		}
 
 		bool IsWhitelistEnabled()
@@ -455,6 +486,112 @@ namespace ServerRuntime
 			}
 
 			return whitelistManager->SnapshotWhitelistedPlayers(outEntries);
+		}
+
+		bool IsPlayerOp(PlayerUID xuid)
+		{
+			const std::string formatted = FormatXuid(xuid);
+			if (formatted.empty())
+			{
+				return false;
+			}
+
+			std::shared_ptr<OpManager> opManager = GetOpManagerSnapshot();
+			return (opManager != nullptr) ? opManager->IsPlayerOp(formatted) : false;
+		}
+
+		bool AddOp(PlayerUID xuid, const std::string &name, const OpMetadata &metadata)
+		{
+			const std::string formatted = FormatXuid(xuid);
+			if (formatted.empty())
+			{
+				return false;
+			}
+
+			std::lock_guard<std::mutex> writeLock(g_accessState.writeLock);
+			std::shared_ptr<OpManager> current = GetOpManagerSnapshot();
+			if (current == nullptr)
+			{
+				return false;
+			}
+
+			auto opManager = std::make_shared<OpManager>(*current);
+			OpPlayerEntry entry;
+			entry.xuid = formatted;
+			entry.name = name;
+			entry.metadata = metadata;
+			if (!opManager->AddOp(entry))
+			{
+				return false;
+			}
+
+			PublishOpManagerSnapshot(opManager);
+			return true;
+		}
+
+		bool RemoveOp(PlayerUID xuid)
+		{
+			const std::string formatted = FormatXuid(xuid);
+			if (formatted.empty())
+			{
+				return false;
+			}
+
+			std::lock_guard<std::mutex> writeLock(g_accessState.writeLock);
+			std::shared_ptr<OpManager> current = GetOpManagerSnapshot();
+			if (current == nullptr)
+			{
+				return false;
+			}
+
+			auto opManager = std::make_shared<OpManager>(*current);
+			if (!opManager->RemoveOpByXuid(formatted))
+			{
+				return false;
+			}
+
+			PublishOpManagerSnapshot(opManager);
+			return true;
+		}
+
+		bool ReloadOps()
+		{
+			std::lock_guard<std::mutex> writeLock(g_accessState.writeLock);
+			const auto current = GetOpManagerSnapshot();
+			if (current == nullptr)
+			{
+				return false;
+			}
+
+			auto opManager = std::make_shared<OpManager>(*current);
+			if (!opManager->EnsureOpFileExists())
+			{
+				return false;
+			}
+			if (!opManager->Reload())
+			{
+				return false;
+			}
+
+			PublishOpManagerSnapshot(opManager);
+			return true;
+		}
+
+		bool SnapshotOps(std::vector<OpPlayerEntry> *outEntries)
+		{
+			if (outEntries == nullptr)
+			{
+				return false;
+			}
+
+			const auto opManager = GetOpManagerSnapshot();
+			if (opManager == nullptr)
+			{
+				outEntries->clear();
+				return false;
+			}
+
+			return opManager->SnapshotOps(outEntries);
 		}
 	}
 }

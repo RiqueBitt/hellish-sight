@@ -1,66 +1,69 @@
-﻿#include "stdafx.h"
-#include "..\..\Minecraft.World\net.minecraft.world.entity.item.h"
-#include "..\..\Minecraft.World\net.minecraft.world.entity.player.h"
-#include "..\..\Minecraft.World\net.minecraft.world.level.tile.entity.h"
-#include "..\..\Minecraft.World\net.minecraft.world.phys.h"
-#include "..\..\Minecraft.World\InputOutputStream.h"
-#include "..\..\Minecraft.World\compression.h"
-#include "..\Options.h"
-#include "..\MinecraftServer.h"
-#include "..\MultiPlayerLevel.h"
-#include "..\GameRenderer.h"
-#include "..\ProgressRenderer.h"
-#include "..\LevelRenderer.h"
-#include "..\MobSkinMemTextureProcessor.h"
-#include "..\Minecraft.h"
-#include "..\ClientConnection.h"
-#include "..\MultiPlayerLocalPlayer.h"
-#include "..\LocalPlayer.h"
-#include "..\..\Minecraft.World\Player.h"
-#include "..\..\Minecraft.World\Inventory.h"
-#include "..\..\Minecraft.World\Level.h"
-#include "..\..\Minecraft.World\FurnaceTileEntity.h"
-#include "..\..\Minecraft.World\Container.h"
-#include "..\..\Minecraft.World\DispenserTileEntity.h"
-#include "..\..\Minecraft.World\SignTileEntity.h"
-#include "..\StatsCounter.h"
-#include "..\GameMode.h"
-#include "..\Xbox\Social\SocialManager.h"
-#include "Tutorial\TutorialMode.h"
+#include "stdafx.h"
+#include "../../Minecraft.World/net.minecraft.world.entity.item.h"
+#include "../../Minecraft.World/net.minecraft.world.entity.player.h"
+#include "../../Minecraft.World/net.minecraft.world.level.tile.entity.h"
+#include "../../Minecraft.World/net.minecraft.world.phys.h"
+#include "../../Minecraft.World/InputOutputStream.h"
+#include "../../Minecraft.World/compression.h"
+#include "../Options.h"
+#include "../MinecraftServer.h"
+#include "../MultiPlayerLevel.h"
+#include "../GameRenderer.h"
+#include "../ProgressRenderer.h"
+#include "../LevelRenderer.h"
+#include "../MobSkinMemTextureProcessor.h"
+#include "../Minecraft.h"
+#include "../ClientConnection.h"
+#include "../MultiPlayerLocalPlayer.h"
+#include "../LocalPlayer.h"
+#include "../../Minecraft.World/Player.h"
+#include "../../Minecraft.World/Inventory.h"
+#include "../../Minecraft.World/Level.h"
+#include "../../Minecraft.World/FurnaceTileEntity.h"
+#include "../../Minecraft.World/Container.h"
+#include "../../Minecraft.World/DispenserTileEntity.h"
+#include "../../Minecraft.World/SignTileEntity.h"
+#include "../StatsCounter.h"
+#include "../GameMode.h"
+#include "../Xbox/Social/SocialManager.h"
+#include "Tutorial/TutorialMode.h"
+#ifdef _WINDOWS64
+#include "../Windows64/Network/WinsockNetLayer.h" // HUCKLE - added for quit on disconnect
+#endif
 #if defined _XBOX || defined _WINDOWS64
-#include "..\Xbox\XML\ATGXmlParser.h"
-#include "..\Xbox\XML\xmlFilesCallback.h"
+#include "../Xbox/XML/ATGXmlParser.h"
+#include "../Xbox/XML/xmlFilesCallback.h"
 #endif
 #include "Minecraft_Macros.h"
-#include "..\PlayerList.h"
-#include "..\ServerPlayer.h"
-#include "GameRules\ConsoleGameRules.h"
-#include "GameRules\ConsoleSchematicFile.h"
-#include "..\User.h"
-#include "..\..\Minecraft.World\LevelData.h"
+#include "../PlayerList.h"
+#include "../ServerPlayer.h"
+#include "GameRules/ConsoleGameRules.h"
+#include "GameRules/ConsoleSchematicFile.h"
+#include "../User.h"
+#include "../../Minecraft.World/LevelData.h"
 #if defined(_WINDOWS64) && defined(MINECRAFT_SERVER_BUILD)
-#include "..\..\Minecraft.Server\ServerLogManager.h"
+#include "../../Minecraft.Server/ServerLogManager.h"
 #endif
-#include "..\..\Minecraft.World\net.minecraft.world.entity.player.h"
-#include "..\EntityRenderDispatcher.h"
-#include "..\..\Minecraft.World\compression.h"
-#include "..\TexturePackRepository.h"
-#include "..\DLCTexturePack.h"
-#include "DLC\DLCPack.h"
-#include "..\StringTable.h"
+#include "../../Minecraft.World/net.minecraft.world.entity.player.h"
+#include "../EntityRenderDispatcher.h"
+#include "../../Minecraft.World/compression.h"
+#include "../TexturePackRepository.h"
+#include "../DLCTexturePack.h"
+#include "DLC/DLCPack.h"
+#include "../StringTable.h"
 #ifndef _XBOX
-#include "..\ArchiveFile.h"
+#include "../ArchiveFile.h"
 #endif
-#include "..\Minecraft.h"
+#include "../Minecraft.h"
 #ifdef _XBOX
-#include "..\Xbox\GameConfig\Minecraft.spa.h"
-#include "..\Xbox\Network\NetworkPlayerXbox.h"
-#include "XUI\XUI_TextEntry.h"
-#include "XUI\XUI_XZP_Icons.h"
-#include "XUI\XUI_PauseMenu.h"
+#include "../Xbox/GameConfig/Minecraft.spa.h"
+#include "../Xbox/Network/NetworkPlayerXbox.h"
+#include "XUI/XUI_TextEntry.h"
+#include "XUI/XUI_XZP_Icons.h"
+#include "XUI/XUI_PauseMenu.h"
 #else
-#include "UI\UI.h"
-#include "UI\UIScene_PauseMenu.h"
+#include "UI/UI.h"
+#include "UI/UIScene_PauseMenu.h"
 #endif
 #ifdef __PS3__
 #include <sys/tty.h>
@@ -69,7 +72,8 @@
 #include <save_data_dialog.h>
 #endif
 
-#include "..\Common\Leaderboards\LeaderboardManager.h"
+#include "../Common/Leaderboards/LeaderboardManager.h"
+#include <regex>
 
 //CMinecraftApp app;
 unsigned int CMinecraftApp::m_uiLastSignInData = 0;
@@ -95,7 +99,7 @@ CMinecraftApp::CMinecraftApp()
 		// 4J Stu - See comment for GAME_SETTINGS_PROFILE_DATA_BYTES in Xbox_App.h
 		DebugPrintf("WARNING: The size of the profile GAME_SETTINGS struct has changed, so all stat data is likely incorrect. Is: %d, Should be: %d\n",sizeof(GAME_SETTINGS),GAME_SETTINGS_PROFILE_DATA_BYTES);
 #ifndef _CONTENT_PACKAGE
-		__debugbreak();
+		DEBUG_BREAK();
 #endif
 	}
 
@@ -187,6 +191,7 @@ CMinecraftApp::CMinecraftApp()
 #endif
 
 	ZeroMemory(m_playerColours,MINECRAFT_NET_MAX_PLAYERS);
+	ZeroMemory(m_playerMapIcons,MINECRAFT_NET_MAX_PLAYERS);
 
 	m_iDLCOfferC=0;
 	m_bAllDLCContentRetrieved=true;
@@ -206,6 +211,8 @@ CMinecraftApp::CMinecraftApp()
 	m_dwRequiredTexturePackID=0;
 
 	m_bResetNether=false;
+	m_seedOverride = 0;
+	m_hasSeedOverride = false;
 
 #ifdef _XBOX
 	//	m_bTransferSavesToXboxOne=false;
@@ -238,6 +245,34 @@ CMinecraftApp::CMinecraftApp()
 }
 
 
+void CMinecraftApp::GetSkinAdjustments(_SkinAdjustments* out,
+                                        unsigned int skinId)
+{
+    _SkinAdjustments adj; 
+
+    EnterCriticalSection(&csAdditionalSkinBoxes);
+
+    if (!m_SkinAdjustmentsMap.empty())
+    {
+        auto it = m_SkinAdjustmentsMap.find(skinId);
+        if (it != m_SkinAdjustmentsMap.end())
+            adj = it->second;
+    }
+
+    LeaveCriticalSection(&csAdditionalSkinBoxes);
+
+    *out = adj;
+}
+
+void CMinecraftApp::SetSkinAdjustments(unsigned int skinId,
+                                        const _SkinAdjustments& adj)
+{
+    EnterCriticalSection(&csAdditionalSkinBoxes);
+
+    m_SkinAdjustmentsMap[skinId] = adj; 
+
+    LeaveCriticalSection(&csAdditionalSkinBoxes);
+}
 
 void CMinecraftApp::DebugPrintf(const char *szFormat, ...)
 {
@@ -325,11 +360,73 @@ void CMinecraftApp::DebugPrintf(int user, const char *szFormat, ...)
 #endif
 }
 
+namespace
+{
+const wchar_t *ResolveStringKeyFromId(int iID)
+{
+#ifdef _WINDOWS64
+    switch(iID)
+    {
+    #include "StringIdLookup.generated.inc"
+    default:
+        return nullptr;
+    }
+#else
+    (void)iID;
+    return nullptr;
+#endif
+}
+}
+
 LPCWSTR CMinecraftApp::GetString(int iID)
 {
-	//return L"Değişiklikler ve Yenilikler";
-	//return L"ÕÕÕÕÖÖÖÖ";
-	return app.m_stringTable->getString(iID);
+    if(app.m_stringTable == nullptr)
+    {
+        const wchar_t *key = ResolveStringKeyFromId(iID);
+        return key != nullptr ? key : L"";
+    }
+
+    LPCWSTR byIndex = app.m_stringTable->getString(iID);
+    if(byIndex != nullptr && byIndex[0] != L'\0')
+    {
+        return byIndex;
+    }
+
+    const wchar_t *key = ResolveStringKeyFromId(iID);
+    if(key != nullptr)
+    {
+        LPCWSTR byKey = app.m_stringTable->getString(key);
+        if(byKey != nullptr && byKey[0] != L'\0')
+        {
+            return byKey;
+        }
+
+        // Prefer visible fallback text instead of returning an empty string.
+        return key;
+    }
+
+    return L"";
+}
+
+LPCWSTR CMinecraftApp::GetString(const wchar_t *id)
+{
+    if(id == nullptr)
+    {
+        return L"";
+    }
+
+    if(app.m_stringTable == nullptr)
+    {
+        return id;
+    }
+
+    LPCWSTR byKey = app.m_stringTable->getString(id);
+    if(byKey != nullptr && byKey[0] != L'\0')
+    {
+        return byKey;
+    }
+
+    return id;
 }
 
 void CMinecraftApp::SetAction(int iPad, eXuiAction action, LPVOID param)
@@ -356,7 +453,7 @@ void CMinecraftApp::SetAction(int iPad, eXuiAction action, LPVOID param)
 
 bool CMinecraftApp::IsAppPaused()
 {
-#if defined(_XBOX_ONE) || defined(__ORBIS__)
+#if defined(_XBOX_ONE) || defined(__ORBIS__) || defined(_WINDOWS64)
 	bool paused = m_bIsAppPaused;
 	EnterCriticalSection(&m_saveNotificationCriticalSection);
 	if( g_NetworkManager.IsLocalGame() && g_NetworkManager.GetPlayerCount() == 1 )
@@ -483,16 +580,15 @@ bool CMinecraftApp::LoadCrafting3x3Menu(int iPad,shared_ptr<LocalPlayer> player,
 	initData->y = y;
 	initData->z = z;
 
-	if(app.GetLocalPlayerCount()>1)
-	{
-		initData->bSplitscreen=true;
-		success = ui.NavigateToScene(iPad,eUIScene_Crafting3x3Menu, initData);
-	}
+	if (app.GetLocalPlayerCount() > 1)
+		initData->bSplitscreen = true;
 	else
-	{
-		initData->bSplitscreen=false;
-		success = ui.NavigateToScene(iPad,eUIScene_Crafting3x3Menu, initData);
-	}
+		initData->bSplitscreen = false;
+
+	if (app.GetGameSettings(iPad, eGameSetting_ClassicCrafting))
+		success = ui.NavigateToScene(iPad, eUIScene_ClassicCraftingMenu, initData);
+	else
+		success = ui.NavigateToScene(iPad, eUIScene_Crafting3x3Menu, initData);
 
 	return success;
 }
@@ -777,6 +873,21 @@ bool CMinecraftApp::LoadBeaconMenu(int iPad ,shared_ptr<Inventory> inventory, sh
 	return success;
 }
 
+bool CMinecraftApp::LoadWritingBookMenu(int iPad, shared_ptr<ItemInstance> instance, shared_ptr<Player> player, bool editable)
+{
+	bool success = true;
+
+	WritingBookMenuParams* initData = new WritingBookMenuParams();
+	initData->itemInstance = instance;
+	initData->player = player;
+	initData->iPad = iPad;
+	initData->isEditable = editable;
+
+	success = ui.NavigateToScene(iPad, eUIScene_BookMenu, initData);
+
+	return success;
+}
+
 //////////////////////////////////////////////
 // GAME SETTINGS
 //////////////////////////////////////////////
@@ -838,13 +949,22 @@ void CMinecraftApp::InitGameSettings()
 		memset(pProfileSettings,0,sizeof(C_4JProfile::PROFILESETTINGS));
 		SetDefaultOptions(pProfileSettings,i);
 		Win64_LoadSettings(GameSettingsA[i]);
+#ifndef MINECRAFT_SERVER_BUILD
 		ApplyGameSettingsChanged(i);
+#endif
 #elif defined __PS3__ || defined __ORBIS__ || defined _DURANGO  || defined __PSVITA__
 		C4JStorage::PROFILESETTINGS *pProfileSettings=StorageManager.GetDashboardProfileSettings(i);
 		// 4J-PB - don't cause an options write to happen here
 		SetDefaultOptions(pProfileSettings,i,false);
 
 #endif
+
+		Minecraft* minecraft = Minecraft::GetInstance();
+		if (minecraft != nullptr && minecraft->stats[i] != nullptr)
+		{
+			minecraft->stats[i]->clear();
+			minecraft->stats[i]->parse(GameSettingsA[i]);
+		}
 	}
 }
 
@@ -924,6 +1044,9 @@ int CMinecraftApp::SetDefaultOptions(C_4JProfile::PROFILESETTINGS *pSettings,con
 	app.SetGameHostOption(eGameHostOption_DoTileDrops, 1 );
 	app.SetGameHostOption(eGameHostOption_NaturalRegeneration, 1 );
 	app.SetGameHostOption(eGameHostOption_DoDaylightCycle, 1 );
+
+	//TU25
+	SetGameSettings(iPad, eGameSetting_ClassicCrafting, 0);
 
 	// 4J-PB - leave these in, or remove from everywhere they are referenced!
 	// Although probably best to leave in unless we split the profile settings into platform specific classes - having different meaning per platform for the same bitmask could get confusing
@@ -1299,9 +1422,6 @@ int CMinecraftApp::OldProfileVersionCallback(LPVOID pParam,unsigned char *pucDat
 		{
 			// This might be from a version during testing of new profile updates
 			app.DebugPrintf("Don't know what to do with this profile version!\n");
-#ifndef _CONTENT_PACKAGE
-			//		__debugbreak();
-#endif
 
 			GAME_SETTINGS *pGameSettings=(GAME_SETTINGS *)pucData;
 			pGameSettings->ucMenuSensitivity=100; //eGameSetting_Sensitivity_InMenu
@@ -1325,6 +1445,7 @@ int CMinecraftApp::OldProfileVersionCallback(LPVOID pParam,unsigned char *pucDat
 			pGameSettings->uiBitmaskValues|=(GAMESETTING_UISIZE&0x00000800);				// uisize 2
 			pGameSettings->uiBitmaskValues|=(GAMESETTING_UISIZE_SPLITSCREEN&0x00004000);	// splitscreen ui size 3
 			pGameSettings->uiBitmaskValues|=GAMESETTING_ANIMATEDCHARACTER;		//eGameSetting_AnimatedCharacter - on
+			pGameSettings->uiBitmaskValues |= GAMESETTING_CLASSICCRAFTING;		//eGameSetting_ClassicCrafting - off
 			// TU12
 			// favorite skins added, but only set in TU12 - set to FFs
 			for(int i=0;i<MAX_FAVORITE_SKINS;i++)
@@ -1382,7 +1503,11 @@ void CMinecraftApp::ApplyGameSettingsChanged(int iPad)
 	ActionGameSettings(iPad,eGameSetting_AnimatedCharacter);
 
 	ActionGameSettings(iPad,eGameSetting_PS3_EULA_Read);
+	ActionGameSettings(iPad,eGameSetting_VSync);
 
+	//TU25
+	ActionGameSettings(iPad, eGameSetting_ClassicCrafting);
+	ActionGameSettings(iPad, eGameSetting_HideSaveSizeBar);
 }
 
 void CMinecraftApp::ActionGameSettings(int iPad,eGameSetting eVal)
@@ -1615,6 +1740,28 @@ void CMinecraftApp::ActionGameSettings(int iPad,eGameSetting eVal)
 		//nothing to do here
 		break;
 	case eGameSetting_PSVita_NetworkModeAdhoc:
+		//nothing to do here
+		break;
+	case eGameSetting_VSync:
+#ifdef _WINDOWS64
+		{
+			extern bool g_bVSync;
+			g_bVSync = (GetGameSettings(iPad, eGameSetting_VSync) != 0);
+		}
+#endif
+		break;
+	case eGameSetting_ExclusiveFullscreen:
+#ifdef _WINDOWS64
+		{
+			extern void SetExclusiveFullscreen(bool enabled);
+			SetExclusiveFullscreen(GetGameSettings(iPad, eGameSetting_ExclusiveFullscreen) != 0);
+		}
+#endif
+		break;
+	case eGameSetting_ClassicCrafting:
+		//nothing to do here
+		break;
+	case eGameSetting_HideSaveSizeBar:
 		//nothing to do here
 		break;
 	}
@@ -2328,6 +2475,67 @@ void CMinecraftApp::SetGameSettings(int iPad,eGameSetting eVal,unsigned char ucV
 		}
 		break;
 
+	case eGameSetting_VSync:
+		if(((GameSettingsA[iPad]->uiBitmaskValues&GAMESETTING_VSYNC)>>24)!=(ucVal&0x01))
+		{
+			if(ucVal==1)
+			{
+				GameSettingsA[iPad]->uiBitmaskValues|=GAMESETTING_VSYNC;
+			}
+			else
+			{
+				GameSettingsA[iPad]->uiBitmaskValues&=~GAMESETTING_VSYNC;
+			}
+			ActionGameSettings(iPad,eVal);
+			GameSettingsA[iPad]->bSettingsChanged=true;
+		}
+		break;
+
+	case eGameSetting_ExclusiveFullscreen:
+		if(((GameSettingsA[iPad]->uiBitmaskValues&GAMESETTING_EXCLUSIVEFULLSCREEN)>>25)!=(ucVal&0x01))
+		{
+			if(ucVal==1)
+			{
+				GameSettingsA[iPad]->uiBitmaskValues|=GAMESETTING_EXCLUSIVEFULLSCREEN;
+			}
+			else
+			{
+				GameSettingsA[iPad]->uiBitmaskValues&=~GAMESETTING_EXCLUSIVEFULLSCREEN;
+			}
+			ActionGameSettings(iPad,eVal);
+			GameSettingsA[iPad]->bSettingsChanged=true;
+		}
+		break;
+	case eGameSetting_ClassicCrafting:
+		if ((GameSettingsA[iPad]->uiBitmaskValues & GAMESETTING_CLASSICCRAFTING) != (ucVal & 0x01) << 19)
+		{
+			if (ucVal == 1)
+			{
+				GameSettingsA[iPad]->uiBitmaskValues |= GAMESETTING_CLASSICCRAFTING;
+			}
+			else
+			{
+				GameSettingsA[iPad]->uiBitmaskValues &= ~GAMESETTING_CLASSICCRAFTING;
+			}
+			ActionGameSettings(iPad, eVal);
+			GameSettingsA[iPad]->bSettingsChanged = true;
+		}
+		break;
+	case eGameSetting_HideSaveSizeBar:
+		if ((GameSettingsA[iPad]->uiBitmaskValues & GAMESETTING_HIDESAVESIZEBAR) != (ucVal & 0x01) << 27)
+		{
+			if (ucVal == 1)
+			{
+				GameSettingsA[iPad]->uiBitmaskValues |= GAMESETTING_HIDESAVESIZEBAR;
+			}
+			else
+			{
+				GameSettingsA[iPad]->uiBitmaskValues &= ~GAMESETTING_HIDESAVESIZEBAR;
+			}
+			ActionGameSettings(iPad, eVal);
+			GameSettingsA[iPad]->bSettingsChanged = true;
+		}
+		break;
 	}
 }
 
@@ -2462,6 +2670,18 @@ unsigned char CMinecraftApp::GetGameSettings(int iPad,eGameSetting eVal)
 
 	case eGameSetting_PSVita_NetworkModeAdhoc:
 		return (GameSettingsA[iPad]->uiBitmaskValues&GAMESETTING_PSVITANETWORKMODEADHOC)>>17;
+
+	case eGameSetting_ClassicCrafting:
+		return (GameSettingsA[iPad]->uiBitmaskValues & GAMESETTING_CLASSICCRAFTING) >> 26;
+
+	case eGameSetting_HideSaveSizeBar:
+		return (GameSettingsA[iPad]->uiBitmaskValues & GAMESETTING_HIDESAVESIZEBAR) >> 27;
+
+	case eGameSetting_VSync:
+		return (GameSettingsA[iPad]->uiBitmaskValues&GAMESETTING_VSYNC)>>24;
+
+	case eGameSetting_ExclusiveFullscreen:
+		return (GameSettingsA[iPad]->uiBitmaskValues&GAMESETTING_EXCLUSIVEFULLSCREEN)>>25;
 
 	}
 	return 0;
@@ -3171,6 +3391,15 @@ void CMinecraftApp::HandleXuiActions(void)
 
 				SetAction(i,eAppAction_Idle);
 
+				// HUCKLE - added for quit game on disconnect
+#ifdef _WINDOWS64
+				if(g_Win64MultiplayerQuitOnDisconnect == true)
+				{
+					app.ExitGame();
+					return;
+				}
+#endif
+
 				// If we're already leaving don't exit
 				if (g_NetworkManager.IsLeavingGame())
 				{
@@ -3775,10 +4004,13 @@ void CMinecraftApp::HandleXuiActions(void)
 						// need to stop the streaming audio - by playing streaming audio from the default texture pack now
 						// reset the streaming sounds back to the normal ones
 #ifndef _XBOX
-						pMinecraft->soundEngine->SetStreamingSounds(eStream_Overworld_Calm1,eStream_Overworld_piano3,
-							eStream_Nether1,eStream_Nether4,
-							eStream_end_dragon,eStream_end_end,
-							eStream_CD_1);
+					    pMinecraft->soundEngine->SetStreamingSounds(eStream_Overworld_Calm1,eStream_Overworld_piano3,
+                            eStream_Nether1,eStream_Nether4,
+                            eStream_end_dragon,eStream_end_end,
+                            eStream_Overworld_Creative1,eStream_Overworld_Creative6,
+                            eStream_Overworld_Menu1,eStream_Overworld_Menu4,
+                            eStream_BattleMode1,eStream_BattleMode4,
+                            eStream_CD_1);
 #endif
 						pMinecraft->soundEngine->playStreaming(L"", 0, 0, 0, 1, 1);
 
@@ -4422,20 +4654,20 @@ void CMinecraftApp::loadMediaArchive()
 	wstring mediapath = L"";
 
 #ifdef __PS3__
-	mediapath = L"Common\\Media\\MediaPS3.arc";
+	mediapath = L"Common\\Media\\MediaPS3";
 #elif _WINDOWS64
-	mediapath = L"Common\\Media\\MediaWindows64.arc";
+	mediapath = L"Common\\Media\\MediaWindows64";
 #elif __ORBIS__
-	mediapath = L"Common\\Media\\MediaOrbis.arc";
+	mediapath = L"Common\\Media\\MediaOrbis";
 #elif _DURANGO
-	mediapath = L"Common\\Media\\MediaDurango.arc";
+	mediapath = L"Common\\Media\\MediaDurango";
 #elif __PSVITA__
-	mediapath = L"Common\\Media\\MediaPSVita.arc";
+	mediapath = L"Common\\Media\\MediaPSVita";
 #endif
 
 	if (!mediapath.empty())
 	{
-		m_mediaArchive = new ArchiveFile( File(mediapath) );
+		m_mediaArchive = new FolderFile(mediapath);
 	}
 #if 0
 	string path = "Common\\media.arc";
@@ -4487,6 +4719,58 @@ void CMinecraftApp::loadStringTable()
 		// we need to unload the current string table, this is a reload
 		delete m_stringTable;
 	}
+#ifdef _WINDOWS64
+	m_stringTable = nullptr;
+	const wstring localisationCandidates[] =
+	{
+		L"Common\\Localization", // Fireblade - check multiple directories before resulting to .loc usage
+		L"Windows64Media\\loc",
+		L"..\\Minecraft.Client\\Windows64Media\\loc"
+	};
+
+	for (const auto &localisationFolder : localisationCandidates)
+	{
+		File localisationDirectory(localisationFolder);
+		if (localisationDirectory.exists() && localisationDirectory.isDirectory())
+		{
+			StringTable *candidateTable = new StringTable(localisationFolder); // Fireblade - xml before loc
+
+			const bool hasKeyString = candidateTable->hasStringKey(L"IDS_OK");
+			bool hasIndexString = false;
+			#ifdef IDS_OK
+			LPCWSTR indexedString = candidateTable->getString(IDS_OK);
+			hasIndexString = (indexedString != nullptr && indexedString[0] != L'\0');
+			#endif
+
+			if (hasKeyString || hasIndexString)
+			{
+			    m_stringTable = candidateTable;
+			    app.DebugPrintf("Loaded language data from '%ls'\n", localisationFolder.c_str());
+			    break;
+			}
+
+			app.DebugPrintf("Ignoring localisation path '%ls' (missing expected IDs)\n", localisationFolder.c_str());
+			delete candidateTable;
+		}
+	}
+
+	if (m_stringTable == nullptr && m_mediaArchive != nullptr) // Fireblade - fallback to previous behavior
+	{
+		const wstring localisationFile = L"languages.loc";
+		if (m_mediaArchive->hasFile(localisationFile))
+		{
+			byteArray locFile = m_mediaArchive->getFile(localisationFile);
+			m_stringTable = new StringTable(locFile.data, locFile.length);
+			delete locFile.data;
+		}
+	}
+
+	if (m_stringTable == nullptr)
+	{
+		app.DebugPrintf("Failed to initialize language data\n");
+		assert(false);
+	}
+#else // Fireblade - other platforms keep same logic
 	wstring localisationFile = L"languages.loc";
 	if (m_mediaArchive->hasFile(localisationFile))
 	{
@@ -4500,6 +4784,7 @@ void CMinecraftApp::loadStringTable()
 		assert(false);
 		// AHHHHHHHHH.
 	}
+#endif
 #endif
 }
 
@@ -6420,7 +6705,7 @@ void CMinecraftApp::InitialiseTips()
 		{
 			// the m_TriviaTipA or the m_GameTipA are out of sync
 #ifndef _CONTENT_PACKAGE
-			__debugbreak();
+			DEBUG_BREAK();
 #endif
 		}
 	}
@@ -6471,7 +6756,7 @@ int CMinecraftApp::GetHTMLFontSize(EHTMLFontSize size)
 	return s_iHTMLFontSizesA[size];
 }
 
-wstring CMinecraftApp::FormatHTMLString(int iPad, const wstring &desc, int shadowColour /*= 0xFFFFFFFF*/)
+wstring CMinecraftApp::FormatHTMLString(int iPad, const wstring &desc, int shadowColour /*= 0xFFFFFFFF*/, bool override)
 {
 	wstring text(desc);
 
@@ -6554,7 +6839,7 @@ wstring CMinecraftApp::FormatHTMLString(int iPad, const wstring &desc, int shado
 	text = replaceAll(text, L"{*CONTROLLER_VK_A*}",					GetVKReplacement(VK_PAD_A) );
 	text = replaceAll(text, L"{*CONTROLLER_VK_B*}",					GetVKReplacement(VK_PAD_B) );
 	text = replaceAll(text, L"{*CONTROLLER_VK_X*}",					GetVKReplacement(VK_PAD_X) );
-	text = replaceAll(text, L"{*CONTROLLER_VK_Y*}",					GetVKReplacement(VK_PAD_Y) );
+	text = replaceAll(text, L"{*CONTROLLER_VK_Y*}",					GetVKReplacement(VK_PAD_Y, override) );
 	text = replaceAll(text, L"{*CONTROLLER_VK_LB*}",				GetVKReplacement(VK_PAD_LSHOULDER) );
 	text = replaceAll(text, L"{*CONTROLLER_VK_RB*}",				GetVKReplacement(VK_PAD_RSHOULDER) );
 	text = replaceAll(text, L"{*CONTROLLER_VK_LS*}",				GetVKReplacement(VK_PAD_LTHUMB_UP) );
@@ -6593,6 +6878,97 @@ wstring CMinecraftApp::FormatHTMLString(int iPad, const wstring &desc, int shado
 	}
 
 	return text;
+}
+
+//found list of html escapes at https://stackoverflow.com/questions/7381974/which-characters-need-to-be-escaped-in-html
+wstring CMinecraftApp::EscapeHTMLString(const wstring& desc)
+{
+	static std::unordered_map<wchar_t, wchar_t*> replacementMap = {
+		{L'&', L"&amp;"},
+		{L'<', L"&lt;"},
+		{L'>', L"&gt;"},
+	};
+
+	wstring finalString = L"";
+	for (int i = 0; i < desc.size(); i++) {
+		wchar_t _char = desc[i];
+		auto it = replacementMap.find(_char);
+
+		if (it != replacementMap.end()) finalString += it->second;
+		else finalString += _char;
+	}
+
+	return finalString;
+}
+
+wstring CMinecraftApp::FormatChatMessage(const wstring& desc, bool applyStyling)
+{
+	static std::wregex IDS_Pattern(LR"(\{\*IDS_(\d+)\*\})"); //maybe theres a better way to do translateable IDS
+	static std::wstring_view colorFormatString = L"<font color=\"#%08x\">";
+
+	wstring results = desc;
+	wchar_t replacements[64];
+
+	swprintf(replacements, 64, (applyStyling ? colorFormatString.data() : L""), GetHTMLColour(eHTMLColor_0), 0xFFFFFFFF);
+	results = replaceAll(results, L"\u00A70", replacements);
+
+	swprintf(replacements, 64, (applyStyling ? colorFormatString.data() : L""), GetHTMLColour(eHTMLColor_1), 0xFFFFFFFF);
+	results = replaceAll(results, L"\u00A71", replacements);
+
+	swprintf(replacements, 64, (applyStyling ? colorFormatString.data() : L""), GetHTMLColour(eHTMLColor_2), 0xFFFFFFFF);
+	results = replaceAll(results, L"\u00A72", replacements);
+
+	swprintf(replacements, 64, (applyStyling ? colorFormatString.data() : L""), GetHTMLColour(eHTMLColor_3), 0xFFFFFFFF);
+	results = replaceAll(results, L"\u00A73", replacements);
+
+	swprintf(replacements, 64, (applyStyling ? colorFormatString.data() : L""), GetHTMLColour(eHTMLColor_4), 0xFFFFFFFF);
+	results = replaceAll(results, L"\u00A74", replacements);
+
+	swprintf(replacements, 64, (applyStyling ? colorFormatString.data() : L""), GetHTMLColour(eHTMLColor_5), 0xFFFFFFFF);
+	results = replaceAll(results, L"\u00A75", replacements);
+
+	swprintf(replacements, 64, (applyStyling ? colorFormatString.data() : L""), GetHTMLColour(eHTMLColor_6), 0xFFFFFFFF);
+	results = replaceAll(results, L"\u00A76", replacements);
+
+	swprintf(replacements, 64, (applyStyling ? colorFormatString.data() : L""), GetHTMLColour(eHTMLColor_7), 0xFFFFFFFF);
+	results = replaceAll(results, L"\u00A77", replacements);
+
+	swprintf(replacements, 64, (applyStyling ? colorFormatString.data() : L""), GetHTMLColour(eHTMLColor_8), 0xFFFFFFFF);
+	results = replaceAll(results, L"\u00A78", replacements);
+
+	swprintf(replacements, 64, (applyStyling ? colorFormatString.data() : L""), GetHTMLColour(eHTMLColor_9), 0xFFFFFFFF);
+	results = replaceAll(results, L"\u00A79", replacements);
+
+	swprintf(replacements, 64, (applyStyling ? colorFormatString.data() : L""), GetHTMLColour(eHTMLColor_a), 0xFFFFFFFF);
+	results = replaceAll(results, L"\u00A7a", replacements);
+
+	swprintf(replacements, 64, (applyStyling ? colorFormatString.data() : L""), GetHTMLColour(eHTMLColor_b), 0xFFFFFFFF);
+	results = replaceAll(results, L"\u00A7b", replacements);
+
+	swprintf(replacements, 64, (applyStyling ? colorFormatString.data() : L""), GetHTMLColour(eHTMLColor_c), 0xFFFFFFFF);
+	results = replaceAll(results, L"\u00A7c", replacements);
+
+	swprintf(replacements, 64, (applyStyling ? colorFormatString.data() : L""), GetHTMLColour(eHTMLColor_d), 0xFFFFFFFF);
+	results = replaceAll(results, L"\u00A7d", replacements);
+
+	swprintf(replacements, 64, (applyStyling ? colorFormatString.data() : L""), GetHTMLColour(eHTMLColor_e), 0xFFFFFFFF);
+	results = replaceAll(results, L"\u00A7e", replacements);
+
+	swprintf(replacements, 64, (applyStyling ? colorFormatString.data() : L""), GetHTMLColour(eHTMLColor_f), 0xFFFFFFFF);
+	results = replaceAll(results, L"\u00A7f", replacements);
+	results = replaceAll(results, L"\u00A7r", replacements); //we only support color so reset is the same as white color
+
+	results = replaceAll(results, L"'", L"\u2019");
+
+	if (applyStyling) {
+		std::wsmatch match;
+		while (std::regex_search(results, match, IDS_Pattern)) {
+			results = replaceAll(results, match[0], app.GetString(std::stoi(match[1].str())));
+		}
+	}
+	
+
+	return results;
 }
 
 wstring CMinecraftApp::GetActionReplacement(int iPad, unsigned char ucAction)
@@ -6702,7 +7078,7 @@ wstring CMinecraftApp::GetActionReplacement(int iPad, unsigned char ucAction)
 #endif
 }
 
-wstring CMinecraftApp::GetVKReplacement(unsigned int uiVKey)
+wstring CMinecraftApp::GetVKReplacement(unsigned int uiVKey, bool override)
 {
 #ifdef _XBOX
 	switch(uiVKey)
@@ -6820,7 +7196,7 @@ wstring CMinecraftApp::GetVKReplacement(unsigned int uiVKey)
 	int size = 30;
 #elif defined _WIN64
 	int size = 45;
-	if(ui.getScreenHeight() < 1080) size = 30;
+	if(ui.getScreenHeight() < 1080 || override == true) size = 30;
 #else
 	int size = 45;
 #endif
@@ -8084,6 +8460,16 @@ void CMinecraftApp::SetGameHostOption(unsigned int &uiHostSettings, eGameHostOpt
 		uiHostSettings&=~GAME_HOST_OPTION_BITMASK_WORLDSIZE;
 		uiHostSettings|=(GAME_HOST_OPTION_BITMASK_WORLDSIZE & (uiVal<<GAME_HOST_OPTION_BITMASK_WORLDSIZE_BITSHIFT));
 		break;
+	case eGameHostOption_Hardcore: // 4J Added - for hardcore mode
+		if(uiVal!=0)
+		{
+			uiHostSettings |= GAME_HOST_OPTION_BITMASK_HARDCORE;
+		}
+		else
+		{
+			uiHostSettings &= ~GAME_HOST_OPTION_BITMASK_HARDCORE;
+		}
+		break;
 	case eGameHostOption_All:
 		uiHostSettings=uiVal;
 		break;
@@ -8184,6 +8570,9 @@ unsigned int CMinecraftApp::GetGameHostOption(unsigned int uiHostSettings, eGame
 		return !(uiHostSettings&GAME_HOST_OPTION_BITMASK_NATURALREGEN);
 	case eGameHostOption_DoDaylightCycle:
 		return !(uiHostSettings&GAME_HOST_OPTION_BITMASK_DODAYLIGHTCYCLE);
+		break;
+	case eGameHostOption_Hardcore: // 4J Added - for hardcore mode
+		return (uiHostSettings&GAME_HOST_OPTION_BITMASK_HARDCORE) ? 1 : 0;
 		break;
 	}
 
@@ -8463,6 +8852,39 @@ short CMinecraftApp::GetPlayerColour(BYTE networkSmallId)
 	return index;
 }
 
+void CMinecraftApp::SetPlayerMapIcon(const wchar_t* name, char icon)
+{
+	if (name == nullptr) return;
+	// Update existing entry or use first empty slot
+	int emptySlot = -1;
+	for (int i = 0; i < MINECRAFT_NET_MAX_PLAYERS; ++i)
+	{
+		if (m_playerMapIcons[i].name[0] != 0 && _wcsicmp(m_playerMapIcons[i].name, name) == 0)
+		{
+			m_playerMapIcons[i].icon = icon;
+			return;
+		}
+		if (emptySlot < 0 && m_playerMapIcons[i].name[0] == 0)
+			emptySlot = i;
+	}
+	if (emptySlot >= 0)
+	{
+		wcsncpy_s(m_playerMapIcons[emptySlot].name, 32, name, _TRUNCATE);
+		m_playerMapIcons[emptySlot].icon = icon;
+	}
+}
+
+char CMinecraftApp::GetPlayerMapIconByName(const wchar_t* name)
+{
+	if (name == nullptr) return 0;
+	for (int i = 0; i < MINECRAFT_NET_MAX_PLAYERS; ++i)
+	{
+		if (m_playerMapIcons[i].name[0] != 0 && _wcsicmp(m_playerMapIcons[i].name, name) == 0)
+			return m_playerMapIcons[i].icon;
+	}
+	return 0;
+}
+
 
 unsigned int CMinecraftApp::GetPlayerPrivileges(BYTE networkSmallId)
 {
@@ -8523,6 +8945,9 @@ wstring CMinecraftApp::getEntityName(eINSTANCEOF type)
 		return app.GetString(IDS_WITHER);
 	case eTYPE_BAT:
 		return app.GetString(IDS_BAT);
+	case eTYPE_RABBIT:
+		return app.GetString(IDS_RABBIT);
+	
 	};
 
 	return L"";
@@ -9200,8 +9625,9 @@ bool CMinecraftApp::DLCContentRetrieved(eDLCMarketplaceType eType)
 
 void CMinecraftApp::SetAdditionalSkinBoxes(DWORD dwSkinID, SKIN_BOX *SkinBoxA, DWORD dwSkinBoxC)
 {
-	EntityRenderer *renderer = EntityRenderDispatcher::instance->getRenderer(eTYPE_PLAYER);
-	Model *pModel = renderer->getModel();
+	EntityRenderDispatcher *dispatcher = EntityRenderDispatcher::instance;
+	EntityRenderer *renderer = dispatcher ? dispatcher->getRenderer(eTYPE_PLAYER) : nullptr;
+	Model *pModel = renderer ? renderer->getModel() : nullptr;
 	vector<ModelPart *> *pvModelPart = new vector<ModelPart *>;
 	vector<SKIN_BOX *> *pvSkinBoxes = new vector<SKIN_BOX *>;
 
@@ -9232,8 +9658,9 @@ void CMinecraftApp::SetAdditionalSkinBoxes(DWORD dwSkinID, SKIN_BOX *SkinBoxA, D
 
 vector<ModelPart *> * CMinecraftApp::SetAdditionalSkinBoxes(DWORD dwSkinID, vector<SKIN_BOX *> *pvSkinBoxA)
 {
-	EntityRenderer *renderer = EntityRenderDispatcher::instance->getRenderer(eTYPE_PLAYER);
-	Model *pModel = renderer->getModel();
+	EntityRenderDispatcher *dispatcher = EntityRenderDispatcher::instance;
+	EntityRenderer *renderer = dispatcher ? dispatcher->getRenderer(eTYPE_PLAYER) : nullptr;
+	Model *pModel = renderer ? renderer->getModel() : nullptr;
 	vector<ModelPart *> *pvModelPart = new vector<ModelPart *>;
 
 	EnterCriticalSection( &csAdditionalModelParts );

@@ -1,6 +1,7 @@
 #include "stdafx.h"
 #include "UI.h"
 #include "UIControl_SaveList.h"
+#include "../../../Minecraft.World/ArabicShaping.h"
 
 bool UIControl_SaveList::setupControl(UIScene *scene, IggyValuePath *parent, const string &controlName)
 {
@@ -12,6 +13,14 @@ bool UIControl_SaveList::setupControl(UIScene *scene, IggyValuePath *parent, con
 
 	return success;
 }
+
+void UIControl_SaveList::enableX2Icons()
+{
+	IggyName useX2 = registerFastName(L"m_bUseX2IconButtons");
+	IggyValueSetBooleanRS(getIggyValuePath(), useX2, nullptr, true);
+}
+
+
 
 void UIControl_SaveList::addItem(const wstring &label)
 {
@@ -69,12 +78,14 @@ void UIControl_SaveList::addItem(const string &label, const wstring &iconName, i
 
 void UIControl_SaveList::addItem(const wstring &label, const wstring &iconName, int data)
 {
+	wstring shaped = shapeArabicText(label);
+
 	IggyDataValue result;
 	IggyDataValue value[3];
 
 	IggyStringUTF16 stringVal;
-	stringVal.string = (IggyUTF16*)label.c_str();
-	stringVal.length = static_cast<S32>(label.length());
+	stringVal.string = (IggyUTF16*)shaped.c_str();
+	stringVal.length = static_cast<S32>(shaped.length());
 	value[0].type = IGGY_DATATYPE_string_UTF16;
 	value[0].string16 = stringVal;
 
@@ -87,6 +98,78 @@ void UIControl_SaveList::addItem(const wstring &label, const wstring &iconName, 
 	value[2].type = IGGY_DATATYPE_string_UTF16;
 	value[2].string16 = stringVal2;
 	IggyResult out = IggyPlayerCallMethodRS ( m_parentScene->getMovie() , &result, getIggyValuePath(), m_addNewItemFunc , 3 , value );
+}
+
+void UIControl_SaveList::addItem(const string &label, const wstring &iconName1, const wstring &iconName2)
+{
+	addItem(label, iconName1, iconName2, m_itemCount);
+	++m_itemCount;
+}
+
+void UIControl_SaveList::addItem(const wstring &label, const wstring &iconName1, const wstring &iconName2)
+{
+	addItem(label, iconName1, iconName2, m_itemCount);
+	++m_itemCount;
+}
+
+void UIControl_SaveList::addItem(const string &label, const wstring &iconName1, const wstring &iconName2, int data)
+{
+	IggyDataValue result;
+	IggyDataValue value[4];
+
+	IggyStringUTF8 stringVal;
+	stringVal.string = (char*)label.c_str();
+	stringVal.length = static_cast<S32>(label.length());
+	value[0].type = IGGY_DATATYPE_string_UTF8;
+	value[0].string8 = stringVal;
+
+	value[1].type = IGGY_DATATYPE_number;
+	value[1].number = data;
+
+	IggyStringUTF16 stringVal2;
+	stringVal2.string = (IggyUTF16*)iconName1.c_str();
+	stringVal2.length = iconName1.length();
+	value[2].type = IGGY_DATATYPE_string_UTF16;
+	value[2].string16 = stringVal2;
+
+	IggyStringUTF16 stringVal3;
+	stringVal3.string = (IggyUTF16*)iconName2.c_str();
+	stringVal3.length = iconName2.length();
+	value[3].type = IGGY_DATATYPE_string_UTF16;
+	value[3].string16 = stringVal3;
+
+	IggyResult out = IggyPlayerCallMethodRS(m_parentScene->getMovie(), &result, getIggyValuePath(), m_addNewItemFunc, 4, value);
+}
+
+void UIControl_SaveList::addItem(const wstring &label, const wstring &iconName1, const wstring &iconName2, int data)
+{
+	wstring shaped = shapeArabicText(label);
+
+	IggyDataValue result;
+	IggyDataValue value[4];
+
+	IggyStringUTF16 stringVal;
+	stringVal.string = (IggyUTF16*)shaped.c_str();
+	stringVal.length = static_cast<S32>(shaped.length());
+	value[0].type = IGGY_DATATYPE_string_UTF16;
+	value[0].string16 = stringVal;
+
+	value[1].type = IGGY_DATATYPE_number;
+	value[1].number = data;
+
+	IggyStringUTF16 stringVal2;
+	stringVal2.string = (IggyUTF16*)iconName1.c_str();
+	stringVal2.length = iconName1.length();
+	value[2].type = IGGY_DATATYPE_string_UTF16;
+	value[2].string16 = stringVal2;
+
+	IggyStringUTF16 stringVal3;
+	stringVal3.string = (IggyUTF16*)iconName2.c_str();
+	stringVal3.length = iconName2.length();
+	value[3].type = IGGY_DATATYPE_string_UTF16;
+	value[3].string16 = stringVal3;
+
+	IggyResult out = IggyPlayerCallMethodRS(m_parentScene->getMovie(), &result, getIggyValuePath(), m_addNewItemFunc, 4, value);
 }
 
 void UIControl_SaveList::setTextureName(int iId, const wstring &iconName)
@@ -104,3 +187,4 @@ void UIControl_SaveList::setTextureName(int iId, const wstring &iconName)
 	value[1].string16 = stringVal;
 	IggyResult out = IggyPlayerCallMethodRS ( m_parentScene->getMovie() , &result, getIggyValuePath(), m_funcSetTextureName , 2 , value );
 }
+

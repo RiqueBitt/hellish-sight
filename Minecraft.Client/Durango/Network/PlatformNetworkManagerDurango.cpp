@@ -1,6 +1,6 @@
 #include "stdafx.h"
-#include "..\..\..\Minecraft.World\Socket.h"
-#include "..\..\..\Minecraft.World\StringHelpers.h"
+#include "../../../Minecraft.World/Socket.h"
+#include "../../../Minecraft.World/StringHelpers.h"
 #include "PlatformNetworkManagerDurango.h"
 #include "NetworkPlayerDurango.h"
 
@@ -187,8 +187,6 @@ void CPlatformNetworkManagerDurango::HandlePlayerJoined(DQRNetworkPlayer *pDQRPl
 
 void CPlatformNetworkManagerDurango::HandlePlayerLeaving(DQRNetworkPlayer *pDQRPlayer)
 {
-	//__debugbreak();
-
 	app.DebugPrintf( "Player 0x%p leaving.\n",
         pDQRPlayer );
 

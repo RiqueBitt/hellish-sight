@@ -36,46 +36,51 @@
 #include "FrustumCuller.h"
 #include "Camera.h"
 
-#include "..\Minecraft.World\MobEffect.h"
-#include "..\Minecraft.World\Difficulty.h"
-#include "..\Minecraft.World\net.minecraft.world.level.h"
-#include "..\Minecraft.World\net.minecraft.world.entity.h"
-#include "..\Minecraft.World\net.minecraft.world.entity.player.h"
-#include "..\Minecraft.World\net.minecraft.world.entity.item.h"
-#include "..\Minecraft.World\net.minecraft.world.phys.h"
-#include "..\Minecraft.World\File.h"
-#include "..\Minecraft.World\net.minecraft.world.level.storage.h"
-#include "..\Minecraft.World\net.minecraft.h"
-#include "..\Minecraft.World\net.minecraft.stats.h"
-#include "..\Minecraft.World\System.h"
-#include "..\Minecraft.World\ByteBuffer.h"
-#include "..\Minecraft.World\net.minecraft.world.level.tile.h"
-#include "..\Minecraft.World\net.minecraft.world.level.chunk.h"
-#include "..\Minecraft.World\net.minecraft.world.level.dimension.h"
-#include "..\Minecraft.World\net.minecraft.world.item.h"
-#include "..\Minecraft.World\Minecraft.World.h"
-#include "Windows64\Windows64_Xuid.h"
+#include "../Minecraft.World/MobEffect.h"
+#include "../Minecraft.World/Difficulty.h"
+#include "../Minecraft.World/net.minecraft.world.level.h"
+#include "../Minecraft.World/net.minecraft.world.entity.h"
+#include "../Minecraft.World/net.minecraft.world.entity.player.h"
+#include "../Minecraft.World/net.minecraft.world.entity.item.h"
+#include "../Minecraft.World/net.minecraft.world.phys.h"
+#include "../Minecraft.World/File.h"
+#include "../Minecraft.World/net.minecraft.world.level.storage.h"
+#include "../Minecraft.World/net.minecraft.h"
+#include "../Minecraft.World/net.minecraft.stats.h"
+#include "../Minecraft.World/System.h"
+#include "../Minecraft.World/ByteBuffer.h"
+#include "../Minecraft.World/net.minecraft.world.level.tile.h"
+#include "../Minecraft.World/net.minecraft.world.level.chunk.h"
+#include "../Minecraft.World/net.minecraft.world.level.dimension.h"
+#include "../Minecraft.World/net.minecraft.world.item.h"
+#include "../Minecraft.World/Minecraft.World.h"
+#include "Windows64/Windows64_Xuid.h"
 #include "ClientConnection.h"
-#include "..\Minecraft.World\HellRandomLevelSource.h"
-#include "..\Minecraft.World\net.minecraft.world.entity.animal.h"
-#include "..\Minecraft.World\net.minecraft.world.entity.monster.h"
-#include "..\Minecraft.World\StrongholdFeature.h"
-#include "..\Minecraft.World\IntCache.h"
-#include "..\Minecraft.World\Villager.h"
-#include "..\Minecraft.World\SparseLightStorage.h"
-#include "..\Minecraft.World\SparseDataStorage.h"
-#include "..\Minecraft.World\ChestTileEntity.h"
+#include "../Minecraft.World/HellRandomLevelSource.h"
+#include "../Minecraft.World/net.minecraft.world.entity.animal.h"
+#include "../Minecraft.World/net.minecraft.world.entity.monster.h"
+#include "../Minecraft.World/StrongholdFeature.h"
+#include "../Minecraft.World/IntCache.h"
+#include "../Minecraft.World/Villager.h"
+#include "../Minecraft.World/SparseLightStorage.h"
+#include "../Minecraft.World/SparseDataStorage.h"
+#include "../Minecraft.World/ChestTileEntity.h"
 #include "TextureManager.h"
 #ifdef _XBOX
-#include "Xbox\Network\NetworkPlayerXbox.h"
+#include "Xbox/Network/NetworkPlayerXbox.h"
 #endif
-#include "Common\UI\IUIScene_CreativeMenu.h"
-#include "Common\UI\UIFontData.h"
+#include "Common/UI/IUIScene_CreativeMenu.h"
+#include "Common/UI/UIFontData.h"
+#include "Common/UI/UIComponent_PressStartToPlay.h"
 #include "DLCTexturePack.h"
 #include "Host\RubyLauncherHost.h"
+#ifdef _WINDOWS64
+#define STB_IMAGE_WRITE_IMPLEMENTATION
+#include "Windows64/stb_image_write.h"
+#endif
 
 #ifdef __ORBIS__
-#include "Orbis\Network\PsPlusUpsellWrapper_Orbis.h"
+#include "Orbis/Network/PsPlusUpsellWrapper_Orbis.h"
 #endif
 
 // #define DISABLE_SPU_CODE
@@ -137,8 +142,10 @@ Minecraft::Minecraft(Component *mouseComponent, Canvas *parent, MinecraftApplet 
 	user = nullptr;
 	parent = nullptr;
 	pause = false;
+#ifndef MINECRAFT_SERVER_BUILD
 	textures = nullptr;
 	font = nullptr;
+#endif
 	screen = nullptr;
 	localPlayerIdx = 0;
 	rightClickDelay = 0;
@@ -147,8 +154,9 @@ Minecraft::Minecraft(Component *mouseComponent, Canvas *parent, MinecraftApplet 
 	InitializeCriticalSection( &ProgressRenderer::s_progress );
 	InitializeCriticalSection(&m_setLevelCS);
 	//m_hPlayerRespawned = CreateEvent(nullptr, FALSE, FALSE, nullptr);
-
+#ifndef MINECRAFT_SERVER_BUILD
 	progressRenderer = nullptr;
+#endif
 	gameRenderer = nullptr;
 	bgLoader = nullptr;
 
@@ -162,8 +170,12 @@ Minecraft::Minecraft(Component *mouseComponent, Canvas *parent, MinecraftApplet 
 	orgWidth = orgHeight = 0;
 	achievementPopup = new AchievementPopup(this);
 	gui = nullptr;
+#ifndef MINECRAFT_SERVER_BUILD
 	noRender = false;
 	humanoidModel = new HumanoidModel(0);
+#else
+	noRender = true;
+#endif
 	hitResult = nullptr;
 	options = nullptr;
 	soundEngine = new SoundEngine();
@@ -334,12 +346,13 @@ void Minecraft::init()
 	options = new Options(this, workingDirectory);
 	skins = new TexturePackRepository(workingDirectory, this);
 	skins->addDebugPacks();
+#ifndef MINECRAFT_SERVER_BUILD
 	textures = new Textures(skins, options);
 	//renderLoadingScreen();
 
 	font = new Font(options, L"font/Default.png", textures, false, &DEFAULT_FONT_LOCATION, 23, 20, 8, 8, SFontData::Codepoints);
 	altFont = new Font(options, L"font/alternate.png", textures, false, &ALT_FONT_LOCATION, 16, 16, 8, 8);
-
+#endif
 	//if (options.languageCode != null) {
 	//	Language.getInstance().loadLanguage(options.languageCode);
 	//	//            font.setEnforceUnicodeSheet("true".equalsIgnoreCase(I18n.get("language.enforceUnicode")));
@@ -353,7 +366,9 @@ void Minecraft::init()
 	//FoliageColor::init(textures->loadTexturePixels(L"misc/foliagecolor.png"));
 
 	gameRenderer = new GameRenderer(this);
+#ifndef MINECRAFT_SERVER_BUILD
 	EntityRenderDispatcher::instance->itemInHandRenderer = new ItemInHandRenderer(this,false);
+#endif
 
 	for( int i=0 ; i<4 ; ++i )
 		stats[i] = new StatsCounter();
@@ -380,6 +395,7 @@ void Minecraft::init()
 		e.printStackTrace();
 	}
 #endif
+#ifndef MINECRAFT_SERVER_BUILD
 
 	MemSect(31);
 	checkGlError(L"Pre startup");
@@ -403,12 +419,17 @@ void Minecraft::init()
 	MemSect(31);
 	checkGlError(L"Startup");
 	MemSect(0);
-
+#endif
 	//    openGLCapabilities = new OpenGLCapabilities();	// 4J - removed
-
+#ifndef MINECRAFT_SERVER_BUILD
 	levelRenderer = new LevelRenderer(this, textures);
+#else
+	levelRenderer = new LevelRenderer(this, nullptr);
+#endif
 	//textures->register(&TextureAtlas::LOCATION_BLOCKS, new TextureAtlas(Icon::TYPE_TERRAIN, TN_TERRAIN));
 	//textures->register(&TextureAtlas::LOCATION_ITEMS, new TextureAtlas(Icon::TYPE_ITEM, TN_GUI_ITEMS));
+#ifndef MINECRAFT_SERVER_BUILD
+
 	textures->stitch();
 
 	glViewport(0, 0, width, height);
@@ -419,6 +440,7 @@ void Minecraft::init()
 	checkGlError(L"Post startup");
 	MemSect(0);
 	gui = new Gui(this);
+
 
 	if (connectToIp != L"")	// 4J - was nullptr comparison
 	{
@@ -431,6 +453,7 @@ void Minecraft::init()
 	progressRenderer = new ProgressRenderer(this);
 
 	RenderManager.CBuffLockStaticCreations();
+#endif
 }
 
 void Minecraft::renderLoadingScreen()
@@ -504,9 +527,10 @@ LevelStorageSource *Minecraft::getLevelSource()
 
 void Minecraft::setScreen(Screen *screen)
 {
-	if (this->screen != nullptr)
+	Screen *oldScreen = this->screen;
+	if (oldScreen != nullptr)
 	{
-		this->screen->removed();
+		oldScreen->removed();
 	}
 
 #ifdef _WINDOWS64
@@ -1246,6 +1270,8 @@ void Minecraft::applyFrameMouseLook()
 
 void Minecraft::run_middle()
 {
+	pause = app.IsAppPaused();
+
 	static int64_t lastTime = 0;
 	static bool bFirstTimeIntoGame = true;
 	static bool bAutosaveTimerSet=false;
@@ -1258,11 +1284,14 @@ void Minecraft::run_middle()
 
 	if(running)
 	{
+#ifndef MINECRAFT_SERVER_BUILD
 		if (reloadTextures)
 		{
 			reloadTextures = false;
 			textures->reloadAll();
 		}
+#endif
+
 
 		//while (running)
 		{
@@ -1449,6 +1478,7 @@ void Minecraft::run_middle()
 					if(InputManager.ButtonPressed(i, MINECRAFT_ACTION_USE))					localplayers[i]->ullButtonsPressed|=1LL<<MINECRAFT_ACTION_USE;
 
 					if(InputManager.ButtonPressed(i, MINECRAFT_ACTION_INVENTORY))				localplayers[i]->ullButtonsPressed|=1LL<<MINECRAFT_ACTION_INVENTORY;
+					if(InputManager.ButtonDown(i, MINECRAFT_ACTION_INVENTORY))				    localplayers[i]->ullButtonsDown|=1LL<<MINECRAFT_ACTION_INVENTORY;
 					if(InputManager.ButtonPressed(i, MINECRAFT_ACTION_ACTION))					localplayers[i]->ullButtonsPressed|=1LL<<MINECRAFT_ACTION_ACTION;
 					if(InputManager.ButtonPressed(i, MINECRAFT_ACTION_CRAFTING))				localplayers[i]->ullButtonsPressed|=1LL<<MINECRAFT_ACTION_CRAFTING;
 					if(InputManager.ButtonPressed(i, MINECRAFT_ACTION_PAUSEMENU))
@@ -1515,7 +1545,7 @@ void Minecraft::run_middle()
 
 							if(g_KBMInput.IsKeyPressed(KeyboardMouseInput::KEY_CRAFTING) || g_KBMInput.IsKeyPressed(KeyboardMouseInput::KEY_CRAFTING_ALT))
 							{
-							if((ui.IsSceneInStack(i, eUIScene_Crafting2x2Menu) || ui.IsSceneInStack(i, eUIScene_Crafting3x3Menu) || ui.IsSceneInStack(i, eUIScene_CreativeMenu) || isClosableByEitherKey) && !isEditing)
+								if ((ui.IsSceneInStack(i, eUIScene_Crafting2x2Menu) || ui.IsSceneInStack(i, eUIScene_Crafting3x3Menu) || ui.IsSceneInStack(i, eUIScene_CreativeMenu) || ui.IsSceneInStack(i, eUIScene_ClassicCraftingMenu) || isClosableByEitherKey) && !isEditing)
 							{
 								ui.CloseUIScenes(i);
 							}
@@ -1525,12 +1555,15 @@ void Minecraft::run_middle()
 							}
 						}
 
-							for (int slot = 0; slot < 9; slot++)
-							{
-								if (g_KBMInput.IsKeyPressed('1' + slot))
+							//Prevent hotbar switching in menu
+							if (!ui.GetMenuDisplayed(0)) {
+								for (int slot = 0; slot < 9; slot++)
 								{
-									if (localplayers[i]->inventory)
-										localplayers[i]->inventory->selected = slot;
+									if (g_KBMInput.IsKeyPressed('1' + slot))
+									{
+										if (localplayers[i]->inventory)
+											localplayers[i]->inventory->selected = slot;
+									}
 								}
 							}
 						}
@@ -1538,8 +1571,12 @@ void Minecraft::run_middle()
 						// Utility keys always work regardless of KBM active state
 						if(g_KBMInput.IsKeyPressed(KeyboardMouseInput::KEY_PAUSE) && !ui.GetMenuDisplayed(i))
 						{
-							localplayers[i]->ullButtonsPressed|=1LL<<MINECRAFT_ACTION_PAUSEMENU;
-							app.DebugPrintf("PAUSE PRESSED (keyboard) - ipad = %d\n",i);
+							if (dynamic_cast<ChatScreen*>(getScreen()) != nullptr) {
+								setScreen(nullptr);
+							} else {
+								localplayers[i]->ullButtonsPressed|=1LL<<MINECRAFT_ACTION_PAUSEMENU;
+								app.DebugPrintf("PAUSE PRESSED (keyboard) - ipad = %d\n",i);
+							}
 						}
 
 						if(g_KBMInput.IsKeyPressed(KeyboardMouseInput::KEY_THIRD_PERSON))
@@ -1549,6 +1586,9 @@ void Minecraft::run_middle()
 						{
 							localplayers[i]->ullButtonsPressed|=1LL<<MINECRAFT_ACTION_RENDER_DEBUG;
 						}
+
+						if(g_KBMInput.IsKeyPressed(KeyboardMouseInput::KEY_SCREENSHOT))
+							localplayers[i]->ullButtonsPressed|=1LL<<MINECRAFT_ACTION_SCREENSHOT;
 
 						// In flying mode, Shift held = sneak/descend
 						if(g_KBMInput.IsKBMActive() && g_KBMInput.IsKeyDown(KeyboardMouseInput::KEY_SNEAK))
@@ -2327,13 +2367,18 @@ void Minecraft::tick(bool bFirst, bool bUpdateTextures)
 	// soundEngine.playMusicTick();
 
 	if (!pause && level != nullptr) gameMode->tick();
+#ifndef MINECRAFT_SERVER_BUILD
 	MemSect(31);
 	glBindTexture(GL_TEXTURE_2D, textures->loadTexture(TN_TERRAIN)); //L"/terrain.png"));
 	MemSect(0);
+#endif
+
 	if( bFirst )
 	{
 		PIXBeginNamedEvent(0,"Texture tick");
+#ifndef MINECRAFT_SERVER_BUILD
 		if (!pause) textures->tick(bUpdateTextures);
+#endif
 		PIXEndNamedEvent();
 	}
 
@@ -2632,6 +2677,34 @@ void Minecraft::tick(bool bFirst, bool bUpdateTextures)
 
 				case Item::expBottle_Id:
 					if (bUseItem) *piUse=IDS_TOOLTIPS_THROW;
+					break;
+				case Item::writingBook_Id:
+					*piUse = IDS_TOOLTIPS_OPEN;
+					break;
+				case Item::writtenBook_Id:
+					*piUse = IDS_TOOLTIPS_READ;
+					break;
+				case Item::helmet_leather_Id:
+				case Item::helmet_chain_Id:
+				case Item::helmet_iron_Id:
+				case Item::helmet_gold_Id:
+				case Item::helmet_diamond_Id:
+				case Item::chestplate_leather_Id:
+				case Item::chestplate_chain_Id:
+				case Item::chestplate_iron_Id:
+				case Item::chestplate_gold_Id:
+				case Item::chestplate_diamond_Id:
+				case Item::leggings_leather_Id:
+				case Item::leggings_chain_Id:
+				case Item::leggings_iron_Id:
+				case Item::leggings_gold_Id:
+				case Item::leggings_diamond_Id:
+				case Item::boots_leather_Id:
+				case Item::boots_chain_Id:
+				case Item::boots_iron_Id:
+				case Item::boots_gold_Id:
+				case Item::boots_diamond_Id:
+					*piUse = IDS_TOOLTIPS_EQUIP;
 					break;
 				}
 			}
@@ -3145,14 +3218,15 @@ void Minecraft::tick(bool bFirst, bool bUpdateTextures)
 							{
 								*piUse=IDS_TOOLTIPS_UNLEASH;
 							}
-							else if (heldItemId == Item::lead_Id)
+							// 4J: fix improper tooltips for TU20
+							/*else if (heldItemId == Item::lead_Id)
 							{
 								if (!pig->isLeashed()) *piUse=IDS_TOOLTIPS_LEASH;
 							}
 							else if (heldItemId == Item::nameTag_Id)
 							{
 								*piUse = IDS_TOOLTIPS_NAME;
-							}
+							}*/
 							else if (pig->hasSaddle()) // does the pig have a saddle?
 							{
 								*piUse=IDS_TOOLTIPS_MOUNT;
@@ -3626,21 +3700,22 @@ void Minecraft::tick(bool bFirst, bool bUpdateTextures)
 #else
 		bool useHeld = InputManager.ButtonDown(iPad, MINECRAFT_ACTION_USE);
 #endif
+		bool achHeld;
 		if( player->isUsingItem() )
 		{
 			if(!useHeld) gameMode->releaseUsingItem(player);
 		}
-		else if( gameMode->isInputAllowed(MINECRAFT_ACTION_USE) )
+		else if (gameMode->isInputAllowed(MINECRAFT_ACTION_USE))
 		{
-			if( player->abilities.instabuild )
+			if (player->abilities.instabuild)
 			{
 				// 4J - attempt to handle click in special creative mode fashion if possible (used for placing blocks at regular intervals)
-				bool didClick = player->creativeModeHandleMouseClick(1, useHeld );
+				bool didClick = player->creativeModeHandleMouseClick(1, useHeld);
 				// If this handler has put us in lastClick_oldRepeat mode then it is because we aren't placing blocks - behave largely as the code used to
-				if( player->lastClickState == LocalPlayer::lastClick_oldRepeat )
+				if (player->lastClickState == LocalPlayer::lastClick_oldRepeat)
 				{
 					// If we've already handled the click in creativeModeHandleMouseClick then just record the time of this click
-					if( didClick )
+					if (didClick)
 					{
 						player->lastClickTick[1] = ticks;
 					}
@@ -3660,21 +3735,21 @@ void Minecraft::tick(bool bFirst, bool bUpdateTextures)
 				// Consider as a click if we've had a period of not pressing the button, or we've reached auto-repeat time since the last time
 				// Auto-repeat is only considered if we aren't riding or sprinting, to avoid photo sensitivity issues when placing fire whilst doing fast things
 				// Also disable repeat when the player is sleeping to stop the waking up right after using the bed
-				bool firstClick = ( player->lastClickTick[1] == 0 );
+				bool firstClick = (player->lastClickTick[1] == 0);
 				bool autoRepeat = ticks - player->lastClickTick[1] >= timer->ticksPerSecond / 4;
-				if ( player->isRiding() || player->isSprinting() || player->isSleeping() ) autoRepeat = false;
-				if (useHeld )
+				if (player->isRiding() || player->isSprinting() || player->isSleeping()) autoRepeat = false;
+				if (useHeld)
 				{
 					// If the player has just exited a bed, then delay the time before a repeat key is allowed without releasing
-					if(player->isSleeping() ) player->lastClickTick[1] = ticks + (timer->ticksPerSecond * 2);
-					if( firstClick || autoRepeat )
+					if (player->isSleeping()) player->lastClickTick[1] = ticks + (timer->ticksPerSecond * 2);
+					if (firstClick || autoRepeat)
 					{
 						bool wasSleeping = player->isSleeping();
 
 						player->handleMouseClick(1);
 
 						// If the player has just exited a bed, then delay the time before a repeat key is allowed without releasing
-						if(wasSleeping) player->lastClickTick[1] = ticks + (timer->ticksPerSecond * 2);
+						if (wasSleeping) player->lastClickTick[1] = ticks + (timer->ticksPerSecond * 2);
 						else player->lastClickTick[1] = ticks;
 					}
 				}
@@ -3682,6 +3757,68 @@ void Minecraft::tick(bool bFirst, bool bUpdateTextures)
 				{
 					player->lastClickTick[1] = 0;
 				}
+			}
+
+			achHeld = InputManager.ButtonDown(iPad, MINECRAFT_ACTION_INVENTORY) ||
+				(iPad == 0 && g_KBMInput.IsKBMActive() &&
+					g_KBMInput.IsKeyDown(KeyboardMouseInput::KEY_INVENTORY));
+			if (ui.toastOn) {
+				if (achHeld) {
+					// Record when the hold started
+					if (player->lastClickTick[2] == 0) {
+						player->lastClickTick[2] = ticks;
+					}
+					// Check if held for 1 second
+					bool heldLongEnough = (ticks - player->lastClickTick[2]) >= (timer->ticksPerSecond);
+					if (heldLongEnough) {
+						ui.PlayUISFX(eSFX_Press);
+						ui.NavigateToScene(iPad, eUIScene_AchievementsMenu);
+						ui.getGroups()[static_cast<int>(eUIGroup_Fullscreen)]->getPressStartToPlay()->handleTimerComplete(1);
+					}
+				}
+				else {
+					// If let go during period, open inventory
+					if (player->lastClickTick[2] != 0) {
+						shared_ptr<MultiplayerLocalPlayer> player = Minecraft::GetInstance()->player;
+						if (!player->isRiding())
+						{
+							ui.PlayUISFX(eSFX_Press);
+						}
+
+						if (gameMode->isServerControlledInventory())
+						{
+							player->sendOpenInventory();
+						}
+						else
+						{
+							app.LoadInventoryMenu(iPad, player);
+						}
+					}
+
+					// Reset when button is released
+					player->lastClickTick[2] = 0;
+				}
+			}
+			else {
+				//Just open inventory if the toast is not open
+				if ((player->ullButtonsPressed & (1LL << MINECRAFT_ACTION_INVENTORY)) && gameMode->isInputAllowed(MINECRAFT_ACTION_INVENTORY))
+				{
+					shared_ptr<MultiplayerLocalPlayer> player = Minecraft::GetInstance()->player;
+					if (!player->isRiding())
+					{
+						ui.PlayUISFX(eSFX_Press);
+					}
+
+					if (gameMode->isServerControlledInventory())
+					{
+						player->sendOpenInventory();
+					}
+					else
+					{
+						app.LoadInventoryMenu(iPad, player);
+					}
+				}
+				player->lastClickTick[2] = 0;
 			}
 		}
 
@@ -3748,19 +3885,26 @@ void Minecraft::tick(bool bFirst, bool bUpdateTextures)
 
 		if((player->ullButtonsPressed&(1LL<<MINECRAFT_ACTION_INVENTORY)) && gameMode->isInputAllowed(MINECRAFT_ACTION_INVENTORY))
 		{
-			shared_ptr<MultiplayerLocalPlayer> player = Minecraft::GetInstance()->player;
-			if (!player->isRiding())
-			{
-				ui.PlayUISFX(eSFX_Press);
+			if (achHeld) {
+				
+				//ui.PlayUISFX(eSFX_Press);
+				//ui.NavigateToScene(iPad, eUIScene_AchievementsMenu);
 			}
+			else {
+				/*shared_ptr<MultiplayerLocalPlayer> player = Minecraft::GetInstance()->player;
+				if (!player->isRiding())
+				{
+					ui.PlayUISFX(eSFX_Press);
+				}
 
-			if(gameMode->isServerControlledInventory())
-			{
-				player->sendOpenInventory();
-			}
-			else
-			{
-				app.LoadInventoryMenu(iPad,player);
+				if (gameMode->isServerControlledInventory())
+				{
+					player->sendOpenInventory();
+				}
+				else
+				{
+					app.LoadInventoryMenu(iPad, player);
+				}*/
 			}
 		}
 
@@ -3788,7 +3932,10 @@ void Minecraft::tick(bool bFirst, bool bUpdateTextures)
 			else
 			{
 				ui.PlayUISFX(eSFX_Press);
-				app.LoadCrafting2x2Menu(iPad,player);
+				if (app.GetGameSettings(iPad, eGameSetting_ClassicCrafting))
+					app.LoadInventoryMenu(iPad, player);
+				else
+					app.LoadCrafting2x2Menu(iPad, player);
 			}
 		}
 
@@ -3805,7 +3952,8 @@ void Minecraft::tick(bool bFirst, bool bUpdateTextures)
 
 		if((player->ullButtonsPressed&(1LL<<MINECRAFT_ACTION_DROP)) && gameMode->isInputAllowed(MINECRAFT_ACTION_DROP))
 		{
-			player->drop();
+            bool ctrlHeld = g_KBMInput.IsKBMActive() && g_KBMInput.IsKeyDown(KeyboardMouseInput::KEY_CONTROL);
+			player->drop(ctrlHeld);
 		}
 
 		uint64_t ullButtonsPressed=player->ullButtonsPressed;
@@ -4244,15 +4392,16 @@ void Minecraft::setLevel(MultiPlayerLevel *level, int message /*=-1*/, shared_pt
 	EnterCriticalSection(&m_setLevelCS);
 	bool playerAdded = false;
 	this->cameraTargetPlayer = nullptr;
-
+#ifdef MINECRAFT_SERVER_BUILD
 	if(progressRenderer != nullptr)
 	{
 		this->progressRenderer->progressStart(message);
 		this->progressRenderer->progressStage(-1);
 	}
+#endif
 
-	// 4J-PB - since we now play music in the menu, just let it keep playing
-	//soundEngine->playStreaming(L"", 0, 0, 0, 0, 0);
+	// Stop menu music and transition to game music for the new level
+	soundEngine->playStreaming(L"", 0, 0, 0, 1, 1);
 
 	// 4J - stop update thread from processing this level, which blocks until it is safe to move on - will be re-enabled if we set the level to be non-nullptr
 	gameRenderer->DisableUpdateThread();
@@ -4293,6 +4442,8 @@ void Minecraft::setLevel(MultiPlayerLevel *level, int message /*=-1*/, shared_pt
 	// 4J If we are setting the level to nullptr then we are exiting, so delete the levels
 	if( level == nullptr )
 	{
+		if (soundEngine) soundEngine->stopElytraSound();
+
 		if(levels[0]!=nullptr)
 		{
 			delete levels[0];
@@ -4472,11 +4623,14 @@ void Minecraft::setLevel(MultiPlayerLevel *level, int message /*=-1*/, shared_pt
 
 void Minecraft::prepareLevel(int title)
 {
+#ifndef MINECRAFT_SERVER_BUILD
 	if(progressRenderer != nullptr)
 	{
 		this->progressRenderer->progressStart(title);
 		this->progressRenderer->progressStage(IDS_PROGRESS_BUILDING_TERRAIN);
 	}
+#endif
+
 	int r = 128;
 	if (gameMode->isCutScene()) r = 64;
 	int pp = 0;
@@ -4500,7 +4654,7 @@ void Minecraft::prepareLevel(int title)
 		spcc->centerOn(spawnPos->x >> 4, spawnPos->z >> 4);
 	}
 #endif
-
+#ifndef MINECRAFT_SERVER_BUILD
 	for (int x = -r; x <= r; x += 16)
 	{
 		for (int z = -r; z <= r; z += 16)
@@ -4516,7 +4670,8 @@ void Minecraft::prepareLevel(int title)
 	{
 		if(progressRenderer != nullptr) this->progressRenderer->progressStage(IDS_PROGRESS_SIMULATING_WORLD);
 		max = 2000;
-}
+	}
+#endif
 }
 
 wstring Minecraft::gatherStats1()
@@ -4779,8 +4934,10 @@ void Minecraft::main()
 
 	// Ruby Launcher - mods are read and loaded here
 	RubyLoader::onClientBoot();
+#ifndef MINECRAFT_SERVER_BUILD
 	EntityRenderDispatcher::staticCtor();
 	TileEntityRenderDispatcher::staticCtor();
+#endif
 	User::staticCtor();
 	Tutorial::staticCtor();
 	ColourTable::staticCtor();
@@ -4809,7 +4966,7 @@ void Minecraft::main()
 			app.DebugPrintf("<xs:enumeration value=\"%d\"><xs:annotation><xs:documentation>%ls</xs:documentation></xs:annotation></xs:enumeration>\n", i, app.GetString( Tile::tiles[i]->getDescriptionId() ));
 		}
 	}
-	__debugbreak();
+	DEBUG_BREAK();
 #endif
 
 	// 4J-PB - Can't call this for the first 5 seconds of a game - MS rule

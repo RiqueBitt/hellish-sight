@@ -1,16 +1,56 @@
 #include "stdafx.h"
 
 #include "ServerLogger.h"
-#include "Common\\StringUtils.h"
-#include "vendor\\linenoise\\linenoise.h"
+#include "Common//StringUtils.h"
+#include "vendor//linenoise//linenoise.h"
 
 #include <stdio.h>
 #include <stdarg.h>
 #include <string.h>
+#include <mutex>
 
 namespace ServerRuntime
 {
 static volatile LONG g_minLogLevel = (LONG)eServerLogLevel_Info;
+static FILE *g_logFile = NULL;
+static std::once_flag g_logFileOnce;
+
+bool g_serverPerfTrace = false;
+
+static void OpenLogFile()
+{
+	if (g_logFile != NULL)
+		return;
+
+	errno_t err = fopen_s(&g_logFile, "server.log", "a");
+	if (err != 0 || g_logFile == NULL)
+	{
+		g_logFile = NULL;
+		printf("[ServerLogger] Warning: Could not open server.log for writing (errno=%d)\n", (int)err);
+		fflush(stdout);
+	}
+}
+
+static void CloseLogFile()
+{
+	if (g_logFile != NULL)
+	{
+		fflush(g_logFile);
+		fclose(g_logFile);
+		g_logFile = NULL;
+	}
+}
+
+static void EnsureLogFileInitialized()
+{
+	std::call_once(g_logFileOnce, []() {
+		OpenLogFile();
+		if (g_logFile != NULL)
+		{
+			atexit(CloseLogFile);
+		}
+	});
+}
 
 static const char *NormalizeCategory(const char *category)
 {
@@ -119,6 +159,14 @@ static void WriteLogLine(EServerLogLevel level, const char *category, const char
 	if (hasColorConsole)
 	{
 		SetConsoleTextAttribute(stdoutHandle, originalInfo.wAttributes);
+	}
+
+	EnsureLogFileInitialized();
+	if (g_logFile != NULL)
+	{
+		fprintf(g_logFile, "[%s][%s][%s] %s\n",
+			timestamp, LogLevelToString(level), safeCategory, safeMessage);
+		fflush(g_logFile);
 	}
 
 	linenoiseExternalWriteEnd();

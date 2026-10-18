@@ -4,19 +4,19 @@
 
 #include "base64.h"
 
-#include "..\Orbis_App.h"
-#include "..\..\Common\Consoles_App.h"
+#include "../Orbis_App.h"
+#include "../../Common/Consoles_App.h"
 
-#include "Common\Network\Sony\SQRNetworkManager.h"
+#include "Common/Network/Sony/SQRNetworkManager.h"
 
-#include "..\..\..\Minecraft.World\StringHelpers.h"
+#include "../../../Minecraft.World/StringHelpers.h"
 
 #include <cstdlib>
 
 #include <np.h>
 //#include <sys/ppu_thread.h>
 
-#include "Orbis\OrbisExtras\ShutdownManager.h"
+#include "Orbis/OrbisExtras/ShutdownManager.h"
 
 
 LeaderboardManager *LeaderboardManager::m_instance = new OrbisLeaderboardManager(); //Singleton instance of the LeaderboardManager
@@ -245,7 +245,7 @@ bool OrbisLeaderboardManager::getScoreByIds()
 		{
 			// 4J-JEV: Something terrible must have happend,
 			// 'getFriendslist' was supposed to be a synchronous operation.
-			__debugbreak();
+			DEBUG_BREAK();
 
 			// 4J-JEV: We can at least fall-back to just the players score.
 			num = 1;

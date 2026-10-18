@@ -2,11 +2,12 @@
 
 #include "CliCommandWhitelist.h"
 
-#include "..\..\ServerCliEngine.h"
-#include "..\..\ServerCliParser.h"
-#include "..\..\..\Access\Access.h"
-#include "..\..\..\Common\StringUtils.h"
-#include "..\..\..\ServerProperties.h"
+#include "../../ServerCliEngine.h"
+#include "../../ServerCliParser.h"
+#include "../../../Access/Access.h"
+#include "../../../Common/StringUtils.h"
+#include "../../../ServerProperties.h"
+#include "../../../ServerLogManager.h"
 
 #include <algorithm>
 #include <array>
@@ -181,14 +182,44 @@ namespace ServerRuntime
 		{
 			if (line.tokens.size() < 3)
 			{
-				engine->LogWarn("Usage: whitelist add <xuid> [name ...]");
+				engine->LogWarn("Usage: whitelist add <xuid|name> [display name ...]");
 				return false;
 			}
 
 			PlayerUID xuid = INVALID_XUID;
-			if (!TryParseWhitelistXuid(line.tokens[2], engine, &xuid))
+			std::string name;
+
+			if (ServerRuntime::Access::TryParseXuid(line.tokens[2], &xuid))
 			{
-				return false;
+				// Argument is a XUID
+				name = StringUtils::JoinTokens(line.tokens, 3);
+			}
+			else
+			{
+				// Argument is a player name -- look up XUID from recent login cache
+				std::vector<PlayerUID> cachedXuids;
+				int count = ServerRuntime::ServerLogManager::GetCachedXuids(line.tokens[2], &cachedXuids);
+				if (count == 0)
+				{
+					engine->LogWarn("Unknown player: " + line.tokens[2]);
+					engine->LogWarn("The player must attempt to connect first so the server can learn their XUID.");
+					engine->LogWarn("Alternatively, use: whitelist add <xuid>");
+					return false;
+				}
+				if (count > 1)
+				{
+					engine->LogWarn("Ambiguous: " + std::to_string(count) + " different XUIDs have been seen for '" + line.tokens[2] + "':");
+					for (size_t i = 0; i < cachedXuids.size(); ++i)
+					{
+						std::string label = (i == cachedXuids.size() - 1) ? " (most recent)" : "";
+						engine->LogWarn("  " + ServerRuntime::Access::FormatXuid(cachedXuids[i]) + label);
+					}
+					engine->LogWarn("Re-run with the explicit XUID: whitelist add <xuid> [name]");
+					return false;
+				}
+				xuid = cachedXuids.back();
+				name = line.tokens[2];
+				engine->LogInfo("Resolved '" + name + "' to XUID " + ServerRuntime::Access::FormatXuid(xuid));
 			}
 
 			if (ServerRuntime::Access::IsPlayerWhitelisted(xuid))
@@ -198,7 +229,6 @@ namespace ServerRuntime
 			}
 
 			const auto metadata = ServerRuntime::Access::WhitelistManager::BuildDefaultMetadata("Console");
-			const auto name = StringUtils::JoinTokens(line.tokens, 3);
 			if (!ServerRuntime::Access::AddWhitelistedPlayer(xuid, name, metadata))
 			{
 				engine->LogError("Failed to write whitelist entry.");

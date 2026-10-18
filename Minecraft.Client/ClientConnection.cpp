@@ -12,46 +12,46 @@
 #include "TakeAnimationParticle.h"
 #include "CritParticle.h"
 #include "User.h"
-#include "..\Minecraft.World\net.minecraft.world.level.storage.h"
-#include "..\Minecraft.World\net.minecraft.world.level.chunk.h"
-#include "..\Minecraft.World\net.minecraft.stats.h"
-#include "..\Minecraft.World\net.minecraft.world.entity.h"
-#include "..\Minecraft.World\net.minecraft.world.entity.ai.attributes.h"
-#include "..\Minecraft.World\net.minecraft.world.entity.player.h"
-#include "..\Minecraft.World\net.minecraft.world.entity.animal.h"
-#include "..\Minecraft.World\net.minecraft.world.entity.npc.h"
-#include "..\Minecraft.World\net.minecraft.world.entity.item.h"
-#include "..\Minecraft.World\net.minecraft.world.entity.projectile.h"
-#include "..\Minecraft.World\net.minecraft.world.entity.global.h"
-#include "..\Minecraft.World\net.minecraft.world.entity.boss.enderdragon.h"
-#include "..\Minecraft.World\net.minecraft.world.entity.monster.h"
-#include "..\Minecraft.World\net.minecraft.world.level.tile.entity.h"
-#include "..\Minecraft.World\net.minecraft.world.item.h"
-#include "..\Minecraft.World\net.minecraft.world.item.trading.h"
-#include "..\Minecraft.World\net.minecraft.world.level.tile.h"
-#include "..\Minecraft.World\net.minecraft.world.inventory.h"
-#include "..\Minecraft.World\net.minecraft.world.h"
-#include "..\Minecraft.World\net.minecraft.world.level.saveddata.h"
-#include "..\Minecraft.World\net.minecraft.world.level.dimension.h"
-#include "..\Minecraft.World\net.minecraft.world.effect.h"
-#include "..\Minecraft.World\net.minecraft.world.food.h"
-#include "..\Minecraft.World\SharedConstants.h"
-#include "..\Minecraft.World\AABB.h"
-#include "..\Minecraft.World\Pos.h"
-#include "..\Minecraft.World\Socket.h"
+#include "../Minecraft.World/net.minecraft.world.level.storage.h"
+#include "../Minecraft.World/net.minecraft.world.level.chunk.h"
+#include "../Minecraft.World/net.minecraft.stats.h"
+#include "../Minecraft.World/net.minecraft.world.entity.h"
+#include "../Minecraft.World/net.minecraft.world.entity.ai.attributes.h"
+#include "../Minecraft.World/net.minecraft.world.entity.player.h"
+#include "../Minecraft.World/net.minecraft.world.entity.animal.h"
+#include "../Minecraft.World/net.minecraft.world.entity.npc.h"
+#include "../Minecraft.World/net.minecraft.world.entity.item.h"
+#include "../Minecraft.World/net.minecraft.world.entity.projectile.h"
+#include "../Minecraft.World/net.minecraft.world.entity.global.h"
+#include "../Minecraft.World/net.minecraft.world.entity.boss.enderdragon.h"
+#include "../Minecraft.World/net.minecraft.world.entity.monster.h"
+#include "../Minecraft.World/net.minecraft.world.level.tile.entity.h"
+#include "../Minecraft.World/net.minecraft.world.item.h"
+#include "../Minecraft.World/net.minecraft.world.item.trading.h"
+#include "../Minecraft.World/net.minecraft.world.level.tile.h"
+#include "../Minecraft.World/net.minecraft.world.inventory.h"
+#include "../Minecraft.World/net.minecraft.world.h"
+#include "../Minecraft.World/net.minecraft.world.level.saveddata.h"
+#include "../Minecraft.World/net.minecraft.world.level.dimension.h"
+#include "../Minecraft.World/net.minecraft.world.effect.h"
+#include "../Minecraft.World/net.minecraft.world.food.h"
+#include "../Minecraft.World/SharedConstants.h"
+#include "../Minecraft.World/AABB.h"
+#include "../Minecraft.World/Pos.h"
+#include "../Minecraft.World/Socket.h"
 #include "Minecraft.h"
 #include "ProgressRenderer.h"
 #include "LevelRenderer.h"
 #include "Options.h"
 #include "MinecraftServer.h"
 #include "ClientConstants.h"
-#include "..\Minecraft.World\SoundTypes.h"
-#include "..\Minecraft.World\BasicTypeContainers.h"
+#include "../Minecraft.World/SoundTypes.h"
+#include "../Minecraft.World/BasicTypeContainers.h"
 #include "TexturePackRepository.h"
 #ifdef _XBOX
-#include "Common\XUI\XUI_Scene_Trading.h"
+#include "Common/XUI/XUI_Scene_Trading.h"
 #else
-#include "Common\UI\UI.h"
+#include "Common/UI/UI.h"
 #endif
 #ifdef __PS3__
 #include "PS3/Network/SonyVoiceChat.h"
@@ -59,15 +59,42 @@
 #include "DLCTexturePack.h"
 
 #ifdef _WINDOWS64
-#include "Xbox\Network\NetworkPlayerXbox.h"
-#include "Common\Network\PlatformNetworkManagerStub.h"
+#include "Xbox/Network/NetworkPlayerXbox.h"
+#include "Common/Network/PlatformNetworkManagerStub.h"
+#include "Windows64/Network/WinsockNetLayer.h"
 #endif
+
+#include "../Minecraft.World/Recipes.h"
 
 
 #ifdef _DURANGO
-#include "..\Minecraft.World\DurangoStats.h"
-#include "..\Minecraft.World\GenericStats.h"
+#include "../Minecraft.World/DurangoStats.h"
+#include "../Minecraft.World/GenericStats.h"
 #endif
+
+namespace
+{
+	char mapIconToFrame(char iconSlot)
+	{
+		if (iconSlot >= 8) return iconSlot - 4;
+		return iconSlot;
+	}
+
+	// Same hash as getRandomPlayerMapIcon in MapItemSavedData.cpp, returning
+	// the Iggy/SWF frame index (0-7) instead of the raw icon slot.
+	char computePlayerMapFrame(int entityId, int playerIndex)
+	{
+		static const char PLAYER_MAP_ICON_SLOTS[] = { 0, 1, 2, 3, 8, 9, 10, 11 };
+		unsigned int seed = static_cast<unsigned int>(entityId);
+		seed ^= static_cast<unsigned int>(playerIndex * 0x9E3779B9u);
+		seed ^= (seed >> 16);
+		seed *= 0x7FEB352Du;
+		seed ^= (seed >> 15);
+		seed *= 0x846CA68Bu;
+		seed ^= (seed >> 16);
+		return mapIconToFrame(PLAYER_MAP_ICON_SLOTS[seed % 8]);
+	}
+}
 
 ClientConnection::ClientConnection(Minecraft *minecraft, const wstring& ip, int port)
 {
@@ -113,6 +140,10 @@ ClientConnection::ClientConnection(Minecraft *minecraft, Socket *socket, int iUs
 	started = false;
 	savedDataStorage = new SavedDataStorage(nullptr);
 	maxPlayers = 20;
+	m_isForkServer = false;
+
+	m_recivedRecipeRegistyUpdate = false;
+	m_recivedCreativeRegistyUpdate = false;
 
 	this->minecraft = minecraft;
 
@@ -222,6 +253,14 @@ INetworkPlayer *ClientConnection::getNetworkPlayer()
 void ClientConnection::handleLogin(shared_ptr<LoginPacket> packet)
 {
 	if (done) return;
+
+	if (!m_recivedRecipeRegistyUpdate) {
+		Recipes::getInstance()->loadFromLocal();
+	}
+
+	if (!m_recivedCreativeRegistyUpdate) {
+		IUIScene_CreativeMenu::loadFromLocal();
+	}
 
 	PlayerUID OnlineXuid;
 	ProfileManager.GetXUID(m_userIndex,&OnlineXuid,true); // online xuid
@@ -345,7 +384,7 @@ void ClientConnection::handleLogin(shared_ptr<LoginPacket> packet)
 		Level *dimensionLevel = minecraft->getLevel( packet->dimension );
 		if( dimensionLevel == nullptr )
 		{
-			level = new MultiPlayerLevel(this, new LevelSettings(packet->seed, GameType::byId(packet->gameType), false, false, packet->m_newSeaLevel, packet->m_pLevelType, packet->m_xzSize, packet->m_hellScale), packet->dimension, packet->difficulty);
+			level = new MultiPlayerLevel(this, new LevelSettings(packet->seed, GameType::byId(packet->gameType), false, packet->m_isHardcore, packet->m_newSeaLevel, packet->m_pLevelType, packet->m_xzSize, packet->m_hellScale), packet->dimension, packet->difficulty);
 
 			// 4J Stu - We want to share the SavedDataStorage between levels
 			int otherDimensionId = packet->dimension == 0 ? -1 : 0;
@@ -380,6 +419,7 @@ void ClientConnection::handleLogin(shared_ptr<LoginPacket> packet)
 
 		BYTE networkSmallId = getSocket()->getSmallId();
 		app.UpdatePlayerInfo(networkSmallId, packet->m_playerIndex, packet->m_uiGamePrivileges);
+		app.SetPlayerMapIcon(minecraft->player->getName().c_str(), computePlayerMapFrame(packet->clientVersion, packet->m_playerIndex));
 		minecraft->player->setPlayerGamePrivilege(Player::ePlayerGamePrivilege_All, packet->m_uiGamePrivileges);
 
 		// Assume all privileges are on, so that the first message we see only indicates things that have been turned off
@@ -414,7 +454,7 @@ void ClientConnection::handleLogin(shared_ptr<LoginPacket> packet)
 				activeLevel = minecraft->getLevel(otherDimensionId);
 			}
 
-			MultiPlayerLevel *dimensionLevel = new MultiPlayerLevel(this, new LevelSettings(packet->seed, GameType::byId(packet->gameType), false, false, packet->m_newSeaLevel, packet->m_pLevelType, packet->m_xzSize, packet->m_hellScale), packet->dimension, packet->difficulty);
+			MultiPlayerLevel *dimensionLevel = new MultiPlayerLevel(this, new LevelSettings(packet->seed, GameType::byId(packet->gameType), false, packet->m_isHardcore, packet->m_newSeaLevel, packet->m_pLevelType, packet->m_xzSize, packet->m_hellScale), packet->dimension, packet->difficulty);
 
 			dimensionLevel->savedDataStorage = activeLevel->savedDataStorage;
 
@@ -450,6 +490,7 @@ void ClientConnection::handleLogin(shared_ptr<LoginPacket> packet)
 
 		BYTE networkSmallId = getSocket()->getSmallId();
 		app.UpdatePlayerInfo(networkSmallId, packet->m_playerIndex, packet->m_uiGamePrivileges);
+		app.SetPlayerMapIcon(player->getName().c_str(), computePlayerMapFrame(packet->clientVersion, packet->m_playerIndex));
 		player->setPlayerGamePrivilege(Player::ePlayerGamePrivilege_All, packet->m_uiGamePrivileges);
 
 		// Assume all privileges are on, so that the first message we see only indicates things that have been turned off
@@ -920,6 +961,36 @@ void ClientConnection::handleAddPlayer(shared_ptr<AddPlayerPacket> packet)
 			}
 		}
 
+		// Client-side registration: if we still have no IQNet entry for this remote
+		// player, create one so they appear in the Tab player list.
+		// Find the first available IQNet slot (customData == 0, skip slot 0 which
+		// is the host). We can't use packet->m_playerIndex directly because on
+		// dedicated servers the game-level player index starts at 0 for real
+		// players, conflicting with the IQNet host slot.
+		if (matchedQNetPlayer == nullptr)
+		{
+			for (int s = 1; s < MINECRAFT_NET_MAX_PLAYERS; ++s)
+			{
+				IQNetPlayer* qp = &IQNet::m_player[s];
+				if (qp->GetCustomDataValue() == 0 && qp->m_gamertag[0] == 0)
+				{
+					BYTE smallId = static_cast<BYTE>(s);
+					qp->m_smallId = smallId;
+					qp->m_isRemote = true;
+					qp->m_isHostPlayer = false;
+					qp->m_resolvedXuid = pktXuid;
+					wcsncpy_s(qp->m_gamertag, 32, packet->name.c_str(), _TRUNCATE);
+					if (smallId >= IQNet::s_playerCount)
+						IQNet::s_playerCount = smallId + 1;
+
+					extern CPlatformNetworkManagerStub* g_pPlatformNetworkManager;
+					g_pPlatformNetworkManager->NotifyPlayerJoined(qp);
+					matchedQNetPlayer = qp;
+					break;
+				}
+			}
+		}
+
 		if (matchedQNetPlayer != nullptr)
 		{
 			// Store packet-authoritative XUID on this network slot so later lookups by XUID
@@ -949,6 +1020,7 @@ void ClientConnection::handleAddPlayer(shared_ptr<AddPlayerPacket> packet)
 	player->setPlayerIndex( packet->m_playerIndex );
 	player->setCustomSkin( packet->m_skinId );
 	player->setCustomCape( packet->m_capeId );
+	app.SetPlayerMapIcon(packet->name.c_str(), computePlayerMapFrame(packet->id, packet->m_playerIndex));
 	player->setPlayerGamePrivilege(Player::ePlayerGamePrivilege_All, packet->m_uiGamePrivileges);
 
     if (!player->customTextureUrl.empty() && player->customTextureUrl.substr(0, 3).compare(L"def") != 0 && !app.IsFileInMemoryTextures(player->customTextureUrl))
@@ -1086,33 +1158,35 @@ void ClientConnection::handleMoveEntitySmall(shared_ptr<MoveEntityPacketSmall> p
 void ClientConnection::handleRemoveEntity(shared_ptr<RemoveEntitiesPacket> packet)
 {
 #ifdef _WINDOWS64
-	if (!g_NetworkManager.IsHost())
+	// On fork servers, IQNet cleanup is handled by the MC|ForkPLeave custom
+	// payload so players stay in Tab regardless of render distance.  On
+	// upstream servers (no MC|ForkHello received), fall back to the old
+	// behaviour of cleaning up IQNet here.
+	if (!m_isForkServer && !g_NetworkManager.IsHost())
 	{
 		for (int i = 0; i < packet->ids.length; i++)
 		{
 			shared_ptr<Entity> entity = getEntity(packet->ids[i]);
-			if (entity != nullptr && entity->GetType() == eTYPE_PLAYER)
+			if (entity != nullptr)
 			{
 				shared_ptr<Player> player = dynamic_pointer_cast<Player>(entity);
 				if (player != nullptr)
 				{
-					PlayerUID xuid = player->getXuid();
-					INetworkPlayer* np = g_NetworkManager.GetPlayerByXuid(xuid);
-					if (np != nullptr)
+					for (int s = 1; s < MINECRAFT_NET_MAX_PLAYERS; ++s)
 					{
-						NetworkPlayerXbox* npx = (NetworkPlayerXbox*)np;
-						IQNetPlayer* qp = npx->GetQNetPlayer();
-						if (qp != nullptr)
+						IQNetPlayer* qp = &IQNet::m_player[s];
+						if (qp->GetCustomDataValue() != 0 &&
+							_wcsicmp(qp->m_gamertag, player->getName().c_str()) == 0)
 						{
 							extern CPlatformNetworkManagerStub* g_pPlatformNetworkManager;
 							g_pPlatformNetworkManager->NotifyPlayerLeaving(qp);
 							qp->m_smallId = 0;
 							qp->m_isRemote = false;
 							qp->m_isHostPlayer = false;
-							// Clear resolved id to avoid stale XUID -> player matches after disconnect.
 							qp->m_resolvedXuid = INVALID_XUID;
 							qp->m_gamertag[0] = 0;
 							qp->SetCustomDataValue(0);
+							break;
 						}
 					}
 				}
@@ -1549,17 +1623,28 @@ void ClientConnection::handleChat(shared_ptr<ChatPacket> packet)
 	bool replaceEntitySource = false;
 	bool replaceItem = false;
 
+	int stringArgsSize = packet->m_stringArgs.size();
+
 	wstring playerDisplayName = L"";
 	wstring sourceDisplayName = L"";
 
 	// On platforms other than Xbox One this just sets display name to gamertag
-	if (packet->m_stringArgs.size() >= 1) playerDisplayName = GetDisplayNameByGamertag(packet->m_stringArgs[0]);
-	if (packet->m_stringArgs.size() >= 2) sourceDisplayName = GetDisplayNameByGamertag(packet->m_stringArgs[1]);
+	if (stringArgsSize >= 1) playerDisplayName = GetDisplayNameByGamertag(packet->m_stringArgs[0]);
+	if (stringArgsSize >= 2) sourceDisplayName = GetDisplayNameByGamertag(packet->m_stringArgs[1]);
 
 	switch(packet->m_messageType)
 	{
 	case ChatPacket::e_ChatCustom:
-		message = (packet->m_stringArgs.size() >= 1) ? packet->m_stringArgs[0] : L"";
+	case ChatPacket::e_ChatActionBar:
+		if (stringArgsSize >= 1) {
+			message = packet->m_stringArgs[0];
+
+			message = app.EscapeHTMLString(message); //do this to enforce escaped string
+			message = app.FormatChatMessage(message); //this needs to be last cause it converts colors to html colors that would have been escaped
+		} else {
+			message = L"";
+		}
+		displayOnGui = (packet->m_messageType == ChatPacket::e_ChatCustom);
 		break;
 	case ChatPacket::e_ChatBedOccupied:
 		message = app.GetString(IDS_TILE_BED_OCCUPIED);
@@ -1909,7 +1994,7 @@ void ClientConnection::handleChat(shared_ptr<ChatPacket> packet)
 
 	if(replacePlayer)
 	{
-		message = replaceAll(message,L"{*PLAYER*}",playerDisplayName);
+		message = replaceAll(message,L"{*PLAYER*}", playerDisplayName);
 	}
 
 	if(replaceEntitySource)
@@ -1944,7 +2029,9 @@ void ClientConnection::handleChat(shared_ptr<ChatPacket> packet)
 	// flag that a message is a death message
 	bool bIsDeathMessage = (packet->m_messageType>=ChatPacket::e_ChatDeathInFire) && (packet->m_messageType<=ChatPacket::e_ChatDeathIndirectMagicItem);
 
-	if( displayOnGui ) minecraft->gui->addMessage(message,m_userIndex, bIsDeathMessage);
+	if( displayOnGui ) minecraft->gui->addMessage(message, m_userIndex, bIsDeathMessage);
+
+	if (!displayOnGui && !message.empty()) minecraft->gui->setActionBarMessage(message);
 }
 
 void ClientConnection::handleAnimate(shared_ptr<AnimatePacket> packet)
@@ -2873,7 +2960,7 @@ void ClientConnection::handleRespawn(shared_ptr<RespawnPacket> packet)
 		MultiPlayerLevel *dimensionLevel = (MultiPlayerLevel *)minecraft->getLevel( packet->dimension );
 		if( dimensionLevel == nullptr )
 		{
-			dimensionLevel = new MultiPlayerLevel(this, new LevelSettings(packet->mapSeed, packet->playerGameType, false, minecraft->level->getLevelData()->isHardcore(), packet->m_newSeaLevel, packet->m_pLevelType, packet->m_xzSize, packet->m_hellScale), packet->dimension, packet->difficulty);
+			dimensionLevel = new MultiPlayerLevel(this, new LevelSettings(packet->mapSeed, packet->playerGameType, false, packet->m_isHardcore, packet->m_newSeaLevel, packet->m_pLevelType, packet->m_xzSize, packet->m_hellScale), packet->dimension, packet->difficulty);
 
 			// 4J Stu - We want to shared the savedDataStorage between both levels
 			//if( dimensionLevel->savedDataStorage != nullptr )
@@ -3318,7 +3405,9 @@ void ClientConnection::handleTileEditorOpen(shared_ptr<TileEditorOpenPacket> pac
 
 void ClientConnection::handleSignUpdate(shared_ptr<SignUpdatePacket> packet)
 {
-	app.DebugPrintf("ClientConnection::handleSignUpdate - ");
+	app.DebugPrintf("[SIGN] handleSignUpdate at (%d, %d, %d):\n", packet->x, packet->y, packet->z);
+	for (int i = 0; i < MAX_SIGN_LINES; i++)
+		app.DebugPrintf("[SIGN]   Line%d: \"%ls\"\n", i+1, packet->lines[i].c_str());
 	if (minecraft->level->hasChunkAt(packet->x, packet->y, packet->z))
 	{
 		shared_ptr<TileEntity> te = minecraft->level->getTileEntity(packet->x, packet->y, packet->z);
@@ -3332,7 +3421,7 @@ void ClientConnection::handleSignUpdate(shared_ptr<SignUpdatePacket> packet)
 				ste->SetMessage(i,packet->lines[i]);
 			}
 
-			app.DebugPrintf("verified = %d\tCensored = %d\n",packet->m_bVerified,packet->m_bCensored);
+			app.DebugPrintf("[SIGN]   verified=%d censored=%d\n", packet->m_bVerified, packet->m_bCensored);
 			ste->SetVerified(packet->m_bVerified);
 			ste->SetCensored(packet->m_bCensored);
 
@@ -3340,12 +3429,12 @@ void ClientConnection::handleSignUpdate(shared_ptr<SignUpdatePacket> packet)
 		}
 		else
 		{
-			app.DebugPrintf("dynamic_pointer_cast<SignTileEntity>(te) == nullptr\n");
+			app.DebugPrintf("[SIGN]   ERROR: tile entity is not a SignTileEntity\n");
 		}
 	}
 	else
 	{
-		app.DebugPrintf("hasChunkAt failed\n");
+		app.DebugPrintf("[SIGN]   ERROR: chunk not loaded at position\n");
 	}
 }
 
@@ -3738,6 +3827,158 @@ void ClientConnection::handleCustomPayload(shared_ptr<CustomPayloadPacket> custo
 		return;
 	}
 
+#ifdef _WINDOWS64
+	// Build a server-specific identity token file path next to the executable.
+	// Each server gets its own token file based on a hash of the server address,
+	// so connecting to multiple secured servers doesn't overwrite tokens.
+	auto buildIdentityTokenPath = []() -> std::string {
+		char exePath[MAX_PATH] = {};
+		DWORD len = GetModuleFileNameA(NULL, exePath, MAX_PATH);
+		if (len == 0 || len >= MAX_PATH) return std::string();
+		char *lastSlash = strrchr(exePath, '\\');
+		if (lastSlash != NULL) *(lastSlash + 1) = 0;
+
+		// Hash the server IP:port to create a unique filename per server
+		char serverAddr[300] = {};
+		sprintf_s(serverAddr, sizeof(serverAddr), "%s:%d", g_Win64MultiplayerIP, g_Win64MultiplayerPort);
+		unsigned int hash = 5381;
+		for (const char *p = serverAddr; *p; ++p)
+			hash = ((hash << 5) + hash) + static_cast<unsigned char>(*p);
+
+		char filename[64] = {};
+		sprintf_s(filename, sizeof(filename), "identity-token-%08x.dat", hash);
+		return std::string(exePath) + filename;
+	};
+
+	// Identity token: server issued us a new token - store it locally
+	if (CustomPayloadPacket::IDENTITY_TOKEN_ISSUE.compare(customPayloadPacket->identifier) == 0)
+	{
+		if (customPayloadPacket->data.data != nullptr && customPayloadPacket->length == 32)
+		{
+			std::string tokenPath = buildIdentityTokenPath();
+			if (!tokenPath.empty())
+			{
+				FILE *f = nullptr;
+				fopen_s(&f, tokenPath.c_str(), "wb");
+				if (f != nullptr)
+				{
+					size_t written = fwrite(customPayloadPacket->data.data, 1, 32, f);
+					fclose(f);
+					if (written == 32)
+					{
+						app.DebugPrintf("Client: Stored identity token to %s\n", tokenPath.c_str());
+					}
+					else
+					{
+						app.DebugPrintf("Client: Failed to write full identity token (wrote %zu/32)\n", written);
+					}
+				}
+				else
+				{
+					app.DebugPrintf("Client: Failed to open %s for writing\n", tokenPath.c_str());
+				}
+			}
+		}
+		return;
+	}
+
+	// Identity token: server is challenging us to present our stored token
+	if (CustomPayloadPacket::IDENTITY_TOKEN_CHALLENGE.compare(customPayloadPacket->identifier) == 0)
+	{
+		std::string tokenPath = buildIdentityTokenPath();
+		FILE *f = nullptr;
+		if (!tokenPath.empty())
+			fopen_s(&f, tokenPath.c_str(), "rb");
+		if (f != nullptr)
+		{
+			uint8_t token[32] = {};
+			size_t bytesRead = fread(token, 1, 32, f);
+			fclose(f);
+			if (bytesRead == 32)
+			{
+				byteArray tokenData(32);
+				memcpy(tokenData.data, token, 32);
+				connection->send(std::make_shared<CustomPayloadPacket>(
+					CustomPayloadPacket::IDENTITY_TOKEN_RESPONSE, tokenData));
+				app.DebugPrintf("Client: Sent identity token response\n");
+			}
+			else
+			{
+				app.DebugPrintf("Client: identity-token.dat is invalid (%zu bytes)\n", bytesRead);
+				connection->send(std::make_shared<CustomPayloadPacket>(
+					CustomPayloadPacket::IDENTITY_TOKEN_RESPONSE, byteArray()));
+			}
+			SecureZeroMemory(token, sizeof(token));
+		}
+		else
+		{
+			app.DebugPrintf("Client: No identity-token.dat found, sending empty response\n");
+			connection->send(std::make_shared<CustomPayloadPacket>(
+				CustomPayloadPacket::IDENTITY_TOKEN_RESPONSE, byteArray()));
+		}
+		return;
+	}
+
+	// Stream cipher handshake: server sent us a key
+	if (CustomPayloadPacket::CIPHER_KEY_CHANNEL.compare(customPayloadPacket->identifier) == 0)
+	{
+		if (customPayloadPacket->length == ServerRuntime::Security::StreamCipher::KEY_SIZE &&
+			customPayloadPacket->data.data != nullptr)
+		{
+			app.DebugPrintf("Client: Received MC|CKey from server (%d bytes)\n", customPayloadPacket->length);
+			// Store key and send ack+activate atomically to prevent ResetClientCipher race
+			WinsockNetLayer::StoreClientCipherKey(customPayloadPacket->data.data);
+			if (!WinsockNetLayer::SendAckAndActivateClientSendCipher())
+			{
+				app.DebugPrintf("Client: Failed to send cipher ack, connection will be closed\n");
+			}
+		}
+		else
+		{
+			app.DebugPrintf("Client: Received malformed MC|CKey (length=%d)\n", customPayloadPacket->length);
+		}
+		return;
+	}
+
+	// Fork server identification: enables render-distance-independent player list
+	if (CustomPayloadPacket::FORK_HELLO_CHANNEL.compare(customPayloadPacket->identifier) == 0)
+	{
+		m_isForkServer = true;
+		app.DebugPrintf("Client: Connected to fork server\n");
+		return;
+	}
+
+	// Fork server player leave: clean up IQNet slot so player leaves Tab list
+	if (CustomPayloadPacket::FORK_PLAYER_LEAVE_CHANNEL.compare(customPayloadPacket->identifier) == 0)
+	{
+		if (customPayloadPacket->data.data != nullptr && customPayloadPacket->length > 0)
+		{
+			int nameLen = customPayloadPacket->length / static_cast<int>(sizeof(wchar_t));
+			wstring leavingName(reinterpret_cast<const wchar_t*>(customPayloadPacket->data.data), nameLen);
+
+			for (int s = 1; s < MINECRAFT_NET_MAX_PLAYERS; ++s)
+			{
+				IQNetPlayer* qp = &IQNet::m_player[s];
+				if (qp->GetCustomDataValue() != 0 &&
+					_wcsicmp(qp->m_gamertag, leavingName.c_str()) == 0)
+				{
+					extern CPlatformNetworkManagerStub* g_pPlatformNetworkManager;
+					g_pPlatformNetworkManager->NotifyPlayerLeaving(qp);
+					qp->m_smallId = 0;
+					qp->m_isRemote = false;
+					qp->m_isHostPlayer = false;
+					qp->m_resolvedXuid = INVALID_XUID;
+					qp->m_gamertag[0] = 0;
+					qp->SetCustomDataValue(0);
+					app.DebugPrintf("Client: Player \"%ls\" left fork server, cleared IQNet slot %d\n", leavingName.c_str(), s);
+					break;
+				}
+			}
+		}
+		return;
+	}
+#endif
+
 	if (CustomPayloadPacket::TRADER_LIST_PACKET.compare(customPayloadPacket->identifier) == 0)
 	{
 		ByteArrayInputStream bais(customPayloadPacket->data);
@@ -3769,6 +4010,52 @@ void ClientConnection::handleCustomPayload(shared_ptr<CustomPayloadPacket> custo
 			MerchantRecipeList *recipeList = MerchantRecipeList::createFromStream(&input);
 			trader->overrideOffers(recipeList);
 		}
+	}
+	else if (CustomPayloadPacket::ENCHANTMENT_LIST_PACKET.compare(customPayloadPacket->identifier) == 0) {
+		ByteArrayInputStream bais(customPayloadPacket->data);
+		DataInputStream input(&bais);
+		bool done = false;
+		int l = 0;
+		bool firstInGroup = true;
+		EnchantmentEntry temp;
+		//int firstAmount = input.readInt();
+		while (!done) {
+			int a = input.readInt();
+			if (a == -1) {
+				minecraft->localplayers[m_userIndex]->enchantmentEntries[l] = temp;
+				l++;
+				firstInGroup = true;
+			}
+			else if (a == -2) {
+				done = true;
+			}
+			else if (a == -4) {
+				for (int i = 0; i < 3; i++) {
+					minecraft->localplayers[m_userIndex]->enchantmentEntries[i].id = -3;
+				}
+				done = true;
+			}
+			else {
+				if (firstInGroup) {
+					temp.id = a;
+					temp.level = input.readInt();
+					firstInGroup = false;
+				}
+				else {
+					input.readInt();
+				}
+			}
+		}
+	}
+	else if (CustomPayloadPacket::UPDATE_RECIPE_REGISTRY.compare(customPayloadPacket->identifier) == 0) {
+		this->m_recivedRecipeRegistyUpdate = true;
+
+		Recipes::getInstance()->loadFromPacket(customPayloadPacket->data);
+	}
+	else if (CustomPayloadPacket::UPDATE_CREATIVE_REGISTRY.compare(customPayloadPacket->identifier) == 0) {
+		this->m_recivedCreativeRegistyUpdate = true;
+
+		IUIScene_CreativeMenu::loadFromPacket(customPayloadPacket->data);
 	}
 }
 
@@ -4045,7 +4332,8 @@ void ClientConnection::handleSetPlayerTeamPacket(shared_ptr<SetPlayerTeamPacket>
 
 void ClientConnection::handleParticleEvent(shared_ptr<LevelParticlesPacket> packet)
 {
-    ePARTICLE_TYPE particleId = (ePARTICLE_TYPE)Integer::parseInt(packet->getName());
+	wstring pktName = packet->getName(); // packet->getName() is a temporary, patches error on linux build
+	ePARTICLE_TYPE particleId = (ePARTICLE_TYPE)Integer::parseInt(pktName);
 
 	for (int i = 0; i < packet->getCount(); i++)
 	{

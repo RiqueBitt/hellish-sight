@@ -1,7 +1,7 @@
 services:
-  minecraft-lce-dedicated-server:
-    image: ghcr.io/kuwacom/minecraft-lce-dedicated-server:nightly
-    container_name: minecraft-lce-dedicated-server
+  lce-revelations-dedicated-server:
+    image: ghcr.io/itsrevela/lce-revelations-dedicated-server:nightly
+    container_name: lce-revelations-dedicated-server
     restart: unless-stopped
     tty: true
     stdin_open: true

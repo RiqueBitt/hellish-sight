@@ -16,6 +16,7 @@ import net.minecraft.world.level.tile.Tile;
 */
 
 #include "Recipy.h"
+#include "../Minecraft.World/CustomPayloadPacket.h"
 
 #pragma once
 using namespace std;
@@ -84,11 +85,16 @@ public:
 
 private: 
 	void _init(); // 4J add
+	void _compileRecipes();
+	void _wipeRecipes();
+	void _wipeIngredientsList();
 	Recipes();
 
 public:
 	ShapedRecipy *addShapedRecipy(ItemInstance *, ... );
-	void addShapelessRecipy(ItemInstance *result,... ); 
+	void addShapelessRecipy(ItemInstance *result,... );
+
+	void addShapelessRecipy(ItemInstance* result, std::vector<ItemInstance*>* ingredients, int group);
 
 	shared_ptr<ItemInstance> getItemFor(shared_ptr<CraftingContainer> craftSlots, Level *level, Recipy *recipesClass = nullptr); // 4J Added recipesClass param
 	vector <Recipy *> *getRecipies();
@@ -100,11 +106,16 @@ public:
 	// Ruby Launcher: mod recipes
 	void addRecipe(Recipy *recipe);
 	void rebuildIngredientsArray();
+	void loadFromLocal();
+	void loadFromPacket(byteArray packetData);
+
+	std::shared_ptr<CustomPayloadPacket> createUpdatePacket();
 
 private:
 	void buildRecipeIngredientsArray();
 	Recipy::INGREDIENTS_REQUIRED *m_pRecipeIngredientsRequired = nullptr;
 	int m_ingredientsCount = 0;
+	std::vector<Recipy *> m_modRecipes;	// Ruby Launcher
 
 public:
 	static ToolRecipies			*pToolRecipies;

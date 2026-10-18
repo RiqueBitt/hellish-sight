@@ -1,17 +1,17 @@
 #include "stdafx.h"
-//#include "..\Minecraft.World\JavaMath.h"
-#include "MultiplayerLocalPlayer.h"
+//#include "../Minecraft.World/JavaMath.h"
+#include "MultiPlayerLocalPlayer.h"
 #include "ClientConnection.h"
-#include "..\Minecraft.World\net.minecraft.world.level.h"
-#include "..\Minecraft.World\net.minecraft.network.h"
-#include "..\Minecraft.World\Mth.h"
-#include "..\Minecraft.World\AABB.h"
-#include "..\Minecraft.World\net.minecraft.stats.h"
-#include "..\Minecraft.World\net.minecraft.world.inventory.h"
-#include "..\Minecraft.World\net.minecraft.world.level.dimension.h"
-#include "..\Minecraft.World\net.minecraft.world.effect.h"
-#include "..\Minecraft.World\LevelData.h"
-#include "..\Minecraft.World\net.minecraft.world.entity.item.h"
+#include "../Minecraft.World/net.minecraft.world.level.h"
+#include "../Minecraft.World/net.minecraft.network.h"
+#include "../Minecraft.World/Mth.h"
+#include "../Minecraft.World/AABB.h"
+#include "../Minecraft.World/net.minecraft.stats.h"
+#include "../Minecraft.World/net.minecraft.world.inventory.h"
+#include "../Minecraft.World/net.minecraft.world.level.dimension.h"
+#include "../Minecraft.World/net.minecraft.world.effect.h"
+#include "../Minecraft.World/LevelData.h"
+#include "../Minecraft.World/net.minecraft.world.entity.item.h"
 #include "Input.h"
 #include "LevelRenderer.h"
 
@@ -173,9 +173,12 @@ void MultiplayerLocalPlayer::sendPosition()
 
 }
 
-shared_ptr<ItemEntity> MultiplayerLocalPlayer::drop()
+shared_ptr<ItemEntity> MultiplayerLocalPlayer::drop(bool dropAll)
 {
-	connection->send(std::make_shared<PlayerActionPacket>(PlayerActionPacket::DROP_ITEM, 0, 0, 0, 0));
+    int action = dropAll ?
+		PlayerActionPacket::DROP_ALL_ITEMS :
+		PlayerActionPacket::DROP_ITEM;
+	connection->send(std::make_shared<PlayerActionPacket>(action, 0, 0, 0, 0));
 	return nullptr;
 }
 

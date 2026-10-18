@@ -1,10 +1,10 @@
 #include "stdafx.h"
 #include "UI.h"
 #include "UIScene_TeleportMenu.h"
-#include "..\..\MultiPlayerLocalPlayer.h"
-#include "..\..\..\Minecraft.World\net.minecraft.network.packet.h"
-#include "..\..\MultiPlayerLocalPlayer.h"
-#include "..\..\ClientConnection.h"
+#include "../../MultiPlayerLocalPlayer.h"
+#include "../../../Minecraft.World/net.minecraft.network.packet.h"
+#include "../../MultiPlayerLocalPlayer.h"
+#include "../../ClientConnection.h"
 #include "TeleportCommand.h"
 
 UIScene_TeleportMenu::UIScene_TeleportMenu(int iPad, void *initData, UILayer *parentLayer) : UIScene(iPad, parentLayer)
@@ -193,12 +193,12 @@ void UIScene_TeleportMenu::tick()
 		{
 			m_players[i] = player->GetSmallId();
 
-			short icon = app.GetPlayerColour( m_players[i] );
+			short icon = static_cast<short>(app.GetPlayerMapIconByName(player->GetOnlineName()));
 
 			if(icon != m_playersColourState[i])
 			{
 				m_playersColourState[i] = icon;
-				m_playerList.setPlayerIcon( i, (int)app.GetPlayerColour( m_players[i] ) );
+				m_playerList.setPlayerIcon( i, (int)icon );
 			}
 
 			wstring playerName = L"";

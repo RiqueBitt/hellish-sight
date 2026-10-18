@@ -2,18 +2,18 @@
 #include "TrackedEntity.h"
 #include "ServerPlayer.h"
 #include "PlayerConnection.h"
-#include "..\Minecraft.World\Mth.h"
-#include "..\Minecraft.World\net.minecraft.world.entity.h"
-#include "..\Minecraft.World\net.minecraft.world.entity.item.h"
-#include "..\Minecraft.World\net.minecraft.world.entity.monster.h"
-#include "..\Minecraft.World\net.minecraft.world.entity.player.h"
-#include "..\Minecraft.World\net.minecraft.world.entity.animal.h"
-#include "..\Minecraft.World\net.minecraft.world.entity.global.h"
-#include "..\Minecraft.World\net.minecraft.world.entity.projectile.h"
-#include "..\Minecraft.World\net.minecraft.network.packet.h"
-#include "..\Minecraft.World\net.minecraft.world.item.h"
-#include "..\Minecraft.World\net.minecraft.world.level.saveddata.h"
-#include "..\Minecraft.World\net.minecraft.world.entity.ai.attributes.h"
+#include "../Minecraft.World/Mth.h"
+#include "../Minecraft.World/net.minecraft.world.entity.h"
+#include "../Minecraft.World/net.minecraft.world.entity.item.h"
+#include "../Minecraft.World/net.minecraft.world.entity.monster.h"
+#include "../Minecraft.World/net.minecraft.world.entity.player.h"
+#include "../Minecraft.World/net.minecraft.world.entity.animal.h"
+#include "../Minecraft.World/net.minecraft.world.entity.global.h"
+#include "../Minecraft.World/net.minecraft.world.entity.projectile.h"
+#include "../Minecraft.World/net.minecraft.network.packet.h"
+#include "../Minecraft.World/net.minecraft.world.item.h"
+#include "../Minecraft.World/net.minecraft.world.level.saveddata.h"
+#include "../Minecraft.World/net.minecraft.world.entity.ai.attributes.h"
 #include "MinecraftServer.h"
 #include "ServerLevel.h"
 #include "PlayerList.h"
@@ -22,6 +22,10 @@
 #include <qnet.h>
 
 #include <memory>
+
+#ifdef _WINDOWS64
+extern bool g_Win64DedicatedServer;
+#endif
 
 TrackedEntity::TrackedEntity(shared_ptr<Entity> e, int range, int updateInterval, bool trackDelta)
 {
@@ -286,24 +290,53 @@ void TrackedEntity::tick(EntityTracker *tracker, vector<shared_ptr<Player> > *pl
 			wasRiding = false;
 		}
 		else
-		{
-			bool rot = abs(yRotn - yRotp) >= TOLERANCE_LEVEL || abs(xRotn - xRotp) >= TOLERANCE_LEVEL;
-			if (rot)
-			{
-				// 4J: Changed this to use deltas
-				broadcast(std::make_shared<MoveEntityPacket::Rot>(e->entityId, static_cast<byte>(yRota), static_cast<byte>(xRota)));
-				yRotp = yRotn;
-				xRotp = xRotn;
-			}
+{
+    // the entity have a rider, the code didnt send position updates, 
+	// causing desync between client and server when boat was spritning.
 
-			xp = Mth::floor(e->x * 32.0);
-			yp = Mth::floor(e->y * 32.0);
-			zp = Mth::floor(e->z * 32.0);
+    bool rot = abs(yRotn - yRotp) >= TOLERANCE_LEVEL || abs(xRotn - xRotp) >= TOLERANCE_LEVEL;
+    if (rot)
+    {
+       
+        broadcast(std::make_shared<MoveEntityPacket::Rot>(e->entityId, static_cast<byte>(yRota), static_cast<byte>(xRota)));
+        yRotp = yRotn;
+        xRotp = xRotn;
+    }
 
-			sendDirtyEntityData();
+    int xn = Mth::floor(e->x * 32.0);
+    int yn = Mth::floor(e->y * 32.0);
+    int zn = Mth::floor(e->z * 32.0);
+    int xa = xn - xp;
+    int ya = yn - yp;
+    int za = zn - zp;
 
-			wasRiding = true;
-		}
+    // send only if the boat moved enough
+    // or 3 seconds periodically
+    bool pos = abs(xa) >= TOLERANCE_LEVEL || abs(ya) >= TOLERANCE_LEVEL || abs(za) >= TOLERANCE_LEVEL
+               || (tickCount % (SharedConstants::TICKS_PER_SECOND * 3) == 0);
+
+    if (pos)
+    {
+        // if deltapos is too much big use teleport.
+        if (xa < -128 || xa >= 128 || ya < -128 || ya >= 128 || za < -128 || za >= 128)
+        {
+            broadcast(std::make_shared<TeleportEntityPacket>(e->entityId, xn, yn, zn,
+                static_cast<byte>(yRotn), static_cast<byte>(xRotn)));
+        }
+        else
+        {
+            // small movement, delta
+            broadcast(std::make_shared<MoveEntityPacket::Pos>(e->entityId,
+                static_cast<char>(xa), static_cast<char>(ya), static_cast<char>(za)));
+        }
+        xp = xn;
+        yp = yn;
+        zp = zn;
+    }
+
+    sendDirtyEntityData();
+    wasRiding = true;
+}
 
 		int yHeadRot = Mth::floor(e->getYHeadRot() * 256 / 360);
 		if (abs(yHeadRot - yHeadRotp) >= TOLERANCE_LEVEL)
@@ -351,6 +384,19 @@ void TrackedEntity::sendDirtyEntityData()
 
 void TrackedEntity::broadcast(shared_ptr<Packet> packet)
 {
+#ifdef _WINDOWS64
+	// On dedicated servers, IsSameSystem() always returns false for remote players
+	// (no split-screen), so the dedup loop never filters anything. Skip straight
+	// to sending to all players in seenBy to avoid O(seenBy^2) overhead.
+	if (g_Win64DedicatedServer)
+	{
+		for (auto& player : seenBy)
+		{
+			player->connection->send(packet);
+		}
+		return;
+	}
+#endif
 	if( Packet::canSendToAnyClient( packet ) )
 	{
 		// 4J-PB - due to the knockback on a player being hit, we need to send to all players, but limit the network traffic here to players that have not already had it sent to their system
@@ -462,7 +508,13 @@ TrackedEntity::eVisibility TrackedEntity::isVisible(EntityTracker *tracker, shar
 	// 4J - added. Try and find other players who are in the same dimension as this one and on the same machine, and extend our visibility
 	// so things are consider visible to this player if they are near the other one. This is because we only send entity tracking info to
 	// players who canReceiveAllPackets().
-	if(!bVisible)
+	// NOTE: On dedicated servers, all real players are remote so IsSameSystem()
+	// always returns false. Skip this O(players) loop entirely.
+#ifdef _WINDOWS64
+	if (!bVisible && !g_Win64DedicatedServer)
+#else
+	if (!bVisible)
+#endif
 	{
 		MinecraftServer *server = MinecraftServer::getInstance();
 		INetworkPlayer *thisPlayer = sp->connection->getNetworkPlayer();
@@ -653,12 +705,14 @@ shared_ptr<Packet> TrackedEntity::getAddEntityPacket()
 
 		PlayerUID xuid = INVALID_XUID;
 		PlayerUID OnlineXuid = INVALID_XUID;
-		// do not pass xuid/onlinxuid to cleints
-		//if( player != nullptr )
-		//{
-		//	xuid = player->getXuid();
-		//	OnlineXuid = player->getOnlineXuid();
-		//}
+		// do not pass xuid/onlinexuid to clients if dedicated server
+#ifndef MINECRAFT_SERVER_BUILD
+		if( player != nullptr )
+		{
+			xuid = player->getXuid();
+			OnlineXuid = player->getOnlineXuid();
+		}
+#endif
 		// 4J Added yHeadRotp param to fix #102563 - TU12: Content: Gameplay: When one of the Players is idle for a few minutes his head turns 180 degrees.
 		return std::make_shared<AddPlayerPacket>(player, xuid, OnlineXuid, xp, yp, zp, yRotp, xRotp, yHeadRotp);
 	}
@@ -672,6 +726,11 @@ shared_ptr<Packet> TrackedEntity::getAddEntityPacket()
 		return std::make_shared<AddEntityPacket>(e, AddEntityPacket::BOAT, yRotp, xRotp, xp, yp, zp);
 	}
 	else if (e->instanceof(eTYPE_ENDERDRAGON))
+	{
+		yHeadRotp = Mth::floor(e->getYHeadRot() * 256 / 360);
+		return std::make_shared<AddMobPacket>(dynamic_pointer_cast<LivingEntity>(e), yRotp, xRotp, xp, yp, zp, yHeadRotp);
+	}
+	else if (e->instanceof(eTYPE_ARMORSTAND))
 	{
 		yHeadRotp = Mth::floor(e->getYHeadRot() * 256 / 360);
 		return std::make_shared<AddMobPacket>(dynamic_pointer_cast<LivingEntity>(e), yRotp, xRotp, xp, yp, zp, yHeadRotp);

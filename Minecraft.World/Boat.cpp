@@ -87,7 +87,7 @@ Boat::Boat(Level *level, double x, double y, double z) : Entity( level )
 
 double Boat::getRideHeight()
 {
-	return heightOffset;
+	return heightOffset - 0.4f;
 }
 
 bool Boat::hurt(DamageSource *source, float hurtDamage)
@@ -148,7 +148,7 @@ void Boat::lerpTo(double x, double y, double z, float yRot, float xRot, int step
 {
 	if (doLerp)
 	{
-		lSteps = steps + 5;
+		lSteps = steps +5;
 	}
 	else
 	{
@@ -188,6 +188,10 @@ void Boat::lerpMotion(double xd, double yd, double zd)
 void Boat::tick()
 {
 	Entity::tick();
+
+
+
+
 	if (getHurtTime() > 0) setHurtTime(getHurtTime() - 1);
 	if (getDamage() > 0) setDamage(getDamage() - 1);
 	xo = x;
@@ -199,8 +203,8 @@ void Boat::tick()
 	double waterPercentage = 0;
 	for (int i = 0; i < steps; i++)
 	{
-		double y0 = bb->y0 + (bb->y1 - bb->y0) * (i + 0) / steps - 2 / 16.0f;
-		double y1 = bb->y0 + (bb->y1 - bb->y0) * (i + 1) / steps - 2 / 16.0f;
+		double y0 = bb->y0 + (bb->y1 - bb->y0) * (i + 0) / steps + 1.5f / 16.0f;
+		double y1 = bb->y0 + (bb->y1 - bb->y0) * (i + 1) / steps + 1.5f / 16.0f;
 		AABB *bb2 = AABB::newTemp(bb->x0, y0, bb->z0, bb->x1, y1, bb->z1);
 		if (level->containsLiquid(bb2, Material::water))
 		{
@@ -257,18 +261,19 @@ void Boat::tick()
 		return;
 	}
 
-	// Bob in water
-	if (waterPercentage > 0)
+	// Bob in water & gravity
+	if (waterPercentage < 1.0)
 	{
-		double bob = waterPercentage * 2 - 1;
+		double bob = waterPercentage * 2.0 - 1.0;
 		yd += 0.04f * bob;
 	}
-
-	// Reimplement gravity again (??)
-	int tileUnder = level->getTile(Mth::floor(x), Mth::floor(y-0.15), Mth::floor(z));
-	if (tileUnder == 0 && !onGround)
+	else
 	{
-		yd -= 0.04f;
+		if (yd < 0.0)
+		{
+			yd /= 2.0;
+		}
+		yd += 0.007f;
 	}
 
 	// Rider controls
@@ -277,24 +282,28 @@ void Boat::tick()
 		shared_ptr<LivingEntity> livingRider = dynamic_pointer_cast<LivingEntity>(rider.lock());
 		double forward = livingRider->yya;
 
-		if (forward > 0)
+		if (forward != 0)
 		{
 			double riderXd = -sin(livingRider->yRot * PI / 180);
 			double riderZd = cos(livingRider->yRot * PI / 180);
-			xd += riderXd * acceleration * 0.05f;
-			zd += riderZd * acceleration * 0.05f;
+			double currentSpeed = sqrt(xd * xd + zd * zd);
+			float moveFactor = (float)forward;
+			if (forward < 0) moveFactor *= 0.5f; // Move slower backwards
+			xd += riderXd * acceleration * 0.05f * moveFactor;
+			zd += riderZd * acceleration * 0.05f * moveFactor;
 		}
 	}
 
 	double curSpeed = sqrt(xd * xd + zd * zd);
+	double maxSpeed = MAX_SPEED;
 
-	if (curSpeed > MAX_SPEED)
+	if (curSpeed > maxSpeed)
 	{
-		double ratio = MAX_SPEED / curSpeed;
+		double ratio = maxSpeed / curSpeed;
 
 		xd *= ratio;
 		zd *= ratio;
-		curSpeed = MAX_SPEED;
+		curSpeed = maxSpeed;
 	}
 
 	if (curSpeed > lastSpeed && acceleration < MAX_ACCELERATION)
@@ -318,10 +327,12 @@ void Boat::tick()
 	move(xd, yd, zd);
 
 	// Break boat on high speed collision
+	float breakThreshold = (rider.lock() != nullptr) ? 0.35f : 0.20f;
 	if ((horizontalCollision && lastSpeed > 0.20))
 	{
 		if (!level->isClientSide && !removed)
 		{
+			
 			remove();
 			for (int i = 0; i < 3; i++)
 			{
@@ -331,6 +342,9 @@ void Boat::tick()
 			{
 				spawnAtLocation(Item::stick->id, 1, 0);
 			}
+			
+			
+
 		}
 	}
 	else
@@ -460,10 +474,19 @@ bool Boat::interact(shared_ptr<Player> player)
 	if ( (rider.lock() != nullptr) && rider.lock()->instanceof(eTYPE_PLAYER) && (rider.lock() != player) ) return true;
 	if (!level->isClientSide)
 	{
+        bool isRiding = (rider.lock() == player);
+
+        if (isRiding)
+        {
+           
+            player->xd = 0;
+            player->yd = 0;
+            player->zd = 0;
+        }
 		// 4J HEG - Fixed issue with player not being able to dismount boat (issue #4446)
-		player->ride( rider.lock() == player ? nullptr : shared_from_this() );
-	}
-	return true;
+        player->ride(isRiding ? nullptr : shared_from_this());
+    }
+    return true;
 }
 
 void Boat::setDamage(float damage)

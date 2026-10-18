@@ -6,15 +6,24 @@
 #ifdef _WINDOWS64
 
 #include "WinsockNetLayer.h"
-#include "..\..\Common\Network\PlatformNetworkManagerStub.h"
-#include "..\..\..\Minecraft.World\Socket.h"
+#include "../../Common/Network/PlatformNetworkManagerStub.h"
+#include "../../../Minecraft.World/Socket.h"
+
 #if defined(MINECRAFT_SERVER_BUILD)
-#include "..\..\..\Minecraft.Server\Access\Access.h"
-#include "..\..\..\Minecraft.Server\ServerLogManager.h"
+#include "../../../Minecraft.Server/Access/Access.h"
+#include "../../../Minecraft.Server/ServerLogManager.h"
+#include "../../../Minecraft.Server/ServerLogger.h"
+#include "../../../Minecraft.Server/Security/SecurityConfig.h"
+#include "../../../Minecraft.Server/Security/RateLimiter.h"
+#include "../../../Minecraft.Server/Security/ConnectionCipher.h"
 #endif
-#include "..\..\..\Minecraft.World\DisconnectPacket.h"
-#include "..\..\Minecraft.h"
-#include "..\4JLibs\inc\4J_Profile.h"
+
+#include "../../../Minecraft.World/DisconnectPacket.h"
+#include "../../Minecraft.h"
+
+#include <windns.h>
+#pragma comment(lib, "dnsapi.lib")
+#include "../4JLibs/inc/4J_Profile.h"
 
 #include <string>
 
@@ -22,6 +31,28 @@ static bool RecvExact(SOCKET sock, BYTE* buf, int len);
 #if defined(MINECRAFT_SERVER_BUILD)
 static bool TryGetNumericRemoteIp(const sockaddr_in &remoteAddress, std::string *outIp);
 #endif
+
+// Raw serialized byte patterns for cipher handshake packets (CustomPayloadPacket ID 250).
+// Used by recv threads to detect handshake messages at the byte level before packet parsing,
+// enabling atomic cipher activation at the exact byte boundary.
+
+// MC|CAck: 7-char channel, empty payload. Client sends this; server recv thread matches it.
+static const BYTE kCipherAckPattern[] = {
+	0xFA,                                                                   // packet ID 250
+	0x00, 0x07,                                                             // channel length = 7
+	0x00, 0x4D, 0x00, 0x43, 0x00, 0x7C, 0x00, 0x43, 0x00, 0x41, 0x00, 0x63, 0x00, 0x6B, // "MC|CAck" UTF-16BE
+	0x00, 0x00                                                              // data length = 0
+};
+static const int kCipherAckPatternSize = sizeof(kCipherAckPattern); // 19
+
+// MC|COn: 6-char channel, empty payload. Client recv thread matches this from server.
+static const BYTE kCipherOnPattern[] = {
+	0xFA,                                                                   // packet ID 250
+	0x00, 0x06,                                                             // channel length = 6
+	0x00, 0x4D, 0x00, 0x43, 0x00, 0x7C, 0x00, 0x43, 0x00, 0x4F, 0x00, 0x6E, // "MC|COn" UTF-16BE
+	0x00, 0x00                                                              // data length = 0
+};
+static const int kCipherOnPatternSize = sizeof(kCipherOnPattern); // 17
 
 SOCKET WinsockNetLayer::s_listenSocket = INVALID_SOCKET;
 SOCKET WinsockNetLayer::s_hostConnectionSocket = INVALID_SOCKET;
@@ -67,8 +98,24 @@ SOCKET WinsockNetLayer::s_splitScreenSocket[XUSER_MAX_COUNT] = { INVALID_SOCKET,
 BYTE WinsockNetLayer::s_splitScreenSmallId[XUSER_MAX_COUNT] = { 0xFF, 0xFF, 0xFF, 0xFF };
 HANDLE WinsockNetLayer::s_splitScreenRecvThread[XUSER_MAX_COUNT] = {nullptr, nullptr, nullptr, nullptr};
 
+HANDLE WinsockNetLayer::s_joinThread = nullptr;
+volatile WinsockNetLayer::eJoinState WinsockNetLayer::s_joinState = WinsockNetLayer::eJoinState_Idle;
+volatile int WinsockNetLayer::s_joinAttempt = 0;
+volatile bool WinsockNetLayer::s_joinCancel = false;
+char WinsockNetLayer::s_joinIP[256] = {};
+int WinsockNetLayer::s_joinPort = 0;
+BYTE WinsockNetLayer::s_joinAssignedSmallId = 0;
+DisconnectPacket::eDisconnectReason WinsockNetLayer::s_joinRejectReason = DisconnectPacket::eDisconnect_Quitting;
+
+ServerRuntime::Security::StreamCipher WinsockNetLayer::s_clientSendCipher;
+ServerRuntime::Security::StreamCipher WinsockNetLayer::s_clientRecvCipher;
+CRITICAL_SECTION WinsockNetLayer::s_clientCipherLock;
+uint8_t WinsockNetLayer::s_clientPendingKey[ServerRuntime::Security::StreamCipher::KEY_SIZE] = {};
+bool WinsockNetLayer::s_clientKeyStored = false;
+
 bool g_Win64MultiplayerHost = false;
 bool g_Win64MultiplayerJoin = false;
+bool g_Win64MultiplayerQuitOnDisconnect = false;
 int g_Win64MultiplayerPort = WIN64_NET_DEFAULT_PORT;
 char g_Win64MultiplayerIP[256] = "127.0.0.1";
 bool g_Win64DedicatedServer = false;
@@ -95,6 +142,7 @@ bool WinsockNetLayer::Initialize()
 	InitializeCriticalSection(&s_disconnectLock);
 	InitializeCriticalSection(&s_freeSmallIdLock);
 	InitializeCriticalSection(&s_smallIdToSocketLock);
+	InitializeCriticalSection(&s_clientCipherLock);
 	for (int i = 0; i < 256; i++)
 		s_smallIdToSocket[i] = INVALID_SOCKET;
 
@@ -113,6 +161,15 @@ void WinsockNetLayer::Shutdown()
 {
 	StopAdvertising();
 	StopDiscovery();
+
+	s_joinCancel = true;
+	if (s_joinThread != nullptr)
+	{
+		WaitForSingleObject(s_joinThread, 5000);
+		CloseHandle(s_joinThread);
+		s_joinThread = nullptr;
+	}
+	s_joinState = eJoinState_Idle;
 
 	s_active = false;
 	s_connected = false;
@@ -199,6 +256,8 @@ void WinsockNetLayer::Shutdown()
 		s_freeSmallIds.clear();
 		LeaveCriticalSection(&s_freeSmallIdLock);
 
+		ResetClientCipher();
+		DeleteCriticalSection(&s_clientCipherLock);
 		DeleteCriticalSection(&s_sendLock);
 		DeleteCriticalSection(&s_connectionsLock);
 		DeleteCriticalSection(&s_advertiseLock);
@@ -210,6 +269,163 @@ void WinsockNetLayer::Shutdown()
 		s_initialized = false;
 	}
 }
+
+void WinsockNetLayer::StoreClientCipherKey(const uint8_t key[ServerRuntime::Security::StreamCipher::KEY_SIZE])
+{
+	EnterCriticalSection(&s_clientCipherLock);
+	memcpy(s_clientPendingKey, key, ServerRuntime::Security::StreamCipher::KEY_SIZE);
+	s_clientKeyStored = true;
+	LeaveCriticalSection(&s_clientCipherLock);
+}
+
+bool WinsockNetLayer::SendAckAndActivateClientSendCipher()
+{
+	if (s_hostConnectionSocket == INVALID_SOCKET)
+		return false;
+
+	// Atomic: send the MC|CAck plaintext then activate the send cipher, all under s_sendLock.
+	// No other send can interleave between the ack and cipher activation.
+	EnterCriticalSection(&s_sendLock);
+
+	// Write framed packet: 4-byte length header + ack pattern
+	BYTE header[4];
+	header[0] = static_cast<BYTE>((kCipherAckPatternSize >> 24) & 0xFF);
+	header[1] = static_cast<BYTE>((kCipherAckPatternSize >> 16) & 0xFF);
+	header[2] = static_cast<BYTE>((kCipherAckPatternSize >> 8) & 0xFF);
+	header[3] = static_cast<BYTE>(kCipherAckPatternSize & 0xFF);
+
+	bool ok = true;
+	int totalSent = 0;
+	while (ok && totalSent < 4)
+	{
+		int sent = send(s_hostConnectionSocket, (const char *)header + totalSent, 4 - totalSent, 0);
+		if (sent == SOCKET_ERROR || sent == 0) { ok = false; break; }
+		totalSent += sent;
+	}
+	totalSent = 0;
+	while (ok && totalSent < kCipherAckPatternSize)
+	{
+		int sent = send(s_hostConnectionSocket, (const char *)kCipherAckPattern + totalSent, kCipherAckPatternSize - totalSent, 0);
+		if (sent == SOCKET_ERROR || sent == 0) { ok = false; break; }
+		totalSent += sent;
+	}
+
+	if (ok)
+	{
+		// Activate send cipher immediately after the ack is on the wire
+		EnterCriticalSection(&s_clientCipherLock);
+		s_clientSendCipher.Initialize(s_clientPendingKey, ServerRuntime::Security::StreamCipher::Client);
+		LeaveCriticalSection(&s_clientCipherLock);
+		app.DebugPrintf("Client: Send cipher activated (MC|CAck sent)\n");
+	}
+	else
+	{
+		// Partial send corrupts the stream - force disconnect to prevent desync
+		app.DebugPrintf("Client: MC|CAck send failed, closing connection\n");
+		closesocket(s_hostConnectionSocket);
+		s_hostConnectionSocket = INVALID_SOCKET;
+	}
+
+	LeaveCriticalSection(&s_sendLock);
+	return ok;
+}
+
+void WinsockNetLayer::ActivateClientRecvCipher()
+{
+	EnterCriticalSection(&s_clientCipherLock);
+	s_clientRecvCipher.Initialize(s_clientPendingKey, ServerRuntime::Security::StreamCipher::Client);
+	SecureZeroMemory(s_clientPendingKey, sizeof(s_clientPendingKey));
+	s_clientKeyStored = false;
+	LeaveCriticalSection(&s_clientCipherLock);
+}
+
+void WinsockNetLayer::ResetClientCipher()
+{
+	EnterCriticalSection(&s_clientCipherLock);
+	s_clientSendCipher.Reset();
+	s_clientRecvCipher.Reset();
+	SecureZeroMemory(s_clientPendingKey, sizeof(s_clientPendingKey));
+	s_clientKeyStored = false;
+	LeaveCriticalSection(&s_clientCipherLock);
+}
+
+bool WinsockNetLayer::TryEncryptClientOutgoing(uint8_t *data, int length)
+{
+	if (data == nullptr || length <= 0)
+		return false;
+
+	EnterCriticalSection(&s_clientCipherLock);
+	bool active = s_clientSendCipher.IsActive();
+	if (active)
+	{
+		s_clientSendCipher.Encrypt(data, length);
+	}
+	LeaveCriticalSection(&s_clientCipherLock);
+	return active;
+}
+
+#if defined(MINECRAFT_SERVER_BUILD)
+bool WinsockNetLayer::SendCOnAndCommitServerCipher(BYTE smallId)
+{
+	// Verify a pending key exists before sending MC|COn (prevents rogue ack from triggering spurious activation)
+	auto &registry = ServerRuntime::Security::GetCipherRegistry();
+
+	SOCKET sock = GetSocketForSmallId(smallId);
+	if (sock == INVALID_SOCKET)
+		return false;
+
+	// Verify a pending key exists before sending (rejects rogue acks)
+	if (!registry.HasPendingKey(smallId))
+	{
+		app.DebugPrintf("Server: Ignoring MC|CAck for smallId=%d (no pending key)\n", smallId);
+		return false;
+	}
+
+	// Atomic: send MC|COn plaintext then commit the cipher, all under s_sendLock.
+	// No other send to this smallId can happen between MC|COn and CommitCipher.
+	EnterCriticalSection(&s_sendLock);
+
+	BYTE header[4];
+	header[0] = static_cast<BYTE>((kCipherOnPatternSize >> 24) & 0xFF);
+	header[1] = static_cast<BYTE>((kCipherOnPatternSize >> 16) & 0xFF);
+	header[2] = static_cast<BYTE>((kCipherOnPatternSize >> 8) & 0xFF);
+	header[3] = static_cast<BYTE>(kCipherOnPatternSize & 0xFF);
+
+	bool ok = true;
+	int totalSent = 0;
+	while (ok && totalSent < 4)
+	{
+		int sent = send(sock, (const char *)header + totalSent, 4 - totalSent, 0);
+		if (sent == SOCKET_ERROR || sent == 0) { ok = false; break; }
+		totalSent += sent;
+	}
+	totalSent = 0;
+	while (ok && totalSent < kCipherOnPatternSize)
+	{
+		int sent = send(sock, (const char *)kCipherOnPattern + totalSent, kCipherOnPatternSize - totalSent, 0);
+		if (sent == SOCKET_ERROR || sent == 0) { ok = false; break; }
+		totalSent += sent;
+	}
+
+	if (ok)
+	{
+		// Commit AFTER the send - MC|COn is the last plaintext packet
+		registry.CommitCipher(smallId);
+		app.DebugPrintf("Server: Cipher committed for smallId=%d (MC|COn sent)\n", smallId);
+	}
+	else
+	{
+		// Partial send corrupts the stream - force close
+		app.DebugPrintf("Server: MC|COn send failed for smallId=%d, closing socket\n", smallId);
+		registry.CancelPending(smallId);
+		closesocket(sock);
+		ClearSocketForSmallId(smallId);
+	}
+
+	LeaveCriticalSection(&s_sendLock);
+	return ok;
+}
+#endif
 
 bool WinsockNetLayer::HostGame(int port, const char* bindIp)
 {
@@ -292,6 +508,44 @@ bool WinsockNetLayer::HostGame(int port, const char* bindIp)
 	return true;
 }
 
+// Resolve a Minecraft SRV record (_minecraft._tcp.<hostname>) to get the actual host and port.
+// Returns true if an SRV record was found and outHost/outPort were updated.
+// Returns false (no changes) for numeric IPs, missing records, or DNS errors.
+static bool ResolveSRV(const char* hostname, char* outHost, size_t outHostSize, int* outPort)
+{
+	// Skip numeric IPs (starts with digit, contains no letters)
+	if (hostname[0] >= '0' && hostname[0] <= '9')
+	{
+		bool hasLetter = false;
+		for (const char* p = hostname; *p; ++p)
+			if ((*p >= 'a' && *p <= 'z') || (*p >= 'A' && *p <= 'Z')) { hasLetter = true; break; }
+		if (!hasLetter) return false;
+	}
+
+	char srvName[300];
+	sprintf_s(srvName, "_minecraft._tcp.%s", hostname);
+
+	DNS_RECORD* records = nullptr;
+	DNS_STATUS status = DnsQuery_A(srvName, DNS_TYPE_SRV, DNS_QUERY_STANDARD, nullptr, &records, nullptr);
+	if (status != 0 || records == nullptr)
+		return false;
+
+	// Find the first SRV record
+	for (DNS_RECORD* r = records; r != nullptr; r = r->pNext)
+	{
+		if (r->wType == DNS_TYPE_SRV)
+		{
+			strncpy_s(outHost, outHostSize, r->Data.SRV.pNameTarget, _TRUNCATE);
+			*outPort = r->Data.SRV.wPort;
+			DnsRecordListFree(records, DnsFreeRecordList);
+			return true;
+		}
+	}
+
+	DnsRecordListFree(records, DnsFreeRecordList);
+	return false;
+}
+
 bool WinsockNetLayer::JoinGame(const char* ip, int port)
 {
 	if (!s_initialized && !Initialize()) return false;
@@ -318,6 +572,13 @@ bool WinsockNetLayer::JoinGame(const char* ip, int port)
 		s_clientRecvThread = nullptr;
 	}
 
+	// Try SRV record resolution for hostnames
+	char resolvedHost[256];
+	int resolvedPort = port;
+	strncpy_s(resolvedHost, sizeof(resolvedHost), ip, _TRUNCATE);
+	if (ResolveSRV(ip, resolvedHost, sizeof(resolvedHost), &resolvedPort))
+		app.DebugPrintf("SRV resolved %s -> %s:%d\n", ip, resolvedHost, resolvedPort);
+
 	struct addrinfo hints = {};
 	struct addrinfo* result = nullptr;
 
@@ -326,9 +587,9 @@ bool WinsockNetLayer::JoinGame(const char* ip, int port)
 	hints.ai_protocol = IPPROTO_TCP;
 
 	char portStr[16];
-	sprintf_s(portStr, "%d", port);
+	sprintf_s(portStr, "%d", resolvedPort);
 
-	int iResult = getaddrinfo(ip, portStr, &hints, &result);
+	int iResult = getaddrinfo(resolvedHost, portStr, &hints, &result);
 	if (iResult != 0)
 	{
 		app.DebugPrintf("getaddrinfo failed for %s:%d - %d\n", ip, port, iResult);
@@ -337,10 +598,17 @@ bool WinsockNetLayer::JoinGame(const char* ip, int port)
 
 	bool connected = false;
 	BYTE assignedSmallId = 0;
-	const int maxAttempts = 12;
+	const int maxAttempts = 3;
+	const int connectTimeoutSec = 5;
 
 	for (int attempt = 0; attempt < maxAttempts; ++attempt)
 	{
+		if (s_joinCancel)
+		{
+			app.DebugPrintf("JoinGame cancelled by user\n");
+			break;
+		}
+
 		s_hostConnectionSocket = socket(result->ai_family, result->ai_socktype, result->ai_protocol);
 		if (s_hostConnectionSocket == INVALID_SOCKET)
 		{
@@ -351,16 +619,54 @@ bool WinsockNetLayer::JoinGame(const char* ip, int port)
 		int noDelay = 1;
 		setsockopt(s_hostConnectionSocket, IPPROTO_TCP, TCP_NODELAY, (const char*)&noDelay, sizeof(noDelay));
 
+		// Use non-blocking connect with select() timeout so we don't freeze
+		// the game for the full OS TCP timeout when the server is unreachable.
+		u_long nonBlocking = 1;
+		ioctlsocket(s_hostConnectionSocket, FIONBIO, &nonBlocking);
+
 		iResult = connect(s_hostConnectionSocket, result->ai_addr, static_cast<int>(result->ai_addrlen));
 		if (iResult == SOCKET_ERROR)
 		{
 			int err = WSAGetLastError();
-			app.DebugPrintf("connect() to %s:%d failed (attempt %d/%d): %d\n", ip, port, attempt + 1, maxAttempts, err);
-			closesocket(s_hostConnectionSocket);
-			s_hostConnectionSocket = INVALID_SOCKET;
-			Sleep(200);
-			continue;
+			if (err == WSAEWOULDBLOCK)
+			{
+				fd_set writeSet, errorSet;
+				FD_ZERO(&writeSet);
+				FD_SET(s_hostConnectionSocket, &writeSet);
+				FD_ZERO(&errorSet);
+				FD_SET(s_hostConnectionSocket, &errorSet);
+
+				struct timeval tv;
+				tv.tv_sec = connectTimeoutSec;
+				tv.tv_usec = 0;
+
+				int selectResult = select(0, nullptr, &writeSet, &errorSet, &tv);
+				if (selectResult <= 0 || FD_ISSET(s_hostConnectionSocket, &errorSet))
+				{
+					app.DebugPrintf("connect() to %s:%d timed out or failed (attempt %d/%d)\n", ip, port, attempt + 1, maxAttempts);
+					closesocket(s_hostConnectionSocket);
+					s_hostConnectionSocket = INVALID_SOCKET;
+					continue;
+				}
+				// Connection succeeded via non-blocking path
+			}
+			else
+			{
+				app.DebugPrintf("connect() to %s:%d failed (attempt %d/%d): %d\n", ip, port, attempt + 1, maxAttempts, err);
+				closesocket(s_hostConnectionSocket);
+				s_hostConnectionSocket = INVALID_SOCKET;
+				Sleep(200);
+				continue;
+			}
 		}
+
+		// Restore blocking mode for normal socket I/O
+		u_long blocking = 0;
+		ioctlsocket(s_hostConnectionSocket, FIONBIO, &blocking);
+
+		// Set a recv timeout so we don't block forever waiting for the small ID
+		DWORD recvTimeout = connectTimeoutSec * 1000;
+		setsockopt(s_hostConnectionSocket, SOL_SOCKET, SO_RCVTIMEO, (const char*)&recvTimeout, sizeof(recvTimeout));
 
 		BYTE assignBuf[1];
 		int bytesRecv = recv(s_hostConnectionSocket, (char*)assignBuf, 1, 0);
@@ -369,7 +675,6 @@ bool WinsockNetLayer::JoinGame(const char* ip, int port)
 			app.DebugPrintf("Failed to receive small ID assignment from host (attempt %d/%d)\n", attempt + 1, maxAttempts);
 			closesocket(s_hostConnectionSocket);
 			s_hostConnectionSocket = INVALID_SOCKET;
-			Sleep(200);
 			continue;
 		}
 
@@ -404,6 +709,12 @@ bool WinsockNetLayer::JoinGame(const char* ip, int port)
 	{
 		return false;
 	}
+
+	// Clear the recv timeout now that the handshake is complete.
+	// The recv thread should block indefinitely waiting for data.
+	DWORD noTimeout = 0;
+	setsockopt(s_hostConnectionSocket, SOL_SOCKET, SO_RCVTIMEO, (const char*)&noTimeout, sizeof(noTimeout));
+
 	s_localSmallId = assignedSmallId;
 
 	// Save the host IP and port so JoinSplitScreen can connect to the same host
@@ -420,6 +731,242 @@ bool WinsockNetLayer::JoinGame(const char* ip, int port)
 
 	return true;
 }
+
+bool WinsockNetLayer::BeginJoinGame(const char* ip, int port)
+{
+	if (!s_initialized && !Initialize()) return false;
+
+	// Clean up any prior join attempt
+	CancelJoinGame();
+	if (s_joinThread != nullptr)
+	{
+		WaitForSingleObject(s_joinThread, 5000);
+		CloseHandle(s_joinThread);
+		s_joinThread = nullptr;
+	}
+
+	s_isHost = false;
+	s_hostSmallId = 0;
+	s_connected = false;
+	s_active = false;
+
+	if (s_hostConnectionSocket != INVALID_SOCKET)
+	{
+		closesocket(s_hostConnectionSocket);
+		s_hostConnectionSocket = INVALID_SOCKET;
+	}
+
+	if (s_clientRecvThread != nullptr)
+	{
+		WaitForSingleObject(s_clientRecvThread, 5000);
+		CloseHandle(s_clientRecvThread);
+		s_clientRecvThread = nullptr;
+	}
+
+	strncpy_s(s_joinIP, sizeof(s_joinIP), ip, _TRUNCATE);
+	s_joinPort = port;
+	s_joinAttempt = 0;
+	s_joinCancel = false;
+	s_joinAssignedSmallId = 0;
+	s_joinRejectReason = DisconnectPacket::eDisconnect_Quitting;
+	s_joinState = eJoinState_Connecting;
+
+	s_joinThread = CreateThread(nullptr, 0, JoinThreadProc, nullptr, 0, nullptr);
+	if (s_joinThread == nullptr)
+	{
+		s_joinState = eJoinState_Failed;
+		return false;
+	}
+	return true;
+}
+
+DWORD WINAPI WinsockNetLayer::JoinThreadProc(LPVOID param)
+{
+	// Try SRV record resolution for hostnames
+	char resolvedHost[256];
+	int resolvedPort = s_joinPort;
+	strncpy_s(resolvedHost, sizeof(resolvedHost), s_joinIP, _TRUNCATE);
+	if (ResolveSRV(s_joinIP, resolvedHost, sizeof(resolvedHost), &resolvedPort))
+		app.DebugPrintf("SRV resolved %s -> %s:%d\n", s_joinIP, resolvedHost, resolvedPort);
+
+	struct addrinfo hints = {}, *result = nullptr;
+	hints.ai_family = AF_INET;
+	hints.ai_socktype = SOCK_STREAM;
+	hints.ai_protocol = IPPROTO_TCP;
+
+	char portStr[16];
+	sprintf_s(portStr, "%d", resolvedPort);
+
+	if (getaddrinfo(resolvedHost, portStr, &hints, &result) != 0)
+	{
+		app.DebugPrintf("getaddrinfo failed for %s:%d\n", resolvedHost, resolvedPort);
+		s_joinState = eJoinState_Failed;
+		return 0;
+	}
+
+	bool connected = false;
+	BYTE assignedSmallId = 0;
+	SOCKET sock = INVALID_SOCKET;
+	const int connectTimeoutSec = 5;
+
+	for (int attempt = 0; attempt < JOIN_MAX_ATTEMPTS; ++attempt)
+	{
+		if (s_joinCancel) { freeaddrinfo(result); s_joinState = eJoinState_Cancelled; return 0; }
+
+		s_joinAttempt = attempt + 1;
+
+		sock = socket(result->ai_family, result->ai_socktype, result->ai_protocol);
+		if (sock == INVALID_SOCKET) break;
+
+		int noDelay = 1;
+		setsockopt(sock, IPPROTO_TCP, TCP_NODELAY, (const char*)&noDelay, sizeof(noDelay));
+
+		// Non-blocking connect with select() timeout
+		u_long nonBlocking = 1;
+		ioctlsocket(sock, FIONBIO, &nonBlocking);
+
+		int iResult = connect(sock, result->ai_addr, static_cast<int>(result->ai_addrlen));
+		if (iResult == SOCKET_ERROR)
+		{
+			int err = WSAGetLastError();
+			if (err == WSAEWOULDBLOCK)
+			{
+				fd_set writeSet, errorSet;
+				FD_ZERO(&writeSet); FD_SET(sock, &writeSet);
+				FD_ZERO(&errorSet); FD_SET(sock, &errorSet);
+				struct timeval tv = { connectTimeoutSec, 0 };
+
+				int selectResult = select(0, nullptr, &writeSet, &errorSet, &tv);
+				if (selectResult <= 0 || FD_ISSET(sock, &errorSet))
+				{
+					app.DebugPrintf("connect() to %s:%d timed out (attempt %d/%d)\n", s_joinIP, s_joinPort, attempt + 1, JOIN_MAX_ATTEMPTS);
+					closesocket(sock); sock = INVALID_SOCKET;
+					continue;
+				}
+			}
+			else
+			{
+				app.DebugPrintf("connect() to %s:%d failed (attempt %d/%d): %d\n", s_joinIP, s_joinPort, attempt + 1, JOIN_MAX_ATTEMPTS, err);
+				closesocket(sock); sock = INVALID_SOCKET;
+				for (int w = 0; w < 4 && !s_joinCancel; w++) Sleep(50);
+				continue;
+			}
+		}
+
+		// Restore blocking mode
+		u_long blocking = 0;
+		ioctlsocket(sock, FIONBIO, &blocking);
+
+		// Temporary recv timeout for the handshake only
+		DWORD recvTimeout = connectTimeoutSec * 1000;
+		setsockopt(sock, SOL_SOCKET, SO_RCVTIMEO, (const char*)&recvTimeout, sizeof(recvTimeout));
+
+		BYTE assignBuf[1];
+		if (recv(sock, (char*)assignBuf, 1, 0) != 1)
+		{
+			app.DebugPrintf("Failed to receive small ID assignment from host (attempt %d/%d)\n", attempt + 1, JOIN_MAX_ATTEMPTS);
+			closesocket(sock); sock = INVALID_SOCKET;
+			continue;
+		}
+
+		if (assignBuf[0] == WIN64_SMALLID_REJECT)
+		{
+			BYTE rejectBuf[5];
+			if (!RecvExact(sock, rejectBuf, 5))
+			{
+				app.DebugPrintf("Failed to receive reject reason from host\n");
+				closesocket(sock); sock = INVALID_SOCKET;
+				continue;
+			}
+			int reason = ((rejectBuf[1] & 0xff) << 24) | ((rejectBuf[2] & 0xff) << 16) |
+				((rejectBuf[3] & 0xff) << 8) | (rejectBuf[4] & 0xff);
+			s_joinRejectReason = (DisconnectPacket::eDisconnectReason)reason;
+			closesocket(sock);
+			freeaddrinfo(result);
+			s_joinState = eJoinState_Rejected;
+			return 0;
+		}
+
+		assignedSmallId = assignBuf[0];
+		connected = true;
+		break;
+	}
+	freeaddrinfo(result);
+
+	if (s_joinCancel)
+	{
+		if (sock != INVALID_SOCKET) closesocket(sock);
+		s_joinState = eJoinState_Cancelled;
+		return 0;
+	}
+
+	if (!connected)
+	{
+		s_joinState = eJoinState_Failed;
+		return 0;
+	}
+
+	// Clear recv timeout before handing socket to recv thread
+	DWORD noTimeout = 0;
+	setsockopt(sock, SOL_SOCKET, SO_RCVTIMEO, (const char*)&noTimeout, sizeof(noTimeout));
+
+	s_hostConnectionSocket = sock;
+	s_joinAssignedSmallId = assignedSmallId;
+	s_joinState = eJoinState_Success;
+	return 0;
+}
+
+void WinsockNetLayer::CancelJoinGame()
+{
+	s_joinCancel = true;
+
+	// Close socket to immediately unblock any in-progress connect/select/recv
+	SOCKET sock = s_hostConnectionSocket;
+	if (sock != INVALID_SOCKET)
+	{
+		s_hostConnectionSocket = INVALID_SOCKET;
+		closesocket(sock);
+	}
+
+	if (s_joinState == eJoinState_Success || s_joinState == eJoinState_Connecting)
+	{
+		s_joinState = eJoinState_Cancelled;
+	}
+}
+
+bool WinsockNetLayer::FinalizeJoin()
+{
+	if (s_joinState != eJoinState_Success)
+		return false;
+
+	s_localSmallId = s_joinAssignedSmallId;
+
+	strncpy_s(g_Win64MultiplayerIP, sizeof(g_Win64MultiplayerIP), s_joinIP, _TRUNCATE);
+	g_Win64MultiplayerPort = s_joinPort;
+
+	app.DebugPrintf("Win64 LAN: Connected to %s:%d, assigned smallId=%d\n",
+		s_joinIP, s_joinPort, s_localSmallId);
+
+	s_active = true;
+	s_connected = true;
+
+	s_clientRecvThread = CreateThread(nullptr, 0, ClientRecvThreadProc, nullptr, 0, nullptr);
+
+	if (s_joinThread != nullptr)
+	{
+		WaitForSingleObject(s_joinThread, 2000);
+		CloseHandle(s_joinThread);
+		s_joinThread = nullptr;
+	}
+
+	s_joinState = eJoinState_Idle;
+	return true;
+}
+
+WinsockNetLayer::eJoinState WinsockNetLayer::GetJoinState() { return s_joinState; }
+int WinsockNetLayer::GetJoinAttempt() { return s_joinAttempt; }
+int WinsockNetLayer::GetJoinMaxAttempts() { return JOIN_MAX_ATTEMPTS; }
+DisconnectPacket::eDisconnectReason WinsockNetLayer::GetJoinRejectReason() { return s_joinRejectReason; }
 
 bool WinsockNetLayer::SendOnSocket(SOCKET sock, const void* data, int dataSize)
 {
@@ -477,10 +1024,37 @@ bool WinsockNetLayer::SendToSmallId(BYTE targetSmallId, const void* data, int da
 	{
 		SOCKET sock = GetSocketForSmallId(targetSmallId);
 		if (sock == INVALID_SOCKET) return false;
+
+#if defined(MINECRAFT_SERVER_BUILD)
+		// Encrypt outgoing data if a cipher is active for this connection.
+		// TryEncryptOutgoing atomically checks and encrypts under a single lock
+		// to avoid TOCTOU races with DeactivateCipher on disconnect.
+		if (g_Win64DedicatedServer && dataSize > 0)
+		{
+			std::vector<BYTE> buf(static_cast<const BYTE*>(data),
+				static_cast<const BYTE*>(data) + dataSize);
+			if (ServerRuntime::Security::GetCipherRegistry().TryEncryptOutgoing(
+				targetSmallId, buf.data(), dataSize))
+			{
+				return SendOnSocket(sock, buf.data(), dataSize);
+			}
+		}
+#endif
 		return SendOnSocket(sock, data, dataSize);
 	}
 	else
 	{
+		// Client sending to server - encrypt if send cipher is active
+		EnterCriticalSection(&s_clientCipherLock);
+		if (s_clientSendCipher.IsActive() && dataSize > 0)
+		{
+			std::vector<BYTE> buf(static_cast<const BYTE*>(data),
+				static_cast<const BYTE*>(data) + dataSize);
+			s_clientSendCipher.Encrypt(buf.data(), dataSize);
+			LeaveCriticalSection(&s_clientCipherLock);
+			return SendOnSocket(s_hostConnectionSocket, buf.data(), dataSize);
+		}
+		LeaveCriticalSection(&s_clientCipherLock);
 		return SendOnSocket(s_hostConnectionSocket, data, dataSize);
 	}
 }
@@ -545,6 +1119,128 @@ static bool TryGetNumericRemoteIp(const sockaddr_in &remoteAddress, std::string 
 	*outIp = ip;
 	return true;
 }
+
+enum EProxyParseResult
+{
+	eProxyParse_Success,       // Valid PROXY TCP4 header, IP extracted
+	eProxyParse_Unknown,       // Valid PROXY UNKNOWN header, no IP available
+	eProxyParse_Malformed,     // Invalid header format
+	eProxyParse_Timeout,       // Recv timed out
+	eProxyParse_SocketError    // Socket error during read
+};
+
+/**
+ * Parse a PROXY protocol v1 header from the socket.
+ * Must be called immediately after accept(), before any game data is read.
+ * Sets a 5-second recv timeout, reads the header, restores timeout on all paths.
+ */
+static EProxyParseResult TryReadProxyProtocolHeader(SOCKET sock, std::string *outSrcIp)
+{
+	if (outSrcIp != nullptr)
+		outSrcIp->clear();
+
+	// Set 5-second recv timeout for the header read
+	DWORD timeout = 5000;
+	setsockopt(sock, SOL_SOCKET, SO_RCVTIMEO, (const char *)&timeout, sizeof(timeout));
+
+	auto restoreTimeout = [sock]() {
+		DWORD noTimeout = 0;
+		setsockopt(sock, SOL_SOCKET, SO_RCVTIMEO, (const char *)&noTimeout, sizeof(noTimeout));
+	};
+
+	// Peek at first 6 bytes to check for "PROXY " prefix
+	char peekBuf[6];
+	int peekResult = recv(sock, peekBuf, 6, MSG_PEEK);
+	if (peekResult == 0)
+	{
+		restoreTimeout();
+		return eProxyParse_SocketError;
+	}
+	if (peekResult == SOCKET_ERROR)
+	{
+		restoreTimeout();
+		int err = WSAGetLastError();
+		return (err == WSAETIMEDOUT) ? eProxyParse_Timeout : eProxyParse_SocketError;
+	}
+	if (peekResult < 6 || memcmp(peekBuf, "PROXY ", 6) != 0)
+	{
+		restoreTimeout();
+		return eProxyParse_Malformed;
+	}
+
+	// Consume header byte-by-byte until \r\n (max 107 bytes per PROXY v1 spec)
+	char lineBuf[108] = {};
+	int lineLen = 0;
+	bool foundEnd = false;
+
+	while (lineLen < 107)
+	{
+		char ch;
+		int r = recv(sock, &ch, 1, 0);
+		if (r != 1)
+		{
+			restoreTimeout();
+			int err = WSAGetLastError();
+			return (r == SOCKET_ERROR && err == WSAETIMEDOUT) ? eProxyParse_Timeout : eProxyParse_SocketError;
+		}
+		lineBuf[lineLen++] = ch;
+
+		if (lineLen >= 2 && lineBuf[lineLen - 2] == '\r' && lineBuf[lineLen - 1] == '\n')
+		{
+			foundEnd = true;
+			lineBuf[lineLen - 2] = '\0';  // null-terminate, strip \r\n
+			break;
+		}
+	}
+
+	restoreTimeout();
+
+	if (!foundEnd)
+	{
+		return eProxyParse_Malformed;
+	}
+
+	// Parse: "PROXY TCP4 <src_ip> <dst_ip> <src_port> <dst_port>"
+	// or:    "PROXY UNKNOWN"
+	char *tokens[6] = {};
+	int tokenCount = 0;
+	char *ctx = nullptr;
+	char *tok = strtok_s(lineBuf, " ", &ctx);
+	while (tok != nullptr && tokenCount < 6)
+	{
+		tokens[tokenCount++] = tok;
+		tok = strtok_s(nullptr, " ", &ctx);
+	}
+
+	if (tokenCount < 2 || strcmp(tokens[0], "PROXY") != 0)
+	{
+		return eProxyParse_Malformed;
+	}
+
+	if (strcmp(tokens[1], "UNKNOWN") == 0)
+	{
+		return eProxyParse_Unknown;
+	}
+
+	if (strcmp(tokens[1], "TCP4") != 0 || tokenCount < 6)
+	{
+		return eProxyParse_Malformed;
+	}
+
+	// Validate src_ip with inet_pton
+	struct in_addr addr;
+	if (inet_pton(AF_INET, tokens[2], &addr) != 1)
+	{
+		return eProxyParse_Malformed;
+	}
+
+	if (outSrcIp != nullptr)
+	{
+		*outSrcIp = tokens[2];
+	}
+
+	return eProxyParse_Success;
+}
 #endif
 
 void WinsockNetLayer::HandleDataReceived(BYTE fromSmallId, BYTE toSmallId, unsigned char* data, unsigned int dataSize)
@@ -597,7 +1293,36 @@ DWORD WINAPI WinsockNetLayer::AcceptThreadProc(LPVOID param)
 
 #if defined(MINECRAFT_SERVER_BUILD)
 		std::string remoteIp;
-		const bool hasRemoteIp = TryGetNumericRemoteIp(remoteAddress, &remoteIp);
+		bool hasRemoteIp = TryGetNumericRemoteIp(remoteAddress, &remoteIp);
+
+		// PROXY protocol v1: parse real client IP from tunnel header
+		if (g_Win64DedicatedServer && ServerRuntime::Security::GetSettings().proxyProtocol)
+		{
+			std::string proxiedIp;
+			EProxyParseResult proxyResult = TryReadProxyProtocolHeader(clientSocket, &proxiedIp);
+			if (proxyResult == eProxyParse_Success)
+			{
+				ServerRuntime::LogInfof("network", "PROXY: real client IP %s (tunnel: %s)",
+					proxiedIp.c_str(), hasRemoteIp ? remoteIp.c_str() : "unknown");
+				remoteIp = proxiedIp;
+				hasRemoteIp = true;
+			}
+			else if (proxyResult == eProxyParse_Unknown)
+			{
+				ServerRuntime::LogInfof("network", "PROXY: UNKNOWN header, keeping tunnel IP");
+			}
+			else
+			{
+				ServerRuntime::LogWarnf("network", "PROXY: header parse failed (result=%d) from %s",
+					(int)proxyResult, hasRemoteIp ? remoteIp.c_str() : "unknown");
+				const char *rejectIp = hasRemoteIp ? remoteIp.c_str() : "unknown";
+				ServerRuntime::ServerLogManager::OnRejectedTcpConnection(rejectIp,
+					ServerRuntime::ServerLogManager::eTcpRejectReason_InvalidProxyHeader);
+				closesocket(clientSocket);
+				continue;
+			}
+		}
+
 		const char *remoteIpForLog = hasRemoteIp ? remoteIp.c_str() : "unknown";
 		if (g_Win64DedicatedServer)
 		{
@@ -608,6 +1333,22 @@ DWORD WINAPI WinsockNetLayer::AcceptThreadProc(LPVOID param)
 				SendRejectWithReason(clientSocket, DisconnectPacket::eDisconnect_Banned);
 				closesocket(clientSocket);
 				continue;
+			}
+
+			// Rate limiting: reject connections that exceed the per-IP sliding window
+			if (hasRemoteIp)
+			{
+				const auto &secSettings = ServerRuntime::Security::GetSettings();
+				bool allowed = ServerRuntime::Security::GetGlobalRateLimiter().AllowConnection(
+					remoteIp,
+					secSettings.rateLimitConnectionsPerWindow,
+					secSettings.rateLimitWindowSeconds * 1000);
+				if (!allowed)
+				{
+					ServerRuntime::ServerLogManager::OnRejectedTcpConnection(remoteIpForLog, ServerRuntime::ServerLogManager::eTcpRejectReason_RateLimited);
+					closesocket(clientSocket);
+					continue;
+				}
 			}
 		}
 #endif
@@ -787,6 +1528,25 @@ DWORD WINAPI WinsockNetLayer::RecvThreadProc(LPVOID param)
 			break;
 		}
 
+#if defined(MINECRAFT_SERVER_BUILD)
+		// Check for MC|CAck cipher handshake (raw byte match, before decryption).
+		// The ack is always plaintext - it's the last plaintext packet from the client.
+		if (g_Win64DedicatedServer &&
+			packetSize == kCipherAckPatternSize &&
+			memcmp(&recvBuf[0], kCipherAckPattern, kCipherAckPatternSize) == 0)
+		{
+			// Atomically send MC|COn plaintext then commit the cipher
+			SendCOnAndCommitServerCipher(clientSmallId);
+			continue;  // consumed - do not pass to game packet handler
+		}
+
+		// Decrypt incoming data if a cipher is active for this connection
+		if (g_Win64DedicatedServer)
+		{
+			ServerRuntime::Security::GetCipherRegistry().DecryptIncoming(clientSmallId, &recvBuf[0], packetSize);
+		}
+#endif
+
 		HandleDataReceived(clientSmallId, s_hostSmallId, &recvBuf[0], packetSize);
 	}
 
@@ -829,6 +1589,14 @@ bool WinsockNetLayer::PopDisconnectedSmallId(BYTE* outSmallId)
 
 void WinsockNetLayer::PushFreeSmallId(BYTE smallId)
 {
+#if defined(MINECRAFT_SERVER_BUILD)
+	// Clean up any active cipher for this connection
+	if (g_Win64DedicatedServer)
+	{
+		ServerRuntime::Security::GetCipherRegistry().DeactivateCipher(smallId);
+	}
+#endif
+
 	// SmallIds 0..(XUSER_MAX_COUNT-1) are permanently reserved for the host's
 	// local pads and must never be recycled to remote clients.
 	if (smallId < (BYTE)XUSER_MAX_COUNT)
@@ -1065,10 +1833,29 @@ DWORD WINAPI WinsockNetLayer::ClientRecvThreadProc(LPVOID param)
 			break;
 		}
 
+		// Check for MC|COn cipher activation signal (raw byte match, before decryption).
+		// This is always sent in plaintext as the last plaintext packet from the server.
+		if (packetSize == kCipherOnPatternSize &&
+			memcmp(&recvBuf[0], kCipherOnPattern, kCipherOnPatternSize) == 0)
+		{
+			ActivateClientRecvCipher();
+			app.DebugPrintf("Client: Recv cipher activated (MC|COn received)\n");
+			continue;  // consumed - do not pass to game packet handler
+		}
+
+		// Decrypt incoming data if recv cipher is active
+		EnterCriticalSection(&s_clientCipherLock);
+		if (s_clientRecvCipher.IsActive())
+		{
+			s_clientRecvCipher.Decrypt(&recvBuf[0], packetSize);
+		}
+		LeaveCriticalSection(&s_clientCipherLock);
+
 		HandleDataReceived(s_hostSmallId, s_localSmallId, &recvBuf[0], packetSize);
 	}
 
 	s_connected = false;
+	ResetClientCipher();
 	return 0;
 }
 

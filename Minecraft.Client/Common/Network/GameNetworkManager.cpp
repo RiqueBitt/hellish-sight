@@ -1,49 +1,49 @@
 #include "stdafx.h"
-#include "..\..\..\Minecraft.World\StringHelpers.h"
-#include "..\..\..\Minecraft.World\AABB.h"
-#include "..\..\..\Minecraft.World\Vec3.h"
-#include "..\..\..\Minecraft.World\Socket.h"
-#include "..\..\..\Minecraft.World\ThreadName.h"
-#include "..\..\..\Minecraft.World\Entity.h"
-#include "..\..\..\Minecraft.World\net.minecraft.world.level.tile.h"
-#include "..\..\..\Minecraft.World\FireworksRecipe.h"
-#include "..\..\ClientConnection.h"
-#include "..\..\Minecraft.h"
-#include "..\..\User.h"
-#include "..\..\MinecraftServer.h"
-#include "..\..\PlayerList.h"
-#include "..\..\ServerPlayer.h"
-#include "..\..\PlayerConnection.h"
-#include "..\..\MultiPlayerLevel.h"
-#include "..\..\ProgressRenderer.h"
-#include "..\..\MultiPlayerLocalPlayer.h"
-#include "..\..\..\Minecraft.World\DisconnectPacket.h"
-#include "..\..\..\Minecraft.World\compression.h"
-#include "..\..\..\Minecraft.World\OldChunkStorage.h"
-#include "..\..\TexturePackRepository.h"
-#include "..\..\TexturePack.h"
+#include "../../../Minecraft.World/StringHelpers.h"
+#include "../../../Minecraft.World/AABB.h"
+#include "../../../Minecraft.World/Vec3.h"
+#include "../../../Minecraft.World/Socket.h"
+#include "../../../Minecraft.World/ThreadName.h"
+#include "../../../Minecraft.World/Entity.h"
+#include "../../../Minecraft.World/net.minecraft.world.level.tile.h"
+#include "../../../Minecraft.World/FireworksRecipe.h"
+#include "../../ClientConnection.h"
+#include "../../Minecraft.h"
+#include "../../User.h"
+#include "../../MinecraftServer.h"
+#include "../../PlayerList.h"
+#include "../../ServerPlayer.h"
+#include "../../PlayerConnection.h"
+#include "../../MultiPlayerLevel.h"
+#include "../../ProgressRenderer.h"
+#include "../../MultiPlayerLocalPlayer.h"
+#include "../../../Minecraft.World/DisconnectPacket.h"
+#include "../../../Minecraft.World/compression.h"
+#include "../../../Minecraft.World/OldChunkStorage.h"
+#include "../../TexturePackRepository.h"
+#include "../../TexturePack.h"
 
-#include "..\..\Gui.h"
-#include "..\..\LevelRenderer.h"
-#include "..\..\..\Minecraft.World\IntCache.h"
-#include "..\GameRules\ConsoleGameRules.h"
+#include "../../Gui.h"
+#include "../../LevelRenderer.h"
+#include "../../../Minecraft.World/IntCache.h"
+#include "../GameRules/ConsoleGameRules.h"
 #include "GameNetworkManager.h"
 
 #ifdef _XBOX
-#include "Common\XUI\XUI_PauseMenu.h"
+#include "Common/XUI/XUI_PauseMenu.h"
 #else
-#include "Common\UI\UI.h"
-#include "Common\UI\UIScene_PauseMenu.h"
-#include "..\..\Xbox\Network\NetworkPlayerXbox.h"
+#include "Common/UI/UI.h"
+#include "Common/UI/UIScene_PauseMenu.h"
+#include "../../Xbox/Network/NetworkPlayerXbox.h"
 #endif
 
 #ifdef _DURANGO
-#include "..\Minecraft.World\DurangoStats.h"
+#include "../Minecraft.World/DurangoStats.h"
 #endif
 
 #ifdef _WINDOWS64
-#include "..\..\Windows64\Network\WinsockNetLayer.h"
-#include "..\..\Windows64\Windows64_Xuid.h"
+#include "../../Windows64/Network/WinsockNetLayer.h"
+#include "../../Windows64/Windows64_Xuid.h"
 #endif
 
 // Global instance
@@ -53,6 +53,8 @@ CPlatformNetworkManager *CGameNetworkManager::s_pPlatformNetworkManager;
 int64_t CGameNetworkManager::messageQueue[512];
 int64_t CGameNetworkManager::byteQueue[512];
 int CGameNetworkManager::messageQueuePos = 0;
+
+CRITICAL_SECTION bCancelRequestedCS;
 
 CGameNetworkManager::CGameNetworkManager()
 {
@@ -80,9 +82,12 @@ void CGameNetworkManager::Initialise()
 #else
 	s_pPlatformNetworkManager = new CPlatformNetworkManagerStub();
 #endif
+	m_bCancelRequested = false;
 	s_pPlatformNetworkManager->Initialise( this, flagIndexSize );
 	m_bNetworkThreadRunning = false;
 	m_bInitialised = true;
+
+	InitializeCriticalSection(&bCancelRequestedCS);
 }
 
 void CGameNetworkManager::Terminate()
@@ -198,6 +203,12 @@ bool	CGameNetworkManager::StartNetworkGame(Minecraft *minecraft, LPVOID lpParame
 #ifdef _DURANGO
 	ProfileManager.SetDeferredSignoutEnabled(true);
 #endif
+
+	// Clear any stale cancel flag latched by the previous join's progress
+	// UI teardown, otherwise the next join's first tick insta-closes.
+	EnterCriticalSection(&bCancelRequestedCS);
+	g_NetworkManager.m_bCancelRequested = false;
+	LeaveCriticalSection(&bCancelRequestedCS);
 
     int64_t seed = 0;
 	bool dedicatedNoLocalHostPlayer = false;
@@ -435,6 +446,24 @@ bool	CGameNetworkManager::StartNetworkGame(Minecraft *minecraft, LPVOID lpParame
 		app.DebugPrintf("ticking connection A\n");
 		connection->tick();
 
+		EnterCriticalSection(&bCancelRequestedCS);
+		bool bCancelled = g_NetworkManager.m_bCancelRequested;
+
+		if (bCancelled)
+		{
+			if (!app.GetGameStarted())
+			{
+				app.DebugPrintf("Cancel requested, closing connection\n");
+				g_NetworkManager.m_bCancelRequested = false;
+				LeaveCriticalSection(&bCancelRequestedCS);
+				connection->close();
+
+				break;
+			}
+		}
+		LeaveCriticalSection(&bCancelRequestedCS);
+
+
 		// 4J Stu - We were ticking this way too fast which could cause the connection to time out
 		// The connections should tick at 20 per second
 		Sleep(50);
@@ -551,7 +580,10 @@ bool	CGameNetworkManager::StartNetworkGame(Minecraft *minecraft, LPVOID lpParame
 		}
 		else if ( connection->isClosed() || !IsInSession())
 		{
-//		assert(false);
+//		    assert(false);
+		    // Set to NULL because we're returning to home
+		    // The level is not reset when you leave the progress UI which causes a crash
+		    Minecraft::GetInstance()->setLevel(NULL);
 			MinecraftServer::HaltServer();
 			return false;
 		}
@@ -769,8 +801,14 @@ CGameNetworkManager::eJoinGameResult CGameNetworkManager::JoinGame(FriendSession
 
 void CGameNetworkManager::CancelJoinGame(LPVOID lpParam)
 {
+	EnterCriticalSection(&bCancelRequestedCS);
+	g_NetworkManager.m_bCancelRequested = true;
+	LeaveCriticalSection(&bCancelRequestedCS);
 #ifdef _XBOX_ONE
 	s_pPlatformNetworkManager->CancelJoinGame();
+#endif
+#ifdef _WINDOWS64
+	WinsockNetLayer::CancelJoinGame();
 #endif
 }
 
@@ -1452,6 +1490,9 @@ void CGameNetworkManager::StateChange_AnyToStarting()
 		LoadingInputParams *loadingParams = new LoadingInputParams();
 		loadingParams->func = &CGameNetworkManager::RunNetworkGameThreadProc;
 		loadingParams->lpParam = nullptr;
+		loadingParams->cancelText = IDS_TOOLTIPS_CANCEL_JOIN;
+		loadingParams->cancelFunc = &CGameNetworkManager::CancelJoinGame;
+		loadingParams->waitForThreadToDelete = TRUE;
 
 		UIFullscreenProgressCompletionData *completionData = new UIFullscreenProgressCompletionData();
 		completionData->bShowBackground=TRUE;

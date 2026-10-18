@@ -2,7 +2,7 @@
 
 #include "XboxLeaderboardManager.h"
 
-#include "..\Network\NetworkPlayerXbox.h"
+#include "../Network/NetworkPlayerXbox.h"
 
 #ifdef _XBOX
 LeaderboardManager *LeaderboardManager::m_instance = new XboxLeaderboardManager(); //Singleton instance of the LeaderboardManager
@@ -183,7 +183,7 @@ bool XboxLeaderboardManager::WriteStats(unsigned int viewCount, ViewIn views)
 
 	// some debug code to catch the leaderboard write with 7 views
 #ifndef _CONTENT_PACKAGE
-	if(viewCount>5)	__debugbreak();
+	if(viewCount>5)	DEBUG_BREAK();
 #endif
 
 	// 4J Stu - If we are online we already have a session, so use that

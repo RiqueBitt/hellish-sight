@@ -1,9 +1,9 @@
 #include "stdafx.h"
-#include "..\..\..\Minecraft.World\Mth.h"
-#include "..\..\..\Minecraft.World\StringHelpers.h"
-#include "..\..\..\Minecraft.World\Random.h"
-#include "..\..\User.h"
-#include "..\..\MinecraftServer.h"
+#include "../../../Minecraft.World/Mth.h"
+#include "../../../Minecraft.World/StringHelpers.h"
+#include "../../../Minecraft.World/Random.h"
+#include "../../User.h"
+#include "../../MinecraftServer.h"
 #include "UI.h"
 #include "UIScene_MainMenu.h"
 #ifdef __ORBIS__
@@ -34,6 +34,7 @@ UIScene_MainMenu::UIScene_MainMenu(int iPad, void *initData, UILayer *parentLaye
 
 
 	m_buttons[static_cast<int>(eControl_PlayGame)].init(IDS_PLAY_GAME,eControl_PlayGame);
+	m_buttons[(int)eControl_MiniGames].init(L"Mini Games",eControl_MiniGames);
 
 #ifdef _XBOX_ONE
 	if(!ProfileManager.IsFullVersion()) m_buttons[(int)eControl_PlayGame].setLabel(IDS_PLAY_TRIAL_GAME);
@@ -328,6 +329,24 @@ void UIScene_MainMenu::handlePress(F64 controlId, F64 childId)
 		signInReturnedFunc = &UIScene_MainMenu::CreateLoad_SignInReturned;
 #endif		
 		break;
+    case eControl_MiniGames:
+	#ifdef __ORBIS__
+		{
+			m_bIgnorePress=true;
+
+			//CD - Added for audio
+			ui.PlayUISFX(eSFX_Press);
+
+			ProfileManager.RefreshChatAndContentRestrictions(RefreshChatAndContentRestrictionsReturned_PlayGame, this);
+		}
+#else
+		m_eAction=eAction_RunGame;
+		//CD - Added for audio
+		ui.PlayUISFX(eSFX_Press);
+
+		signInReturnedFunc = &UIScene_MainMenu::CreateLoad_SignInReturned;
+#endif		
+		break;
 	case eControl_Leaderboards:
 		//CD - Added for audio
 		ui.PlayUISFX(eSFX_Press);
@@ -390,7 +409,7 @@ void UIScene_MainMenu::handlePress(F64 controlId, F64 childId)
 		break;
 #endif
 
-	default:	__debugbreak();
+	default:	DEBUG_BREAK();
 	}
 	
 	bool confirmUser = false;
@@ -782,7 +801,7 @@ int UIScene_MainMenu::CreateLoad_SignInReturned(void *pParam, bool bContinue, in
 #ifdef _XBOX_ONE
 							ui.ShowPlayerDisplayname(true);
 #endif
-							proceedToScene(ProfileManager.GetPrimaryPad(), eUIScene_LoadOrJoinMenu);
+							proceedToScene(ProfileManager.GetPrimaryPad(), eUIScene_LoadCreateJoinMenu);
 						}
 						else
 						{
@@ -845,7 +864,7 @@ int UIScene_MainMenu::CreateLoad_SignInReturned(void *pParam, bool bContinue, in
 #ifdef _XBOX_ONE
 						ui.ShowPlayerDisplayname(true);
 #endif
-						proceedToScene(ProfileManager.GetPrimaryPad(), eUIScene_LoadOrJoinMenu);
+						proceedToScene(ProfileManager.GetPrimaryPad(), eUIScene_LoadCreateJoinMenu);
 #endif
 					}
 				}
@@ -859,7 +878,7 @@ int UIScene_MainMenu::CreateLoad_SignInReturned(void *pParam, bool bContinue, in
 #ifdef _XBOX_ONE
 					ui.ShowPlayerDisplayname(true);
 #endif
-					proceedToScene(ProfileManager.GetPrimaryPad(), eUIScene_LoadOrJoinMenu);
+					proceedToScene(ProfileManager.GetPrimaryPad(), eUIScene_LoadCreateJoinMenu);
 #endif
 				}
 			}
@@ -1419,7 +1438,7 @@ void UIScene_MainMenu::RunPlayGame(int iPad)
 #ifdef _XBOX_ONE
 				ui.ShowPlayerDisplayname(true);
 #endif
-				proceedToScene(ProfileManager.GetPrimaryPad(), eUIScene_LoadOrJoinMenu);
+				proceedToScene(ProfileManager.GetPrimaryPad(), eUIScene_LoadCreateJoinMenu);
 #endif
 			}
 			else
@@ -1491,7 +1510,7 @@ void UIScene_MainMenu::RunPlayGame(int iPad)
 #ifdef _XBOX_ONE
 				ui.ShowPlayerDisplayname(true);
 #endif
-				proceedToScene(ProfileManager.GetPrimaryPad(), eUIScene_LoadOrJoinMenu);
+				proceedToScene(ProfileManager.GetPrimaryPad(), eUIScene_LoadCreateJoinMenu);
 #endif
 			}
 		}
@@ -2021,6 +2040,7 @@ void UIScene_MainMenu::RunAchievements(int iPad)
 		XShowAchievementsUI( iPad );
 	}
 #endif
+	ui.NavigateToScene(iPad, eUIScene_AchievementsMenu);
 }
 
 void UIScene_MainMenu::RunHelpAndOptions(int iPad)

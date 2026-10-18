@@ -24,14 +24,18 @@
 #include "net.minecraft.world.scores.h"
 #include "com.mojang.nbt.h"
 #include "LivingEntity.h"
-#include "..\Minecraft.Client\Textures.h"
-#include "..\Minecraft.Client\ServerLevel.h"
-#include "..\Minecraft.Client\EntityTracker.h"
+#include "../Minecraft.Client/Textures.h"
+#include "../Minecraft.Client/ServerLevel.h"
+#include "../Minecraft.Client/EntityTracker.h"
 #include "SoundTypes.h"
 #include "BasicTypeContainers.h"
 #include "ParticleTypes.h"
+#include "Dimension.h"
 #include "GenericStats.h"
 #include "ItemEntity.h"
+#if defined(_WINDOWS64) && defined(MINECRAFT_SERVER_BUILD)
+#include "../Minecraft.Server/FourKitBridge.h"
+#endif
 
 const double LivingEntity::MIN_MOVEMENT_DISTANCE = 0.005;
 
@@ -76,6 +80,9 @@ void LivingEntity::_init()
 	deathScore = 0;
 	lastHurt = 0.0f;
 	jumping = false;
+	
+	fourKitDeathExp = 0;
+	fourKitDeathExpSet = false;
 
 	xxa = 0.0f;
 	yya = 0.0f;
@@ -259,9 +266,16 @@ void LivingEntity::baseTick()
 	}
 
 	// If lastHurtByMob is dead, remove it
-	if (lastHurtByMob != nullptr && !lastHurtByMob->isAlive())
+	if (lastHurtByMob != NULL)
 	{
-		setLastHurtByMob(nullptr);
+		if (!lastHurtByMob->isAlive())
+		{
+			setLastHurtByMob(nullptr);
+		}
+		else if (tickCount - lastHurtByMobTimestamp > 100)
+		{
+			setLastHurtByMob(nullptr);
+		}
 	}
 
 	// Update effects
@@ -290,7 +304,11 @@ void LivingEntity::tickDeath()
 		{
 			if (!isBaby() && level->getGameRules()->getBoolean(GameRules::RULE_DOMOBLOOT))
 			{
+#if defined(_WINDOWS64) && defined(MINECRAFT_SERVER_BUILD)
+				int xpCount = fourKitDeathExpSet ? fourKitDeathExp : this->getExperienceReward(lastHurtByPlayer);
+#else
 				int xpCount = this->getExperienceReward(lastHurtByPlayer);
+#endif
 				while (xpCount > 0)
 				{
 					int newCount = ExperienceOrb::getExperienceValue(xpCount);
@@ -762,6 +780,38 @@ bool LivingEntity::hurt(DamageSource *source, float dmg)
 	noActionTime = 0;
 	if (getHealth() <= 0) return false;
 
+#if defined(_WINDOWS64) && defined(MINECRAFT_SERVER_BUILD)
+	{
+		// (SYLV)todo: map these properly
+
+		int entityTypeId = FourKitBridge::MapEntityType((int)GetType());
+		int dimId = level->dimension ? level->dimension->id : 0;
+		int causeId = FourKitBridge::MapDamageCause((void *)source);
+		double outDamage = (double)dmg;
+
+		int damagerEntityId = -1;
+		int damagerEntityTypeId = 0;
+		double damagerX = 0, damagerY = 0, damagerZ = 0;
+		shared_ptr<Entity> damagerEntity = source->getEntity();
+		if (damagerEntity != nullptr)
+		{
+			damagerEntityId = damagerEntity->entityId;
+			damagerEntityTypeId = FourKitBridge::MapEntityType((int)damagerEntity->GetType());
+			damagerX = damagerEntity->x;
+			damagerY = damagerEntity->y;
+			damagerZ = damagerEntity->z;
+		}
+
+		bool cancelled = FourKitBridge::FireEntityDamage(
+			entityId, entityTypeId, dimId,
+			x, y, z, causeId, (double)dmg, &outDamage,
+			damagerEntityId, damagerEntityTypeId, damagerX, damagerY, damagerZ);
+		if (cancelled)
+			return false;
+		dmg = (float)outDamage;
+	}
+#endif
+
 	if ( source->isFire() && hasEffect(MobEffect::fireResistance) )
 	{
 		// 4J-JEV, for new achievement Stayin'Frosty, TODO merge with Java version.
@@ -831,7 +881,12 @@ bool LivingEntity::hurt(DamageSource *source, float dmg)
 
 	if (sound)
 	{
-		level->broadcastEntityEvent(shared_from_this(), EntityEvent::HURT);
+		if (source->isCritical()) {
+			level->broadcastEntityEvent(shared_from_this(), EntityEvent::HURT_CRITICAL);
+		}
+		else {
+			level->broadcastEntityEvent(shared_from_this(), EntityEvent::HURT);
+		}
 		if (source != DamageSource::drown) markHurt();
 		if (sourceEntity != nullptr)
 		{
@@ -854,12 +909,19 @@ bool LivingEntity::hurt(DamageSource *source, float dmg)
 	MemSect(31);
 	if (getHealth() <= 0)
 	{
-		if (sound) playSound(getDeathSound(), getSoundVolume(), getVoicePitch());
+		if (sound) {
+			//New: both death AND hurt sounds should play critical sound as well.
+			if (source->isCritical()) playSound(getCriticalSound(), getSoundVolume(), getVoicePitch());
+			playSound(getDeathSound(), getSoundVolume(), getVoicePitch());
+		};
 		die(source);
 	}
 	else
 	{
-		if (sound) playSound(getHurtSound(), getSoundVolume(), getVoicePitch());
+		if (sound) { 
+			if (source->isCritical()) playSound(getCriticalSound(), getSoundVolume(), getVoicePitch());
+			playSound(getHurtSound(), getSoundVolume(), getVoicePitch());
+		}
 	}
 	MemSect(0);
 
@@ -894,6 +956,18 @@ void LivingEntity::die(DamageSource *source)
 
 	dead = true;
 
+#if defined(_WINDOWS64) && defined(MINECRAFT_SERVER_BUILD)
+	if (!level->isClientSide && !instanceof(eTYPE_SERVERPLAYER) && !instanceof(eTYPE_PLAYER))
+	{
+		int entityTypeId = FourKitBridge::MapEntityType((int)GetType());
+		int dimId = dimension;
+		int exp = getExperienceReward(lastHurtByPlayer);
+		int modifiedExp = FourKitBridge::FireEntityDeath(entityId, entityTypeId, dimId, x, y, z, exp);
+		fourKitDeathExp = modifiedExp;
+		fourKitDeathExpSet = true;
+	}
+#endif
+
 	if (!level->isClientSide)
 	{
 		int playerBonus = 0;
@@ -926,7 +1000,11 @@ void LivingEntity::die(DamageSource *source)
 		}
 	}
 
-	level->broadcastEntityEvent(shared_from_this(), EntityEvent::DEATH);
+	if (source->isCritical()) {
+		level->broadcastEntityEvent(shared_from_this(), EntityEvent::DEATH_CRITICAL);
+	} else {
+		level->broadcastEntityEvent(shared_from_this(), EntityEvent::DEATH);
+	}
 }
 
 void LivingEntity::dropEquipment(bool byPlayer, int playerBonusLevel)
@@ -959,7 +1037,10 @@ int LivingEntity::getHurtSound()
 {
 	return eSoundType_DAMAGE_HURT;
 }
-
+int LivingEntity::getCriticalSound()
+{
+	return eSoundType_DAMAGE_CRITICAL;
+}
 int LivingEntity::getDeathSound()
 {
 	return eSoundType_DAMAGE_HURT;
@@ -986,9 +1067,31 @@ bool LivingEntity::onLadder()
 	int yt = Mth::floor(bb->y0);
 	int zt = Mth::floor(z);
 
-	// 4J-PB - TU9 - add climbable vines
 	int iTile = level->getTile(xt, yt, zt);
-	return  (iTile== Tile::ladder_Id) || (iTile== Tile::vine_Id);
+	switch (iTile)
+	{
+	case Tile::ladder_Id:
+	case Tile::vine_Id: // 4J-PB - TU9 - add climbable vines
+		return true;
+	case Tile::trapdoor_Id: // hexagonny - add climbable (opened) trapdoors
+	{
+		if ((level->getData(xt, yt, zt) & 0x4) != 0)
+		{
+			switch (level->getTile(xt, yt + 1, zt))
+			{
+			case Tile::ladder_Id:
+			case Tile::vine_Id:
+				return false;
+			default:
+				return level->getTile(xt, yt - 1, zt) == Tile::ladder_Id;
+			}
+		}
+		break;
+	}
+	default:
+		break;
+	}
+	return false;
 }
 
 bool LivingEntity::isShootable()
@@ -1181,7 +1284,8 @@ void LivingEntity::swing()
 
 void LivingEntity::handleEntityEvent(byte id)
 {
-	if (id == EntityEvent::HURT)
+	//These gotta be in parentheses
+	if ((id == EntityEvent::HURT) || (id == EntityEvent::HURT_CRITICAL))
 	{
 		walkAnimSpeed = 1.5f;
 
@@ -1191,19 +1295,30 @@ void LivingEntity::handleEntityEvent(byte id)
 
 		MemSect(31);
 		// 4J-PB -added because villagers have no sounds
-		int iHurtSound=getHurtSound();
+		int iHurtSound = getHurtSound();
+		int iCritSound = getCriticalSound();
 		if(iHurtSound!=-1)
 		{
 			playSound(iHurtSound, getSoundVolume(), (random->nextFloat() - random->nextFloat()) * 0.2f + 1.0f);
 		}
+		if(iCritSound!=-1 && (id == EntityEvent::HURT_CRITICAL))
+		{
+			playSound(iCritSound, getSoundVolume(), (random->nextFloat() - random->nextFloat()) * 0.2f + 1.0f);
+		}
 		MemSect(0);
 		hurt(DamageSource::genericSource, 0);
 	}
-	else if (id == EntityEvent::DEATH)
+	else if ((id == EntityEvent::DEATH) || (id == EntityEvent::DEATH_CRITICAL))
 	{
 		MemSect(31);
 		// 4J-PB -added because villagers have no sounds
 		int iDeathSound=getDeathSound();
+		int iCritSound = getCriticalSound();
+
+		if (iCritSound != -1 && (id == EntityEvent::DEATH_CRITICAL))
+		{
+			playSound(iCritSound, getSoundVolume(), (random->nextFloat() - random->nextFloat()) * 0.2f + 1.0f);
+		}
 		if(iDeathSound!=-1)
 		{
 			playSound(iDeathSound, getSoundVolume(), (random->nextFloat() - random->nextFloat()) * 0.2f + 1.0f);
@@ -1380,26 +1495,43 @@ void LivingEntity::jumpFromGround()
 
 void LivingEntity::travel(float xa, float ya)
 {
-#ifdef __PSVITA__
-	// AP - dynamic_pointer_cast is a non-trivial call
+	// AP - dynamic_pointer_cast is a non-trivial call, use raw pointer instead
 	Player *thisPlayer = nullptr;
-	if( this->instanceof(eTYPE_PLAYER) )
+	if (this->instanceof(eTYPE_PLAYER))
 	{
 		thisPlayer = (Player*) this;
 	}
-#else
-	shared_ptr<Player> thisPlayer = dynamic_pointer_cast<Player>(shared_from_this());
-#endif
 	if (isInWater() && !(thisPlayer && thisPlayer->abilities.flying) )
 	{
 		double yo = y;
-		moveRelative(xa, ya, useNewAi() ? 0.04f : 0.02f);
-		move(xd, yd, zd);
+			
+	    int waterWalkerLever = EnchantmentHelper::getWaterWalker(dynamic_pointer_cast<LivingEntity>(shared_from_this()));
+	    if (waterWalkerLever > 3)
+	    {
+	        waterWalkerLever = 3;
+	    }
+		
+	    float waterFriction = 0.8f;
+	    float waterSpeed = useNewAi() ? 0.04f : 0.02f;
+		
+	    if (!onGround)
+	    {
+	        waterWalkerLever *= 0.5f;
+	    }
+		
+	    if (waterWalkerLever > 0)
+	    {
+	        waterFriction += (0.5f - waterFriction) * waterWalkerLever / 3.0f;
+	        waterSpeed += (getSpeed() * 1.0f - waterSpeed) * waterWalkerLever / 3.0f;
+	    }
+		
+	    moveRelative(xa, ya, waterSpeed);
+	    move(xd, yd, zd);
 
-		xd *= 0.80f;
-		yd *= 0.80f;
-		zd *= 0.80f;
-		yd -= 0.02;
+	    xd *= waterFriction;
+	    yd *= 0.8;
+	    zd *= waterFriction;
+	    yd -= 0.02;
 
 		if (horizontalCollision && isFree(xd, yd + 0.6f - y + yo, zd))
 		{
@@ -1424,13 +1556,14 @@ void LivingEntity::travel(float xa, float ya)
 	else
 	{
 		float friction = 0.91f;
+		int frictionTile = 0;
 		if (onGround)
 		{
+			frictionTile = level->getTile(Mth::floor(x), Mth::floor(bb->y0) - 1, Mth::floor(z));
 			friction = 0.6f * 0.91f;
-			int t = level->getTile(Mth::floor(x), Mth::floor(bb->y0) - 1, Mth::floor(z));
-			if (t > 0)
+			if (frictionTile > 0)
 			{
-				friction = Tile::tiles[t]->friction * 0.91f;
+				friction = Tile::tiles[frictionTile]->friction * 0.91f;
 			}
 		}
 
@@ -1452,10 +1585,9 @@ void LivingEntity::travel(float xa, float ya)
 		if (onGround)
 		{
 			friction = 0.6f * 0.91f;
-			int t = level->getTile( Mth::floor(x), Mth::floor(bb->y0) - 1, Mth::floor(z));
-			if (t > 0)
+			if (frictionTile > 0)
 			{
-				friction = Tile::tiles[t]->friction * 0.91f;
+				friction = Tile::tiles[frictionTile]->friction * 0.91f;
 			}
 		}
 		if (onLadder())
@@ -1940,7 +2072,7 @@ HitResult *LivingEntity::pick(double range, float a)
 	return level->clip(from, to);
 }
 
-bool LivingEntity::isEffectiveAi()
+bool LivingEntity::isEffectiveAi()const
 {
 	return !level->isClientSide;
 }
@@ -2003,4 +2135,35 @@ bool LivingEntity::isAlliedTo(Team *other)
 		return getTeam()->isAlliedTo(other);
 	}
 	return false;
+}
+
+float LivingEntity::getEyeHeight()
+{
+    
+    return getHeadHeight(); 
+}
+
+Vec3 *LivingEntity::getPositionEyes(float partialTicks)
+{
+    if (partialTicks == 1.0f)
+    {
+        return Vec3::newTemp(x, y + (double)getEyeHeight(), z);
+    }
+    else
+    {
+        double d0 = xo + (x - xo) * (double)partialTicks;
+        double d1 = yo + (y - yo) * (double)partialTicks + (double)getEyeHeight();
+        double d2 = zo + (z - zo) * (double)partialTicks;
+        return Vec3::newTemp(d0, d1, d2);
+    }
+}
+
+HitResult *LivingEntity::rayTrace(double blockReachDistance, float partialTicks)
+{
+    Vec3 *vec3 = this->getPositionEyes(partialTicks);
+    Vec3 *vec31 = this->getViewVector(partialTicks); 
+    Vec3 *vec32 = vec3->add(vec31->x * blockReachDistance, vec31->y * blockReachDistance, vec31->z * blockReachDistance);
+    
+    
+    return this->level->clip(vec3, vec32, false, false);
 }

@@ -2,11 +2,12 @@
 
 #include "ServerLogManager.h"
 
-#include "Common\StringUtils.h"
+#include "Common/StringUtils.h"
 #include "ServerLogger.h"
 
 #include <array>
 #include <mutex>
+#include <unordered_map>
 
 extern bool g_Win64DedicatedServer;
 
@@ -26,6 +27,12 @@ namespace ServerRuntime
 			{
 				std::string remoteIp;
 				std::string playerName;
+				PlayerUID offlineXuid = INVALID_XUID;
+				PlayerUID onlineXuid = INVALID_XUID;
+				bool isGuest = false;
+				bool cipherActive = false;
+				bool tokenIssued = false;
+				bool tokenVerified = false;
 			};
 
 			/**
@@ -36,6 +43,10 @@ namespace ServerRuntime
 			{
 				std::mutex stateLock;
 				std::array<ConnectionLogEntry, 256> entries;
+
+				// Name->XUIDs cache from recent login attempts (case-insensitive name key)
+				// Multiple XUIDs per name for ambiguity detection
+				std::unordered_map<std::string, std::vector<PlayerUID>> nameToXuidCache;
 			};
 
 			ServerLogState g_serverLogState;
@@ -54,6 +65,12 @@ namespace ServerRuntime
 
 				entry->remoteIp.clear();
 				entry->playerName.clear();
+				entry->offlineXuid = INVALID_XUID;
+				entry->onlineXuid = INVALID_XUID;
+				entry->isGuest = false;
+				entry->cipherActive = false;
+				entry->tokenIssued = false;
+				entry->tokenVerified = false;
 			}
 
 			static std::string NormalizeRemoteIp(const char *ip)
@@ -148,6 +165,9 @@ namespace ServerRuntime
 				case eTcpRejectReason_BannedIp: return "banned-ip";
 				case eTcpRejectReason_GameNotReady: return "game-not-ready";
 				case eTcpRejectReason_ServerFull: return "server-full";
+				case eTcpRejectReason_RateLimited: return "rate-limited";
+				case eTcpRejectReason_TooManyPending: return "too-many-pending";
+				case eTcpRejectReason_InvalidProxyHeader: return "invalid-proxy-header";
 				default: return "unknown";
 				}
 			}
@@ -283,8 +303,17 @@ namespace ServerRuntime
 			LogInfof("network", "accepted tcp connection from %s as smallId=%u", remoteIp.c_str(), (unsigned)smallId);
 		}
 
-		// Once login succeeds, bind the resolved player name onto the cached transport entry.
-		void OnAcceptedPlayerLogin(unsigned char smallId, const std::wstring &playerName)
+		static std::string FormatXuidForLog(PlayerUID xuid)
+		{
+			if (xuid == INVALID_XUID) return "none";
+			char buf[32] = {};
+			sprintf_s(buf, sizeof(buf), "0x%016llx", (unsigned long long)xuid);
+			return buf;
+		}
+
+		// Once login succeeds, bind the resolved player name and identity onto the cached transport entry.
+		void OnAcceptedPlayerLogin(unsigned char smallId, const std::wstring &playerName,
+			PlayerUID offlineXuid, PlayerUID onlineXuid, bool isGuest)
 		{
 			if (!IsDedicatedServerLoggingEnabled())
 			{
@@ -297,13 +326,29 @@ namespace ServerRuntime
 				std::lock_guard<std::mutex> stateLock(g_serverLogState.stateLock);
 				ConnectionLogEntry &entry = g_serverLogState.entries[smallId];
 				entry.playerName = playerNameUtf8;
+				entry.offlineXuid = offlineXuid;
+				entry.onlineXuid = onlineXuid;
+				entry.isGuest = isGuest;
 				if (!entry.remoteIp.empty())
 				{
 					remoteIp = entry.remoteIp;
 				}
 			}
 
-			LogInfof("network", "accepted player login: name=\"%s\" ip=%s smallId=%u", playerNameUtf8.c_str(), remoteIp.c_str(), (unsigned)smallId);
+			std::string xuidStr = FormatXuidForLog(offlineXuid);
+			std::string logMsg = "accepted player login: name=\"" + playerNameUtf8 +
+				"\" ip=" + remoteIp +
+				" xuid=" + xuidStr;
+			if (onlineXuid != INVALID_XUID && onlineXuid != offlineXuid)
+			{
+				logMsg += " online-xuid=" + FormatXuidForLog(onlineXuid);
+			}
+			if (isGuest)
+			{
+				logMsg += " guest=yes";
+			}
+			logMsg += " smallId=" + std::to_string((unsigned)smallId);
+			LogInfof("network", "%s", logMsg.c_str());
 		}
 
 		// Read the cached IP for the rejection log, then clear the slot because the player never fully joined.
@@ -397,6 +442,235 @@ namespace ServerRuntime
 		{
 			std::lock_guard<std::mutex> stateLock(g_serverLogState.stateLock);
 			ResetConnectionLogEntry(&g_serverLogState.entries[smallId]);
+		}
+
+		// ---- Security milestone tracking ----
+
+		static void TryEmitPlayerSecuredSummary(unsigned char smallId, const ConnectionLogEntry &entry)
+		{
+			// Only emit when cipher is confirmed active (the primary security gate)
+			if (!entry.cipherActive) return;
+			// If tokens are required, wait until token status is resolved
+			if (!entry.tokenIssued && !entry.tokenVerified) return;
+
+			const char *tokenStatus = entry.tokenVerified ? "verified" : (entry.tokenIssued ? "issued" : "n/a");
+			std::string xuidStr = FormatXuidForLog(entry.offlineXuid);
+			std::string logMsg = "player secured: name=\"" + entry.playerName +
+				"\" xuid=" + xuidStr +
+				" ip=" + (entry.remoteIp.empty() ? "unknown" : entry.remoteIp) +
+				" cipher=active token=" + tokenStatus;
+			if (entry.isGuest)
+			{
+				logMsg += " guest=yes";
+			}
+			LogInfof("security", "%s", logMsg.c_str());
+		}
+
+		void OnCipherHandshakeCompleted(unsigned char smallId)
+		{
+			if (!IsDedicatedServerLoggingEnabled()) return;
+
+			std::lock_guard<std::mutex> stateLock(g_serverLogState.stateLock);
+			ConnectionLogEntry &entry = g_serverLogState.entries[smallId];
+			entry.cipherActive = true;
+
+			// If tokens are not required, emit summary now
+			// (check if player name is cached -- it should be by this point)
+			if (!entry.playerName.empty())
+			{
+				// Defer: token status may still arrive. Summary emits from token methods
+				// or if tokens are disabled, we need to check config.
+				// For simplicity: always defer to token methods. If tokens are disabled,
+				// the caller in PlayerList.cpp will call a direct emit.
+			}
+		}
+
+		void OnCipherCompletedNoTokenRequired(unsigned char smallId)
+		{
+			// Called when cipher completes and require-challenge-token is false
+			if (!IsDedicatedServerLoggingEnabled()) return;
+
+			std::lock_guard<std::mutex> stateLock(g_serverLogState.stateLock);
+			ConnectionLogEntry &entry = g_serverLogState.entries[smallId];
+			entry.cipherActive = true;
+
+			if (!entry.playerName.empty())
+			{
+				std::string xuidStr = FormatXuidForLog(entry.offlineXuid);
+				LogInfof("security", "player secured: name=\"%s\" xuid=%s ip=%s cipher=active token=n/a%s",
+					entry.playerName.c_str(), xuidStr.c_str(),
+					entry.remoteIp.empty() ? "unknown" : entry.remoteIp.c_str(),
+					entry.isGuest ? " guest=yes" : "");
+			}
+		}
+
+		void OnIdentityTokenIssued(unsigned char smallId)
+		{
+			if (!IsDedicatedServerLoggingEnabled()) return;
+
+			std::lock_guard<std::mutex> stateLock(g_serverLogState.stateLock);
+			ConnectionLogEntry &entry = g_serverLogState.entries[smallId];
+			entry.tokenIssued = true;
+			TryEmitPlayerSecuredSummary(smallId, entry);
+		}
+
+		void OnIdentityTokenVerified(unsigned char smallId)
+		{
+			if (!IsDedicatedServerLoggingEnabled()) return;
+
+			std::lock_guard<std::mutex> stateLock(g_serverLogState.stateLock);
+			ConnectionLogEntry &entry = g_serverLogState.entries[smallId];
+			entry.tokenVerified = true;
+			TryEmitPlayerSecuredSummary(smallId, entry);
+		}
+
+		void OnIdentityTokenMismatch(unsigned char smallId, const std::wstring &playerName)
+		{
+			if (!IsDedicatedServerLoggingEnabled()) return;
+
+			std::string name = NormalizePlayerName(playerName);
+			std::string ip("unknown");
+			{
+				std::lock_guard<std::mutex> stateLock(g_serverLogState.stateLock);
+				const auto &entry = g_serverLogState.entries[smallId];
+				if (!entry.remoteIp.empty()) ip = entry.remoteIp;
+			}
+			LogWarnf("security", "identity token mismatch for player \"%s\" (ip=%s) - use: revoketoken %s",
+				name.c_str(), ip.c_str(), name.c_str());
+		}
+
+		void OnIdentityTokenTimeout(unsigned char smallId, const std::wstring &playerName)
+		{
+			if (!IsDedicatedServerLoggingEnabled()) return;
+
+			std::string name = NormalizePlayerName(playerName);
+			std::string ip("unknown");
+			{
+				std::lock_guard<std::mutex> stateLock(g_serverLogState.stateLock);
+				const auto &entry = g_serverLogState.entries[smallId];
+				if (!entry.remoteIp.empty()) ip = entry.remoteIp;
+			}
+			LogWarnf("security", "kicked player \"%s\" (ip=%s) - identity token response timed out",
+				name.c_str(), ip.c_str());
+		}
+
+		void OnUnsecuredClientKicked(unsigned char smallId)
+		{
+			if (!IsDedicatedServerLoggingEnabled()) return;
+
+			std::string ip("unknown");
+			{
+				std::lock_guard<std::mutex> stateLock(g_serverLogState.stateLock);
+				const auto &entry = g_serverLogState.entries[smallId];
+				if (!entry.remoteIp.empty()) ip = entry.remoteIp;
+			}
+			LogWarnf("security", "kicked unsecured client (smallId=%u, ip=%s) - cipher handshake timed out",
+				(unsigned)smallId, ip.c_str());
+		}
+
+		void OnXuidSpoofDetected(unsigned char smallId, const std::wstring &claimedName,
+			const char *newIp, const char *existingIp)
+		{
+			if (!IsDedicatedServerLoggingEnabled()) return;
+
+			std::string name = NormalizePlayerName(claimedName);
+			LogWarnf("security", "XUID spoof suspected for \"%s\" - new IP %s conflicts with existing IP %s",
+				name.c_str(),
+				(newIp != nullptr) ? newIp : "unknown",
+				(existingIp != nullptr) ? existingIp : "unknown");
+		}
+
+		void OnUnauthorizedCommand(unsigned char smallId, const std::wstring &playerName, const char *action)
+		{
+			if (!IsDedicatedServerLoggingEnabled()) return;
+
+			std::string name = NormalizePlayerName(playerName);
+			std::string ip("unknown");
+			{
+				std::lock_guard<std::mutex> stateLock(g_serverLogState.stateLock);
+				const auto &entry = g_serverLogState.entries[smallId];
+				if (!entry.remoteIp.empty()) ip = entry.remoteIp;
+			}
+			LogWarnf("security", "non-OP player \"%s\" attempted %s (ip=%s)",
+				name.c_str(), (action != nullptr) ? action : "unknown-action", ip.c_str());
+		}
+
+		// ---- Name-to-XUID cache ----
+
+		// Normalize a player name for cache key consistency (lowercase + trim)
+		static std::string NormalizeNameKey(const std::string &name)
+		{
+			return StringUtils::ToLowerAscii(StringUtils::TrimAscii(name));
+		}
+
+		// Maximum entries in the name->XUID cache to prevent unbounded growth
+		static const size_t kMaxCacheEntries = 256;
+		// Maximum XUIDs tracked per name
+		static const size_t kMaxXuidsPerName = 8;
+
+		void CachePlayerXuid(const std::wstring &playerName, PlayerUID xuid)
+		{
+			if (playerName.empty() || xuid == INVALID_XUID)
+			{
+				return;
+			}
+
+			// Note: playerName is from the LoginPacket and is attacker-controlled.
+			// This cache is an operator convenience tool for `whitelist add <name>`,
+			// not a security mechanism. The operator sees the resolved XUID and can
+			// verify it before whitelisting. Ambiguous names are blocked.
+			std::string key = NormalizeNameKey(StringUtils::WideToUtf8(playerName));
+
+			std::lock_guard<std::mutex> stateLock(g_serverLogState.stateLock);
+
+			// Evict oldest cache entry if at capacity
+			if (g_serverLogState.nameToXuidCache.size() >= kMaxCacheEntries &&
+				g_serverLogState.nameToXuidCache.find(key) == g_serverLogState.nameToXuidCache.end())
+			{
+				g_serverLogState.nameToXuidCache.erase(g_serverLogState.nameToXuidCache.begin());
+			}
+
+			auto &entries = g_serverLogState.nameToXuidCache[key];
+			// Move matching XUID to the back (most recent) or append if new
+			for (auto it = entries.begin(); it != entries.end(); ++it)
+			{
+				if (*it == xuid)
+				{
+					entries.erase(it);
+					break;
+				}
+			}
+			entries.push_back(xuid);
+			// Cap per-name vector
+			while (entries.size() > kMaxXuidsPerName)
+			{
+				entries.erase(entries.begin());
+			}
+		}
+
+		int GetCachedXuids(const std::string &playerName, std::vector<PlayerUID> *outXuids)
+		{
+			if (playerName.empty())
+			{
+				if (outXuids != nullptr) outXuids->clear();
+				return 0;
+			}
+
+			std::string key = NormalizeNameKey(playerName);
+
+			std::lock_guard<std::mutex> stateLock(g_serverLogState.stateLock);
+			auto it = g_serverLogState.nameToXuidCache.find(key);
+			if (it == g_serverLogState.nameToXuidCache.end() || it->second.empty())
+			{
+				if (outXuids != nullptr) outXuids->clear();
+				return 0;
+			}
+
+			if (outXuids != nullptr)
+			{
+				*outXuids = it->second;
+			}
+			return static_cast<int>(it->second.size());
 		}
 	}
 }
