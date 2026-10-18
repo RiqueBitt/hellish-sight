@@ -126,29 +126,29 @@ namespace HSMainMenu
 			if (s.page == Page_Main)
 			{
 				const int x = 28, w = 196;
-				int y = (std::max)(104, s.sh / 2 - 70);
+				int y = (std::max)(114, s.sh / 2 - 66);
 				auto add = [&](int action, const wchar_t *label, const wchar_t *hint, int iconId, bool big) {
-					const int h = big ? 28 : 21;
+					const int h = big ? 26 : 19;
 					s.buttons.push_back({ action, label, hint, iconId, x, y, w, h, big });
-					y += h + 4;
+					y += h + 3;
 				};
 				add(Act_Play, L"Jogar", L"Carregar, criar ou entrar em um mundo", Tile::grass_Id, true);
 				add(Act_JavaServers, L"Servidores Java", L"Entrar em servidores Java 1.8 e Reunion", Item::compass_Id, false);
 				add(Local_Mods, L"Mods", L"Ver os mods instalados", Item::book_Id, false);
 				add(Act_TexturePacks, L"Texturas", L"Pacotes de recursos Java 1.8", Item::painting_Id, false);
-				add(Act_Options, L"Ajuda e Opções", L"Configurações, controles, como jogar", Item::redStone_Id, false);
+				add(Act_Options, L"Ajuda e Op\u00E7\u00F5es", L"Configura\u00E7\u00F5es, controles, como jogar", Item::redStone_Id, false);
 				add(Act_Achievements, L"Conquistas", L"Suas conquistas", Item::diamond_Id, false);
-				add(Act_Leaderboards, L"Placares", L"Placares e estatísticas", Item::goldIngot_Id, false);
+				add(Act_Leaderboards, L"Placares", L"Placares e estat\u00EDsticas", Item::goldIngot_Id, false);
 				add(Act_Exit, L"Sair do jogo", L"Fechar o Minecraft", Item::door_wood_Id, false);
 
 				// small buttons under the info card (right)
 				const int cw = 190, cx = s.sw - cw - 24;
-				int cy = (std::max)(104, s.sh / 2 - 70) + 118;
+				int cy = (std::max)(114, s.sh / 2 - 66) + 118;
 				s.buttons.push_back({ Local_ModsFolder, L"Abrir pasta de mods", L"Abre a pasta mods no Explorador", Item::minecart_chest_Id, cx, cy, cw, 20, false });
 				cy += 24;
-				s.buttons.push_back({ Local_InputMode, L"Modo de controle", L"Automático, teclado e mouse ou controle (F9)", Tile::lever_Id, cx, cy, cw, 20, false });
+				s.buttons.push_back({ Local_InputMode, L"Modo de controle", L"Autom\u00E1tico, teclado e mouse ou controle (F9)", Tile::lever_Id, cx, cy, cw, 20, false });
 				cy += 24;
-				s.buttons.push_back({ Act_Store, L"Loja", L"Pacotes de conteúdo", Item::emerald_Id, cx, cy, cw, 20, false });
+				s.buttons.push_back({ Act_Store, L"Loja", L"Pacotes de conte\u00FAdo", Item::emerald_Id, cx, cy, cw, 20, false });
 			}
 			else
 			{
@@ -223,7 +223,7 @@ namespace HSMainMenu
 			font()->draw(title, 0, 0, 0x60FFE070);
 			glPopMatrix();
 			bigText(L"SIGHT", static_cast<float>(x + 4), static_cast<float>(y + 34), 2.6f, 0xFFFFC040, 0xFF3A1000);
-			text(L"MINECRAFT • LEGACY EDITION", x + 4, y + 62, 0xFFB0B0B0);
+			text(L"MINECRAFT \u2022 LEGACY EDITION", x + 4, y + 62, 0xFFB0B0B0);
 
 			if (!splash.empty())
 			{
@@ -260,7 +260,7 @@ namespace HSMainMenu
 		void drawInfoCard()
 		{
 			State &s = S();
-			const int w = 190, x = s.sw - w - 24, y = (std::max)(104, s.sh / 2 - 70);
+			const int w = 190, x = s.sw - w - 24, y = (std::max)(114, s.sh / 2 - 66);
 			const int h = 110;
 			P().rect(x, y, x + w, y + h, 0xC0141418);
 			P().rect(x, y, x + w, y + 2, 0xFFC8321E);
@@ -269,11 +269,11 @@ namespace HSMainMenu
 			int loaded = 0;
 			for (const RubyModInfo &m : mods) if (m.loaded) ++loaded;
 			text(L"Mods carregados: " + std::to_wstring(loaded) + L" / " + std::to_wstring(mods.size()), x + 8, y + 24, 0xFFE0E0E0);
-			static const wchar_t *modes[] = { L"Automático", L"Teclado e mouse", L"Controle" };
+			static const wchar_t *modes[] = { L"Autom\u00E1tico", L"Teclado e mouse", L"Controle" };
 			text(std::wstring(L"Controle: ") + modes[HSPcInput::mode()], x + 8, y + 38, 0xFFE0E0E0);
 			static const wchar_t *tips[] = {
 				L"R / U sobre um item: receitas e usos",
-				L"Botão do meio: pegar o bloco",
+				L"Bot\u00E3o do meio: pegar o bloco",
 				L"F7 liga os shaders, F8 o LOD",
 				L"F9 troca entre teclado e controle",
 				L"Ctrl+Q solta a pilha inteira",
@@ -387,19 +387,19 @@ namespace HSMainMenu
 		// readable left side over the panorama
 		P().gradient(0, 0, s.sw, s.sh, 0x30000000, 0x90000000);
 		glPushMatrix();
-		P().rect(0, 0, 250, s.sh, 0x50000000);
+		P().gradient(0, 0, 250, s.sh, 0x30000000, 0x60000000);
 		glPopMatrix();
 		drawEmbers();
 
 		if (s.page == Page_Main)
 		{
-			drawLogo(splash);
+			(void)splash;	// the Minecraft / Hellish Sight logo layer (with its splash) is drawn above
 			drawInfoCard();
 			for (size_t i = 0; i < s.buttons.size(); ++i) drawButton(s.buttons[i], static_cast<int>(i));
 			if (s.focus >= 0 && s.focus < static_cast<int>(s.buttons.size()))
 			{
 				const std::wstring &hint = s.buttons[s.focus].hint;
-				text(hint, 28, s.sh - 40, 0xFFB0B0B0);
+				text(hint, 28, s.sh - 24, 0xFFB0B0B0);
 			}
 		}
 		else
@@ -407,8 +407,8 @@ namespace HSMainMenu
 			drawModsPage();
 			for (size_t i = 0; i < s.buttons.size(); ++i) drawButton(s.buttons[i], static_cast<int>(i));
 		}
-		text(L"Hellish Sight 2.0  •  Minecraft LCE", 4, s.sh - 10, 0x80FFFFFF);
-		const std::wstring legal = L"Não oficial. Minecraft é da Mojang Studios.";
+		text(L"Hellish Sight 2.0  \u2022  Minecraft LCE", 4, s.sh - 10, 0x80FFFFFF);
+		const std::wstring legal = L"N\u00E3o oficial. Minecraft \u00E9 da Mojang Studios.";
 		text(legal, s.sw - 4 - font()->width(legal), s.sh - 10, 0x80FFFFFF);
 
 		glColor4f(1, 1, 1, 1);

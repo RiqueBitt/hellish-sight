@@ -91,7 +91,7 @@ namespace HSPcInput
 			}
 			switch (button)
 			{
-			case eToolTipButtonA: return { 0, L"Espaço" };
+			case eToolTipButtonA: return { 0, L"Espa\u00E7o" };
 			case eToolTipButtonB: return { 0, L"Q" };
 			case eToolTipButtonX: return { 0, L"C" };
 			case eToolTipButtonY: return { 0, L"E" };
@@ -184,15 +184,15 @@ namespace HSPcInput
 		{
 			struct Row { const wchar_t *key; const wchar_t *what; };
 			static const Row rows[] = {
-				{ L"W A S D", L"Andar" }, { L"Espaço", L"Pular / nadar / voar para cima" }, { L"Shift", L"Agachar / descer voando" },
-				{ L"Ctrl", L"Correr" }, { L"Mouse", L"Olhar" }, { L"Botão esq.", L"Quebrar / atacar" },
-				{ L"Botão dir.", L"Usar / colocar" }, { L"Botão do meio", L"Pegar o bloco (Pick Block)" }, { L"Roda / 1-9", L"Trocar item da barra" },
-				{ L"E", L"Inventário" }, { L"C / R", L"Crafting / Criativo" }, { L"Q", L"Soltar item (Ctrl+Q: pilha)" },
-				{ L"T", L"Chat" }, { L"/", L"Comandos" }, { L"Tab", L"Opções do anfitrião" },
+				{ L"W A S D", L"Andar" }, { L"Espa\u00E7o", L"Pular / nadar / voar para cima" }, { L"Shift", L"Agachar / descer voando" },
+				{ L"Ctrl", L"Correr" }, { L"Mouse", L"Olhar" }, { L"Bot\u00E3o esq.", L"Quebrar / atacar" },
+				{ L"Bot\u00E3o dir.", L"Usar / colocar" }, { L"Bot\u00E3o do meio", L"Pegar o bloco (Pick Block)" }, { L"Roda / 1-9", L"Trocar item da barra" },
+				{ L"E", L"Invent\u00E1rio" }, { L"C / R", L"Crafting / Criativo" }, { L"Q", L"Soltar item (Ctrl+Q: pilha)" },
+				{ L"T", L"Chat" }, { L"/", L"Comandos" }, { L"Tab", L"Op\u00E7\u00F5es do anfitri\u00E3o" },
 				{ L"Esc", L"Pausar / voltar" }, { L"F1", L"Esconder HUD" }, { L"F2", L"Captura de tela" },
-				{ L"F3", L"Informações" }, { L"F5", L"Terceira pessoa" }, { L"F7 / F8", L"Shaders / LOD" },
+				{ L"F3", L"Informa\u00E7\u00F5es" }, { L"F5", L"Terceira pessoa" }, { L"F7 / F8", L"Shaders / LOD" },
 				{ L"F9", L"Modo de controle (auto / teclado / controle)" }, { L"F11", L"Tela cheia" },
-				{ L"R / U", L"Receitas / usos (com inventário aberto)" }, { L"Ctrl+F", L"Buscar item (lista de receitas)" },
+				{ L"R / U", L"Receitas / usos (com invent\u00E1rio aberto)" }, { L"Ctrl+F", L"Buscar item (lista de receitas)" },
 			};
 			const int count = sizeof(rows) / sizeof(rows[0]);
 			const int half = (count + 1) / 2;
@@ -284,7 +284,7 @@ namespace HSPcInput
 		else if (tooltips) renderTooltipBar(sw, sh);
 		if (toast)
 		{
-			static const wchar_t *names[Mode_Count] = { L"Automático (último usado)", L"Teclado e mouse", L"Controle" };
+			static const wchar_t *names[Mode_Count] = { L"Autom\u00E1tico (\u00FAltimo usado)", L"Teclado e mouse", L"Controle" };
 			const std::wstring text = std::wstring(L"Modo de controle: ") + names[s.mode];
 			const int w = font()->width(text) + 16;
 			const int x = (sw - w) / 2, y = 12;
