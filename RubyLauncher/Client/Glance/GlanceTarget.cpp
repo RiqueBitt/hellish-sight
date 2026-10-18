@@ -24,8 +24,6 @@
 #include "ItemEntity.h"
 #include "MultiEntityMob.h"
 #include "MultiEntityMobPart.h"
-#include "BossMob.h"
-#include "BossMobPart.h"
 
 #include <algorithm>
 #include <cstdio>
@@ -204,7 +202,7 @@ namespace Glance
 			return true;
 		}
 
-		// Multi-part mobs (e.g. the Ender Dragon) expose pickable part entities
+		// Multi-part mobs (the Ender Dragon) expose pickable MultiEntityMobPart entities
 		// that are not registered in EntityIO; resolve them to their owner.
 		shared_ptr<Entity> resolveOwner(shared_ptr<Entity> entity)
 		{
@@ -213,13 +211,6 @@ namespace Glance
 				if (shared_ptr<MultiEntityMob> parent = part->parentMob.lock())
 				{
 					if (shared_ptr<Entity> owner = dynamic_pointer_cast<Entity>(parent)) return owner;
-				}
-			}
-			if (shared_ptr<BossMobPart> part = dynamic_pointer_cast<BossMobPart>(entity))
-			{
-				if (part->bossMob != nullptr)
-				{
-					if (Entity *owner = dynamic_cast<Entity *>(part->bossMob)) return owner->shared_from_this();
 				}
 			}
 			return entity;
