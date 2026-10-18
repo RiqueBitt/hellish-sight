@@ -12,6 +12,7 @@
 #include "../Minecraft.World/compression.h"
 #include "../Minecraft.World/OldChunkStorage.h"
 #include "../Minecraft.World/Tile.h"
+#include "../Minecraft.World/System.h"
 
 static DWORD s_tlsIdxCreateDepth = TlsAlloc();
 
@@ -38,6 +39,7 @@ ServerChunkCache::ServerChunkCache(ServerLevel *level, ChunkStorage *storage, Ch
 ServerChunkCache::~ServerChunkCache()
 {
 	storage->WaitForAll();		// MGH -  added to fix crash bug 175183
+	LevelChunk::invalidateShareReferences();	// Hellish Sight: client chunks must not touch our chunks after this
 	delete emptyChunk;
 	delete source;
 
@@ -913,6 +915,7 @@ bool ServerChunkCache::tick()
 
 						m_unloaded.set(chunk->x, chunk->z, chunk);
 						m_table.set(chunk->x, chunk->z, nullptr);
+						m_unloadedOrder.push_back({ chunk, chunk->x, chunk->z, System::currentTimeMillis() });
 					}
 					else
 					{
@@ -922,6 +925,7 @@ bool ServerChunkCache::tick()
 				m_toDrop.pop_front();
 			}
 		}
+		evictUnloadedChunks();
 #endif
         if (storage != nullptr) storage->tick();
     }
@@ -929,6 +933,40 @@ bool ServerChunkCache::tick()
     return source->tick();
 
 }
+
+#ifdef _LARGE_WORLDS
+// Hellish Sight: bound the unloaded-chunk cache (see ServerChunkCache.h).
+// Runs on the server thread from tick(). A chunk here was saved (chunk data and
+// entities) before it was moved in, so freeing it loses nothing; storage->load()
+// reads it back when the player returns.
+void ServerChunkCache::evictUnloadedChunks()
+{
+	const int64_t now = System::currentTimeMillis();
+	int budget = 64;	// bounded work per tick
+
+	while (m_unloadedOrder.size() > MAX_UNLOADED_CHUNKS && budget-- > 0)
+	{
+		UnloadedEntry entry = m_unloadedOrder.front();
+		m_unloadedOrder.pop_front();
+
+		// Reloaded since (load() took it back) or replaced: stale entry.
+		if (m_unloaded.get(entry.x, entry.z) != entry.chunk) continue;
+
+		// Too recent, or a host client chunk still points into its storage: keep it.
+		if ((now - entry.time) < MIN_UNLOADED_AGE_MS ||
+			entry.chunk->m_clientShareRefs.load(std::memory_order_acquire) > 0)
+		{
+			m_unloadedOrder.push_back(entry);
+			continue;
+		}
+
+		if (m_unloaded.compareExchange(entry.x, entry.z, entry.chunk, nullptr))
+		{
+			delete entry.chunk;
+		}
+	}
+}
+#endif
 
 bool ServerChunkCache::shouldSave()
 {

@@ -9,6 +9,7 @@
 #include "ServerLevel.h"
 #include "../Minecraft.World/Tile.h"
 #include "../Minecraft.World/WaterLevelChunk.h"
+#include "../Minecraft.World/System.h"
 
 MultiPlayerChunkCache::MultiPlayerChunkCache(Level *level)
 {
@@ -100,6 +101,9 @@ MultiPlayerChunkCache::~MultiPlayerChunkCache()
 	delete emptyChunk;
 	delete waterChunk;
 
+	for (auto &dead : m_graveyard) delete dead.first;
+	m_graveyard.clear();
+
     for (auto& it : loadedChunkList)
     {
 		if ( it )
@@ -151,6 +155,11 @@ void MultiPlayerChunkCache::drop(const int x, const int z)
 
 		// Keep chunk in cache with structural data intact.
 		chunk->loaded = true;
+
+		// Hellish Sight: remember when the server dropped it; evictDroppedChunks() frees it later.
+		EnterCriticalSection(&m_csLoadCreate);
+		m_droppedAt[chunk] = System::currentTimeMillis();
+		LeaveCriticalSection(&m_csLoadCreate);
 	}
 }
 
@@ -228,6 +237,11 @@ LevelChunk *MultiPlayerChunkCache::create(int x, int z)
 	else
 	{
 		chunk->load();
+
+		// Hellish Sight: back in view - no longer a candidate for eviction.
+		EnterCriticalSection(&m_csLoadCreate);
+		m_droppedAt.erase(chunk);
+		LeaveCriticalSection(&m_csLoadCreate);
 	}
 
 	return chunk;
@@ -259,7 +273,58 @@ bool MultiPlayerChunkCache::save(bool force, ProgressListener *progressListener)
 
 bool MultiPlayerChunkCache::tick()
 {
+	if (++m_evictTickCounter >= EVICT_EVERY_TICKS)
+	{
+		m_evictTickCounter = 0;
+		evictDroppedChunks();
+	}
 	return false;
+}
+
+// Hellish Sight: see MultiPlayerChunkCache.h. Runs on the main thread (MultiPlayerLevel::tick).
+void MultiPlayerChunkCache::evictDroppedChunks()
+{
+	const int64_t now = System::currentTimeMillis();
+
+	// 1) Free chunks that left the table long enough ago.
+	while (!m_graveyard.empty() && (now - m_graveyard.front().second) >= FREE_GRACE_MS)
+	{
+		delete m_graveyard.front().first;
+		m_graveyard.pop_front();
+	}
+
+	// 2) Take chunks that stayed dropped for DROP_GRACE_MS out of the table.
+	vector<LevelChunk *> expired;
+	EnterCriticalSection(&m_csLoadCreate);
+	for (auto it = m_droppedAt.begin(); it != m_droppedAt.end(); )
+	{
+		if ((now - it->second) >= DROP_GRACE_MS)
+		{
+			expired.push_back(it->first);
+			it = m_droppedAt.erase(it);
+		}
+		else
+		{
+			++it;
+		}
+	}
+	LeaveCriticalSection(&m_csLoadCreate);
+
+	for (LevelChunk *chunk : expired)
+	{
+		if (!m_table.compareExchange(chunk->x, chunk->z, chunk, nullptr)) continue;	// replaced meanwhile
+		m_hasData.set(chunk->x, chunk->z, nullptr);
+
+		EnterCriticalSection(&m_csLoadCreate);
+		auto pos = std::find(loadedChunkList.begin(), loadedChunkList.end(), chunk);
+		if (pos != loadedChunkList.end()) loadedChunkList.erase(pos);
+		LeaveCriticalSection(&m_csLoadCreate);
+
+		// Remove its tile entities from the level too; they are recreated with the chunk.
+		// (Entities were already removed by drop().)
+		chunk->removeTileEntitiesFromLevel();
+		m_graveyard.emplace_back(chunk, now);
+	}
 }
 
 bool MultiPlayerChunkCache::shouldSave()
