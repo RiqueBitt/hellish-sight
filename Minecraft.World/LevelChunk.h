@@ -14,6 +14,7 @@ class EntitySelector;
 #include "LightLayer.h"
 #include "Entity.h"
 #include "Level.h"
+#include <atomic>
 
 #define SHARING_ENABLED
 class TileCompressData_SPU;
@@ -119,6 +120,20 @@ public:
 
 	short terrainPopulated;			// 4J - changed from bool to bitfield within short
 	short *serverTerrainPopulated;	// 4J added
+
+	// Hellish Sight: lifetime tracking for host data sharing. A client chunk that
+	// shares (or ever shared) a server chunk's storage holds a reference on it, so
+	// the server never frees a chunk a client chunk can still point into.
+	std::atomic<int> m_clientShareRefs{0};		// on server chunks
+	LevelChunk *m_shareSource = nullptr;		// on client chunks
+	unsigned int m_shareEpoch = 0;				// epoch the reference was taken in
+	void setShareSource(LevelChunk *source);	// acquire/release references
+	// Called by a ServerChunkCache before it frees its chunks: references taken
+	// in earlier epochs are then dropped without touching the (freed) server chunk.
+	static void invalidateShareReferences();
+	// Hellish Sight: mark this chunk's tile entities for removal from the level
+	// (the tile-entity half of unload(true), without touching entities again).
+	void removeTileEntitiesFromLevel();
 
 	void setUnsaved(bool unsaved); // 4J added
 protected:

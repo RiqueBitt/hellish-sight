@@ -1,4 +1,5 @@
 #include "stdafx.h"
+#include <mutex>
 #include "System.h"
 #include "net.minecraft.world.entity.h"
 #include "net.minecraft.world.level.h"
@@ -232,6 +233,7 @@ LevelChunk::LevelChunk(Level *level, int x, int z, LevelChunk *lc)
 
 	sharingTilesAndData = true;
 	serverTerrainPopulated = &lc->terrainPopulated;
+	setShareSource(lc);
 #else
 	this->blocks = new CompressedTileStorage(lc->blocks);
 	this->data = new SparseDataStorage(lc->data);
@@ -239,6 +241,32 @@ LevelChunk::LevelChunk(Level *level, int x, int z, LevelChunk *lc)
 	this->blockLight = new SparseLightStorage(lc->blockLight);
 	serverTerrainPopulated = nullptr;
 #endif
+}
+
+// Hellish Sight: see m_clientShareRefs in LevelChunk.h
+namespace
+{
+	std::mutex &shareRefMutex() { static std::mutex m; return m; }
+	unsigned int g_shareEpoch = 1;	// guarded by shareRefMutex()
+}
+
+void LevelChunk::setShareSource(LevelChunk *source)
+{
+	std::lock_guard<std::mutex> guard(shareRefMutex());
+	if (source == m_shareSource && m_shareEpoch == g_shareEpoch) return;
+	if (m_shareSource != nullptr && m_shareEpoch == g_shareEpoch)
+	{
+		m_shareSource->m_clientShareRefs.fetch_sub(1, std::memory_order_acq_rel);
+	}
+	if (source != nullptr) source->m_clientShareRefs.fetch_add(1, std::memory_order_acq_rel);
+	m_shareSource = source;
+	m_shareEpoch = g_shareEpoch;
+}
+
+void LevelChunk::invalidateShareReferences()
+{
+	std::lock_guard<std::mutex> guard(shareRefMutex());
+	++g_shareEpoch;
 }
 
 // 4J Added so we can track unsaved chunks better
@@ -402,6 +430,8 @@ void LevelChunk::startSharingTilesAndData(int forceMs)
 		}
 	}
 
+	setShareSource(lc);	// Hellish Sight: keep the server chunk alive while we point into it
+
 	// Note - data that was shared isn't directly deleted here, as it might still be in use in the game render update thread. Let that thread
 	// delete it when it is safe to do so instead.
 	GameRenderer::AddForDelete(lowerBlocks);
@@ -430,6 +460,8 @@ void LevelChunk::startSharingTilesAndData(int forceMs)
 
 LevelChunk::~LevelChunk()
 {
+	setShareSource(nullptr);	// Hellish Sight: release any host-sharing reference
+
 #ifdef SHARING_ENABLED
 	if( !sharingTilesAndData )
 #endif
@@ -1509,6 +1541,16 @@ void LevelChunk::load()
 		m_bUnloaded = false;
 #endif
 	}
+}
+
+void LevelChunk::removeTileEntitiesFromLevel()
+{
+	EnterCriticalSection(&m_csTileEntities);
+	for(auto& it : tileEntities)
+	{
+		level->markForRemoval(it.second);
+	}
+	LeaveCriticalSection(&m_csTileEntities);
 }
 
 void LevelChunk::unload(bool unloadTileEntities)	// 4J - added parameter

@@ -1,7 +1,9 @@
 #pragma once
-#include "..\Minecraft.World\net.minecraft.world.level.h"
-#include "..\Minecraft.World\net.minecraft.world.level.chunk.h"
-#include "..\Minecraft.World\RandomLevelSource.h"
+#include "../Minecraft.World/net.minecraft.world.level.h"
+#include "../Minecraft.World/net.minecraft.world.level.chunk.h"
+#include "../Minecraft.World/RandomLevelSource.h"
+#include <deque>
+#include <unordered_map>
 
 using namespace std;
 class ServerChunkCache;
@@ -25,6 +27,19 @@ private:
 	ChunkFlagGrid m_hasData;	// Hellish Sight: sparse flags (was bool hasData[XZSIZE*XZSIZE])
 
 	Level *level;
+
+	// Hellish Sight: the 4J client kept every chunk it ever received ("keep chunk in cache
+	// with structural data intact"), bounded only by the world size. Chunks the server told
+	// us to drop are now released: after DROP_GRACE_MS they leave the table, and after a
+	// further FREE_GRACE_MS (render/update threads may still hold the pointer) they are freed.
+	// The server re-sends a chunk when it comes back into view.
+	unordered_map<LevelChunk *, int64_t> m_droppedAt;			// guarded by m_csLoadCreate
+	deque<pair<LevelChunk *, int64_t>> m_graveyard;				// main thread only
+	int m_evictTickCounter = 0;
+	static const int64_t DROP_GRACE_MS = 20 * 1000;
+	static const int64_t FREE_GRACE_MS = 30 * 1000;
+	static const int EVICT_EVERY_TICKS = 40;
+	void evictDroppedChunks();
 
 public:
 	MultiPlayerChunkCache(Level *level);

@@ -27,6 +27,15 @@ private:
 #ifdef _LARGE_WORLDS
 	deque<LevelChunk *> m_toDrop;
 	ChunkTable m_unloaded;		// Hellish Sight: sparse table (was m_unloadedCache[XZSIZE*XZSIZE])
+
+	// Hellish Sight: the 4J code kept every unloaded chunk in RAM forever (bounded only by
+	// the world size). Keep at most MAX_UNLOADED_CHUNKS, freeing the oldest ones once they
+	// are saved, old enough, and not shared with a host client chunk.
+	struct UnloadedEntry { LevelChunk *chunk; int x; int z; int64_t time; };
+	deque<UnloadedEntry> m_unloadedOrder;
+	static const size_t MAX_UNLOADED_CHUNKS = 1024;
+	static const int64_t MIN_UNLOADED_AGE_MS = 60 * 1000;
+	void evictUnloadedChunks();
 #endif
 
 	// 4J - added for multithreaded support
