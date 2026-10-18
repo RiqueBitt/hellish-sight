@@ -556,9 +556,6 @@ void LuaBindings::bindServerEvents(sol::state& lua) {
         },
         "clear", [](Inventory& inv) {
             inv.clearInventory(-1, -1);
-        },
-        "isInAccessory", [](Inventory& inv, ItemInstance* item) {
-            return inv.inAccessory(item);
         }
     );
 

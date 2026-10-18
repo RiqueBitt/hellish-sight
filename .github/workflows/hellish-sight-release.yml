@@ -54,7 +54,7 @@ jobs:
       with:
         configurePreset: windows64
         buildPreset: windows64-release
-        buildPresetAdditionalArgs: "['--target', 'Minecraft.Client']"
+        buildPresetAdditionalArgs: "['--target', 'Minecraft.Client', '--', '-k', '0']"
 
     - name: Verify build output
       shell: pwsh

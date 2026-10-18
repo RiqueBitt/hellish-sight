@@ -156,6 +156,7 @@ public:
 	void			SetSpecialTutorialCompletionFlag(int iPad, int index);
 
 	static			LPCWSTR			GetString(int iID);
+	StringTable		*getStringTable()	{ return m_stringTable; }	// Ruby Launcher
 
 	eGameMode		GetGameMode()																										{ return m_eGameMode;}
 	void			SetGameMode(eGameMode eMode)																						{ m_eGameMode=eMode;}
