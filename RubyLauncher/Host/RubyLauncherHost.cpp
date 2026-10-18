@@ -2,6 +2,7 @@
 #include "Loader.h"
 #include "Registry/IDs.h"
 #include "net.minecraft.world.level.tile.h"
+#include "Client/ModMachine.h"
 #include "Registry/Item/ItemRegistry.h"
 #include "Registry/Recipe/RecipeRegistry.h"
 #include "Registry/Block/BlockRegistry.h"
@@ -360,6 +361,13 @@ void RubyLoader::fireItemCompleteUse(ItemInstance *item, ServerLevel *level, Ser
 void RubyLoader::fireItemInteract(ItemInstance *item, ServerLevel *level, ServerPlayer *player)
 {
 	if (item == nullptr) return;
+
+	// Hellish Sight: machine tools used in the air (portable teleporter)
+	if (player != nullptr && level != nullptr)
+	{
+		shared_ptr<Player> sp = dynamic_pointer_cast<Player>(player->shared_from_this());
+		if (ModMachines::onItemUse(item, level, sp)) return;
+	}
 
 	ItemInteractEvent event(item, level, player);
 	EventBus::Get().fire(event);

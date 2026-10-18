@@ -461,6 +461,8 @@ public:
 public:
 	virtual bool hsCanBreatheUnderwater();	// Hellish Sight: gas mask helmet
 	bool hsJetpackUsable();				// Hellish Sight: wearing a jetpack with fuel left
+	static void (*s_hsArmorTick)(Player *player);	// Hellish Sight: MekaSuit modules (server)
+	static bool hsHasModule(shared_ptr<ItemInstance> item, const wchar_t *module);
 	virtual void sendMessage(const wstring& message, ChatPacket::EChatPacketMessage type = ChatPacket::e_ChatCustom, int customData = -1, const wstring& additionalMessage = L"") { }
 private:
 	PlayerUID m_xuid;

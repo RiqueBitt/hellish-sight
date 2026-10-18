@@ -208,7 +208,7 @@ int ItemRegistry::registerItem(const std::wstring& path, const std::string& id, 
     }
     if (def.maxDamage > 0)
     {
-        item->setMaxDamage(def.maxDamage);
+        item->hsSetMaxDamage(def.maxDamage);
         item->setMaxStackSize(1);
     }
 

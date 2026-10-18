@@ -54,7 +54,7 @@ namespace
 	struct TeleEntry { Level *level; int x, y, z; int freq; };
 	std::vector<TeleEntry> &teleporters() { static std::vector<TeleEntry> s; return s; }
 
-	std::wstring fmtNum(long long v)
+	std::wstring fmtNumLocal(long long v)
 	{
 		wchar_t buf[32];
 		if (v >= 1000000000LL) swprintf(buf, 32, L"%.2fG", v / 1e9);
@@ -214,6 +214,7 @@ namespace ModMachines
 		FurnaceTileEntity::s_extraFuelCheck = [](shared_ptr<ItemInstance> item) -> bool {
 			return item != nullptr && isAnyMachinePowerItem(item->id, item->getAuxValue());
 		};
+		Player::s_hsArmorTick = &ModMachines::armorTick;
 		registerChemical("minecraft:water", L"\u00C1gua", 0x3F76E4, false);
 		registerChemical("minecraft:lava", L"Lava", 0xFF6A00, false);
 	}
@@ -232,6 +233,30 @@ namespace ModMachines
 		auto it = chems().find(fullId);
 		if (it != chems().end() && !it->second.name.empty()) return it->second.name;
 		return std::wstring(fullId.begin(), fullId.end());
+	}
+
+	int chemicalIndex(const std::string &fullId)
+	{
+		int i = 0;
+		for (auto &kv : chems())
+		{
+			if (kv.first == fullId) return i;
+			i++;
+		}
+		return -1;
+	}
+
+	bool chemicalByIndex(int index, std::wstring &name, int &color)
+	{
+		int i = 0;
+		for (auto &kv : chems())
+		{
+			if (i++ != index) continue;
+			name = kv.second.name;
+			color = kv.second.color;
+			return true;
+		}
+		return false;
 	}
 
 	void registerTool(const std::string &itemName, int role)
@@ -294,6 +319,8 @@ namespace ModMachines
 		return it != refillIds().end() ? &it->second : nullptr;
 	}
 }
+
+std::wstring hsFmtNum(long long v) { return fmtNumLocal(v); }
 
 // ======================================================================================
 // Tile entity: basics
@@ -430,6 +457,18 @@ void ModMachineTileEntity::tick()
 	case MachineKind_Pump: tickPump(d); break;
 	case MachineKind_Miner: tickMiner(d); break;
 	case MachineKind_Teleporter: tickTeleporter(d); break;
+	case MachineKind_Heater: tickHeater(d); break;
+	case MachineKind_Conductor: tickConductor(d); break;
+	case MachineKind_Boiler: tickBoiler(d); break;
+	case MachineKind_Fission: tickFission(d); break;
+	case MachineKind_Fusion: tickFusion(d); break;
+	case MachineKind_Seismic: tickSeismic(d); break;
+	case MachineKind_QioDrive:
+	case MachineKind_QioDashboard:
+	case MachineKind_QioImporter:
+	case MachineKind_QioExporter: tickQio(d); break;
+	case MachineKind_Entangloporter: tickEntangloporter(d); break;
+	case MachineKind_ModStation: tickModStation(d); break;
 	default: break;
 	}
 
@@ -675,7 +714,20 @@ int ModMachineTileEntity::receiveEnergy(int amount, int intoFace, bool fromCable
 	case MachineKind_Tank:
 	case MachineKind_Pipe:
 	case MachineKind_Transporter:
+	case MachineKind_Conductor:
+	case MachineKind_Boiler:
+	case MachineKind_Fission:
+	case MachineKind_QioDrive:
+	case MachineKind_QioDashboard:
 		return 0;
+	case MachineKind_Heater:
+		if (d->energyPerTick <= 0) return 0;	// fuelwood heaters burn items
+		break;
+	case MachineKind_Fusion:
+		if (m_ignited) return 0;				// only charges up for ignition
+		break;
+	case MachineKind_Entangloporter:
+		return entangleEnergyIn(amount);
 	case MachineKind_Storage:
 		if (level && intoFace == (level->getData(x, y, z) & 7) && faceMode(intoFace) != FACE_INPUT) return 0;	// the front only outputs
 		break;
@@ -891,6 +943,20 @@ int ModMachineTileEntity::receiveChem(const std::string &chem, int amount, int i
 	case MachineKind_Pipe:
 		tank = TANK_IN0;
 		break;
+	case MachineKind_Boiler:
+		if (chem == "minecraft:water") tank = TANK_IN0;
+		else if (chem == "mekanism:superheated_sodium") tank = TANK_IN1;
+		break;
+	case MachineKind_Fission:
+		if (chem == d->fuelChem.name) tank = TANK_IN0;
+		else if (chem == "minecraft:water" || chem == "mekanism:sodium") tank = TANK_IN1;
+		break;
+	case MachineKind_Fusion:
+		if (chem == d->fuelChem.name) tank = TANK_IN0;
+		break;
+	case MachineKind_Entangloporter:
+		tank = TANK_IN0;	// redirected to the shared frequency buffer in tickEntangloporter
+		break;
 	default:
 		return 0;
 	}
@@ -1022,6 +1088,11 @@ int ModMachineTileEntity::acceptItem(shared_ptr<ItemInstance> item, int intoFace
 	case MachineKind_Pump:
 	case MachineKind_Miner:
 	case MachineKind_Teleporter:
+	case MachineKind_Heater:
+	case MachineKind_Seismic:
+	case MachineKind_ModStation:
+	case MachineKind_QioImporter:
+	case MachineKind_Entangloporter:
 		break;
 	default:
 		return 0;
@@ -1217,6 +1288,17 @@ void ModMachineTileEntity::tickPump(ModMachineDef *d)
 				if (!water && !lava) continue;
 				if (std::abs(px - x) > d->radius * 4 || std::abs(pz - z) > d->radius * 4) continue;
 				const std::string chem = water ? "minecraft:water" : "minecraft:lava";
+				if (water && m_upgrades[UPG_FILTER] > 0 && level->getData(px, py, pz) == 0)
+				{
+					// filter upgrade: separate heavy water out of the water, the source block stays
+					if (t.amount == 0 || t.name == "mekanism:heavy_water")
+					{
+						t.name = "mekanism:heavy_water";
+						t.amount += 10;
+						done = true;
+					}
+					break;
+				}
 				if (level->getData(px, py, pz) == 0 && (t.amount == 0 || t.name == chem))
 				{
 					level->setTileAndUpdate(px, py, pz, 0);
@@ -1310,72 +1392,6 @@ void ModMachineTileEntity::tickMiner(ModMachineDef *d)
 }
 
 // --------------------------------------------------------------------------------------
-// Teleporter
-// --------------------------------------------------------------------------------------
-
-void ModMachineTileEntity::tickTeleporter(ModMachineDef *d)
-{
-	drainItemInSlot(d);
-	auto &list = teleporters();
-	bool registered = false;
-	for (auto &e : list)
-	{
-		if (e.level == level && e.x == x && e.y == y && e.z == z) { e.freq = m_frequency; registered = true; break; }
-	}
-	if (!registered)
-	{
-		TeleEntry e;
-		e.level = level; e.x = x; e.y = y; e.z = z; e.freq = m_frequency;
-		list.push_back(e);
-	}
-	updateGauge(d);
-
-	if ((m_tickCounter % 5) != 0 || m_teleportCooldown > 0) return;
-	for (auto &p : level->players)
-	{
-		if (p == nullptr || !p->isSneaking()) continue;
-		// standing on top of this block
-		if (Mth::floor(p->x) != x || Mth::floor(p->z) != z || Mth::floor(p->y - 0.5) != y) continue;
-		shared_ptr<ServerPlayer> sp = dynamic_pointer_cast<ServerPlayer>(p);
-		if (sp == nullptr || sp->connection == nullptr) continue;
-
-		// next teleporter with the same frequency (in registration order, wrapping)
-		size_t self = 0;
-		for (size_t i = 0; i < list.size(); i++) if (list[i].level == level && list[i].x == x && list[i].y == y && list[i].z == z) self = i;
-		for (size_t step = 1; step < list.size(); step++)
-		{
-			const size_t idx = (self + step) % list.size();
-			TeleEntry e = list[idx];
-			if (e.level != level || e.freq != m_frequency) continue;
-			shared_ptr<ModMachineTileEntity> target = dynamic_pointer_cast<ModMachineTileEntity>(level->getTileEntity(e.x, e.y, e.z));
-			if (target == nullptr || target->def() == nullptr || target->def()->kind != MachineKind_Teleporter || target->m_frequency != m_frequency)
-			{
-				list.erase(list.begin() + idx);
-				return;
-			}
-			const double dist = std::sqrt(double(e.x - x) * (e.x - x) + double(e.y - y) * (e.y - y) + double(e.z - z) * (e.z - z));
-			const int cost = (std::max)(d->energyPerTick, 0) + static_cast<int>(dist * 10.0);
-			if (m_energy < cost)
-			{
-				sp->sendMessage(L"Teleporter sem energia suficiente (" + fmtNum(cost) + L" FE)");
-				m_teleportCooldown = 40;
-				return;
-			}
-			m_energy -= cost;
-			m_teleportCooldown = 40;
-			target->m_teleportCooldown = 60;
-			sp->connection->teleport(e.x + 0.5, e.y + 1.0, e.z + 0.5, sp->yRot, sp->xRot);
-			setChanged();
-			return;
-		}
-		sp->sendMessage(L"Nenhum outro teleporter na frequ\u00EAncia " + std::to_wstring(m_frequency));
-		m_teleportCooldown = 60;
-		return;
-	}
-	setActiveState(m_energy > 0);
-}
-
-// --------------------------------------------------------------------------------------
 // Multiblocks
 // --------------------------------------------------------------------------------------
 
@@ -1452,6 +1468,8 @@ void ModMachineTileEntity::scanStructure(ModMachineDef *d)
 
 	const int was = m_formed;
 	m_formed = ok ? 1 : 0;
+	m_mbMin[0] = minX; m_mbMin[1] = minY; m_mbMin[2] = minZ;
+	m_mbMax[0] = maxX; m_mbMax[1] = maxY; m_mbMax[2] = maxZ;
 	if (ok)
 	{
 		m_mbVolume = volume;
@@ -1496,11 +1514,11 @@ void ModMachineTileEntity::sendStatus(shared_ptr<Player> player)
 		else player->sendMessage(L"Estrutura: incompleta");
 	}
 	if (capacity() > 0 && d->kind != MachineKind_Tank && d->kind != MachineKind_Pipe && d->kind != MachineKind_Transporter)
-		player->sendMessage(L"Energia: " + fmtNum(m_energy) + L" / " + fmtNum(capacity()) + L" FE");
+		player->sendMessage(L"Energia: " + fmtNumLocal(m_energy) + L" / " + fmtNumLocal(capacity()) + L" FE");
 	for (int t = 0; t < TANK_COUNT; t++)
 	{
 		if (m_tanks[t].amount <= 0) continue;
-		player->sendMessage(std::wstring(t < TANK_OUT0 ? L"Tanque: " : L"Sa\u00EDda: ") + ModMachines::chemicalName(m_tanks[t].name) + L" " + fmtNum(m_tanks[t].amount) + L" / " + fmtNum(tankCapacity()) + L" mB");
+		player->sendMessage(std::wstring(t < TANK_OUT0 ? L"Tanque: " : L"Sa\u00EDda: ") + ModMachines::chemicalName(m_tanks[t].name) + L" " + fmtNumLocal(m_tanks[t].amount) + L" / " + fmtNumLocal(tankCapacity()) + L" mB");
 	}
 	if (d->kind == MachineKind_Processor && m_progress > 0)
 	{
@@ -1509,7 +1527,10 @@ void ModMachineTileEntity::sendStatus(shared_ptr<Player> player)
 	}
 	if (m_upgrades[UPG_SPEED] || m_upgrades[UPG_ENERGY] || m_upgrades[UPG_MUFFLING])
 		player->sendMessage(L"Upgrades: velocidade " + std::to_wstring(m_upgrades[UPG_SPEED]) + L", energia " + std::to_wstring(m_upgrades[UPG_ENERGY]) + L", silenciador " + std::to_wstring(m_upgrades[UPG_MUFFLING]));
-	if (d->kind == MachineKind_Teleporter) player->sendMessage(L"Frequ\u00EAncia: " + std::to_wstring(m_frequency));
+	if (hasHeat()) player->sendMessage(L"Temperatura: " + std::to_wstring(static_cast<int>(m_temp)) + L" K");
+	if (d->kind == MachineKind_Fission) player->sendMessage(std::wstring(L"Reator: ") + (m_enabled ? L"ligado" : L"desligado") + L" | queima " + std::to_wstring(m_burnRate) + L" mB/t | dano " + std::to_wstring(m_damage / 100) + L"%");
+	if (d->kind == MachineKind_Fusion) player->sendMessage(std::wstring(L"Plasma: ") + (m_ignited ? std::wstring(L"aceso") : L"apagado (precisa de " + fmtNumLocal(d->ignitionEnergy) + L" FE para acender)"));
+	if (d->kind == MachineKind_Teleporter || d->kind == MachineKind_Entangloporter || (d->kind >= MachineKind_QioDrive && d->kind <= MachineKind_QioExporter)) player->sendMessage(L"Frequ\u00EAncia: " + std::to_wstring(m_frequency));
 	if (d->kind == MachineKind_Miner) player->sendMessage(std::wstring(L"Filtro: ") + (m_minerAll ? L"todos os blocos" : L"s\u00F3 min\u00E9rios") + L" | " + std::to_wstring(m_minerCursor) + L" blocos verificados");
 	if (!m_buffer.empty()) player->sendMessage(L"Itens aguardando: " + std::to_wstring(m_buffer.size()) + L" pilha(s)");
 	if (!isConnectorKind(d->kind) && d->kind != MachineKind_Storage && d->kind != MachineKind_Tank)
@@ -1526,6 +1547,11 @@ bool ModMachineTileEntity::interact(shared_ptr<Player> player, int face)
 	shared_ptr<ItemInstance> held = player->inventory->getSelected();
 	const bool creative = player->abilities.instabuild;
 
+	if (held == nullptr && d->kind == MachineKind_QioDashboard && !player->isSneaking())
+	{
+		openQioDashboard(player);
+		return true;
+	}
 	if (held == nullptr)
 	{
 		if (player->isSneaking() || isConnectorKind(d->kind))
@@ -1582,12 +1608,13 @@ bool ModMachineTileEntity::interact(shared_ptr<Player> player, int face)
 	}
 
 	const int role = ModMachines::toolRole(held->id);
+	if (interactAdvanced(player, face, held, role)) return true;
 	if (role == MachineTool_Configurator)
 	{
-		if (d->kind == MachineKind_Teleporter)
+		if (d->kind == MachineKind_Teleporter || d->kind == MachineKind_Entangloporter || (d->kind >= MachineKind_QioDrive && d->kind <= MachineKind_QioExporter))
 		{
 			m_frequency = (m_frequency + 1) % 16;
-			player->sendMessage(L"Frequ\u00EAncia do teleporter: " + std::to_wstring(m_frequency));
+			player->sendMessage(L"Frequ\u00EAncia: " + std::to_wstring(m_frequency));
 		}
 		else if (d->kind == MachineKind_Miner && face == Facing::UP)
 		{
@@ -1610,13 +1637,14 @@ bool ModMachineTileEntity::interact(shared_ptr<Player> player, int face)
 		setChanged();
 		return true;
 	}
-	if (role == MachineTool_UpgradeSpeed || role == MachineTool_UpgradeEnergy || role == MachineTool_UpgradeMuffling)
+	if (role == MachineTool_UpgradeSpeed || role == MachineTool_UpgradeEnergy || role == MachineTool_UpgradeMuffling || role == MachineTool_UpgradeFilter)
 	{
 		if (!d->upgrades || isConnectorKind(d->kind) || d->kind == MachineKind_Tank) return false;
-		const int u = role == MachineTool_UpgradeSpeed ? UPG_SPEED : role == MachineTool_UpgradeEnergy ? UPG_ENERGY : UPG_MUFFLING;
-		if (m_upgrades[u] >= MAX_UPGRADES)
+		const int u = role == MachineTool_UpgradeSpeed ? UPG_SPEED : role == MachineTool_UpgradeEnergy ? UPG_ENERGY : role == MachineTool_UpgradeMuffling ? UPG_MUFFLING : UPG_FILTER;
+		const int maxU = u == UPG_FILTER ? 1 : MAX_UPGRADES;
+		if (m_upgrades[u] >= maxU)
 		{
-			player->sendMessage(L"Este upgrade j\u00E1 est\u00E1 no m\u00E1ximo (8)");
+			player->sendMessage(L"Este upgrade j\u00E1 est\u00E1 no m\u00E1ximo (" + std::to_wstring(maxU) + L")");
 			return true;
 		}
 		m_upgrades[u]++;
@@ -1625,7 +1653,7 @@ bool ModMachineTileEntity::interact(shared_ptr<Player> player, int face)
 			held->count--;
 			if (held->count <= 0) player->inventory->setItem(player->inventory->selected, nullptr);
 		}
-		player->sendMessage(L"Upgrade instalado (" + std::to_wstring(m_upgrades[u]) + L"/8)");
+		player->sendMessage(L"Upgrade instalado (" + std::to_wstring(m_upgrades[u]) + L"/" + std::to_wstring(maxU) + L")");
 		setChanged();
 		return true;
 	}
@@ -1639,7 +1667,7 @@ void ModMachineTileEntity::dropExtras(Level *lvl)
 		shared_ptr<ItemEntity> e = std::make_shared<ItemEntity>(lvl, x + 0.5, y + 0.5, z + 0.5, item);
 		lvl->addEntity(e);
 	};
-	const int roles[UPG_COUNT] = { MachineTool_UpgradeSpeed, MachineTool_UpgradeEnergy, MachineTool_UpgradeMuffling };
+	const int roles[UPG_COUNT] = { MachineTool_UpgradeSpeed, MachineTool_UpgradeEnergy, MachineTool_UpgradeMuffling, MachineTool_UpgradeFilter };
 	for (int u = 0; u < UPG_COUNT; u++)
 	{
 		const int id = ModMachines::itemForRole(roles[u]);
@@ -1678,6 +1706,8 @@ void ModMachineTileEntity::load(CompoundTag *base)
 	m_frequency = base->getInt(L"HSFreq");
 	m_minerAll = base->getBoolean(L"HSMinerAll");
 	m_minerCursor = base->getInt(L"HSMinerCursor");
+	m_upgrades[UPG_FILTER] = (std::min)(1, base->getInt(L"HSUpgFilter"));
+	loadAdvanced(base);
 	m_buffer.clear();
 	if (base->contains(L"HSBuffer"))
 	{
@@ -1711,6 +1741,8 @@ void ModMachineTileEntity::save(CompoundTag *base)
 	base->putInt(L"HSFreq", m_frequency);
 	base->putBoolean(L"HSMinerAll", m_minerAll);
 	base->putInt(L"HSMinerCursor", m_minerCursor);
+	base->putInt(L"HSUpgFilter", m_upgrades[UPG_FILTER]);
+	saveAdvanced(base);
 	ListTag<CompoundTag> *buf = new ListTag<CompoundTag>();
 	for (auto &b : m_buffer)
 	{
@@ -1719,6 +1751,35 @@ void ModMachineTileEntity::save(CompoundTag *base)
 		buf->add(t);
 	}
 	base->put(L"HSBuffer", buf);
+}
+
+void ModMachineTileEntity::hsUpdateData()
+{
+	ModMachineDef *d = def();
+	for (int i = 0; i < HS_DATA_MAX; i++) hsData[i] = 0;
+	if (d == nullptr) return;
+	hsData[HSD_KIND] = d->kind + 1;
+	hsPutBig(hsData, HSD_ENERGY, m_energy);
+	hsPutBig(hsData, HSD_ENERGY_CAP, (d->kind == MachineKind_Tank || d->kind == MachineKind_Pipe || d->kind == MachineKind_Transporter) ? 0 : capacity());
+	hsPutBig(hsData, HSD_TANK_CAP, tankCapacity());
+	for (int t = 0; t < TANK_COUNT; t++)
+	{
+		const int base = HSD_TANK0 + t * 4;
+		if (m_tanks[t].amount <= 0) continue;
+		hsData[base] = ModMachines::chemicalIndex(m_tanks[t].name) + 1;
+		hsPutBig(hsData, base + 1, m_tanks[t].amount);
+	}
+	hsData[HSD_UPGRADES] = (m_upgrades[UPG_SPEED] & 0xF) | ((m_upgrades[UPG_ENERGY] & 0xF) << 4) | ((m_upgrades[UPG_MUFFLING] & 0xF) << 8);
+	hsData[HSD_FORMED] = d->multiblock.enabled ? (m_formed == 1 ? 2 : 1) : 0;
+	hsData[HSD_FREQ] = m_frequency;
+	hsData[HSD_EJECT] = m_eject ? 1 : 0;
+	hsData[HSD_MB_VOLUME] = (std::min)(32767, m_mbVolume);
+	if (d->kind == MachineKind_Processor && d->processTicks > 0)
+	{
+		const long long need = static_cast<long long>(d->processTicks) * 1000;
+		hsData[HSD_PROGRESS] = static_cast<int>((std::min)(100LL, m_progress * 100 / need));
+	}
+	hsUpdateDataExtra(d);
 }
 
 wstring ModMachineTileEntity::getName()
@@ -1745,12 +1806,17 @@ bool ModMachineTileEntity::canPlaceItem(int slot, shared_ptr<ItemInstance> item)
 	if (d == nullptr) return true;
 	if (slot == SLOT_FUEL)
 	{
+		if (d->kind == MachineKind_ModStation) return ModMachines::moduleFor(item->id) != nullptr;
+		if (d->kind == MachineKind_QioDrive) return ModMachines::qioDriveCapacity(item->id) > 0;
 		if (powerTicks(item) > 0) return true;
 		if (ModMachines::refillFor(item->id) != nullptr) return true;
 		for (auto &r : d->recipes) if (r.extraId != 0 && r.extraId == item->id) return true;
 		return false;
 	}
 	if (d->kind == MachineKind_Tank) return item->id == Item::bucket_water_Id || item->id == Item::bucket_lava_Id;
+	if (d->kind == MachineKind_ModStation) return ModMachines::suitPieceSlot(item->id) != 0;
+	if (d->kind == MachineKind_QioDrive) return ModMachines::qioDriveCapacity(item->id) > 0;
+	if (d->kind == MachineKind_QioExporter || d->kind == MachineKind_QioImporter || d->kind == MachineKind_Entangloporter) return true;
 	if (d->kind != MachineKind_Processor) return false;
 	for (auto &r : d->recipes) if (r.inId != 0 && r.inId == item->id) return true;
 	if (d->furnaceRecipes && FurnaceRecipes::getInstance()->getResult(item->id, item->getAuxValue()) != nullptr) return true;
@@ -1937,6 +2003,22 @@ void ModMachineTile::animateTick(Level *level, int xt, int yt, int zt, Random *r
 {
 	const int data = level->getData(xt, yt, zt);
 	if (!(data & 8) || isCable()) return;
+	ModMachineDef *td = defAt(m_defIndex);
+	if (td != nullptr && td->kind == MachineKind_Teleporter)
+	{
+		int ax = -1, ox = 0;
+		if (ModMachines::teleporterFrame(level, xt, yt, zt, td, ax, ox))
+		{
+			for (int i = 0; i < 4; i++)
+			{
+				const float along = ox + random->nextFloat() * 2.0f;
+				const float px = ax == 0 ? xt + along : xt + 0.5f;
+				const float pz = ax == 0 ? zt + 0.5f : zt + along;
+				level->addParticle(eParticleType_endportal, px, yt + 1 + random->nextFloat() * 3.0f, pz, (random->nextFloat() - 0.5f) * 0.5f, 0, (random->nextFloat() - 0.5f) * 0.5f);
+			}
+		}
+		return;
+	}
 	// a few sparks at the front while working
 	const int dir = data & 7;
 	float x = xt + 0.5f, y = yt + 0.3f + random->nextFloat() * 0.5f, z = zt + 0.5f;

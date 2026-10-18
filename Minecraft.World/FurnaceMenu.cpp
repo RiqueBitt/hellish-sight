@@ -13,6 +13,7 @@ FurnaceMenu::FurnaceMenu(shared_ptr<Inventory> inventory, shared_ptr<FurnaceTile
 	tc = 0;
 	lt = 0;
 	ld = 0;
+	for (int i = 0; i < 48; i++) hsSent[i] = 0;
 
 	this->furnace = furnace;
 
@@ -39,6 +40,12 @@ void FurnaceMenu::addSlotListener(ContainerListener *listener)
 	listener->setContainerData(this, 0, furnace->tickCount);
 	listener->setContainerData(this, 1, furnace->litTime);
 	listener->setContainerData(this, 2, furnace->litDuration);
+	furnace->hsUpdateData();
+	for (int i = 0; i < FurnaceTileEntity::HS_DATA_MAX; i++)
+	{
+		if (furnace->hsData[i] != 0) listener->setContainerData(this, 3 + i, furnace->hsData[i]);
+		hsSent[i] = furnace->hsData[i];
+	}
 }
 
 void FurnaceMenu::broadcastChanges()
@@ -64,6 +71,15 @@ void FurnaceMenu::broadcastChanges()
 	tc = furnace->tickCount;
 	lt = furnace->litTime;
 	ld = furnace->litDuration;
+
+	// Hellish Sight: mod machine data
+	furnace->hsUpdateData();
+	for (int i = 0; i < FurnaceTileEntity::HS_DATA_MAX; i++)
+	{
+		if (hsSent[i] == furnace->hsData[i]) continue;
+		for (auto& listener : containerListeners) listener->setContainerData(this, 3 + i, furnace->hsData[i]);
+		hsSent[i] = furnace->hsData[i];
+	}
 }
 
 void FurnaceMenu::setData(int id, int value)
@@ -71,6 +87,7 @@ void FurnaceMenu::setData(int id, int value)
 	if (id == 0) furnace->tickCount = value;
 	if (id == 1) furnace->litTime = value;
 	if (id == 2) furnace->litDuration = value;
+	if (id >= 3 && id < 3 + FurnaceTileEntity::HS_DATA_MAX) furnace->hsData[id - 3] = value;
 }
 
 bool FurnaceMenu::stillValid(shared_ptr<Player> player)

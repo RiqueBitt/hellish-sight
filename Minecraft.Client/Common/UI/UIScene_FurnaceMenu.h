@@ -32,6 +32,8 @@ protected:
 			UI_MAP_ELEMENT( m_progressFurnaceFire, "FurnaceFire")
 			UI_MAP_ELEMENT( m_progressFurnaceArrow, "FurnaceArrow")
 		UI_END_MAP_CHILD_ELEMENTS()
+
+		UI_MAP_NAME(m_funcSetMachinePanel, L"HS_SetMachinePanel")
 	UI_END_MAP_ELEMENTS_AND_NAMES()
 
 	virtual wstring getMoviePath();
@@ -47,4 +49,11 @@ protected:
 	virtual void setSectionSelectedSlot(ESceneSection eSection, int x, int y);
 
 	virtual UIControl *getSection(ESceneSection eSection);
+
+private:
+	// Hellish Sight: mod machine screen (side gauges + status labels)
+	IggyName m_funcSetMachinePanel;
+	std::wstring m_hsLastIngredient, m_hsLastFuel, m_hsLastInventory;
+	std::string m_hsLastSpec;
+	void HS_UpdateMachineScreen();
 };

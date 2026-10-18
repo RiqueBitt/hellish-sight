@@ -73,6 +73,12 @@ public:
 	static bool isFuel(shared_ptr<ItemInstance> item);
 	static bool (*s_extraFuelCheck)(shared_ptr<ItemInstance> item);	// Hellish Sight: mod machine power items
 
+	// Hellish Sight: extra values shown on the machine screen (energy, tanks, heat...).
+	// Filled on the server by mod machines and synced through the furnace menu.
+	static const int HS_DATA_MAX = 48;
+	int hsData[HS_DATA_MAX] = {};
+	virtual void hsUpdateData() {}
+
 public:
 	virtual bool stillValid(shared_ptr<Player> player);
 	virtual void setChanged();

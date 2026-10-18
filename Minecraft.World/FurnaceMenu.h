@@ -26,6 +26,7 @@ private:
 	int tc;
 	int lt;
 	int ld;
+	int hsSent[48];		// Hellish Sight: last machine data sent
 
 public:
 	virtual void addSlotListener(ContainerListener *listener);

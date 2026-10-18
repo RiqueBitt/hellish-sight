@@ -1011,6 +1011,9 @@ void LuaBindings::bindClientFunctions(sol::state& lua) {
         else if (role == "upgrade_speed" || role == "speed") r = MachineTool_UpgradeSpeed;
         else if (role == "upgrade_energy" || role == "energy") r = MachineTool_UpgradeEnergy;
         else if (role == "upgrade_muffling" || role == "muffling") r = MachineTool_UpgradeMuffling;
+        else if (role == "upgrade_filter" || role == "filter") r = MachineTool_UpgradeFilter;
+        else if (role == "seismic_reader") r = MachineTool_SeismicReader;
+        else if (role == "portable_teleporter") r = MachineTool_PortableTeleporter;
         if (r != MachineTool_None) ModMachines::registerTool(qualifyName(modEnv, item), r);
     });
     lua.set_function("registerItemRole", [qualifyName](sol::this_environment env, const std::string &item, const std::string &role) {
@@ -1022,6 +1025,34 @@ void LuaBindings::bindClientFunctions(sol::state& lua) {
         else if (role == "gas_mask") bits = HSRole_GasMask;
         else if (role == "night_vision") bits = HSRole_NightVision;
         if (id > 0 && bits != 0) hsSetItemRole(id, bits);
+    });
+    lua.set_function("registerQioDrive", [qualifyName](sol::this_environment env, const std::string &item, int capacity) {
+        sol::environment &modEnv = env;
+        ModMachines::registerQioDrive(qualifyName(modEnv, item), capacity);
+    });
+    auto slotMask = [](const std::string &s) -> int {
+        if (s == "helmet") return ArmorSlot_Helmet;
+        if (s == "chest" || s == "bodyarmor") return ArmorSlot_Chest;
+        if (s == "legs" || s == "pants") return ArmorSlot_Legs;
+        if (s == "boots") return ArmorSlot_Boots;
+        if (s == "tool") return ArmorSlot_Tool;
+        return 0;
+    };
+    lua.set_function("registerSuitPiece", [qualifyName, slotMask](sol::this_environment env, const std::string &item, const std::string &slot) {
+        sol::environment &modEnv = env;
+        ModMachines::registerSuitPiece(qualifyName(modEnv, item), slotMask(slot));
+    });
+    lua.set_function("registerMekaModule", [qualifyName, slotMask](sol::this_environment env, const std::string &item, const std::string &module, sol::optional<sol::table> opts) {
+        sol::environment &modEnv = env;
+        ModModuleDef def;
+        def.name = module;
+        if (opts)
+        {
+            def.maxLevel = opts.value().get_or("maxLevel", 1);
+            sol::optional<sol::table> slots = opts.value()["slots"];
+            if (slots) for (auto &kv : slots.value()) if (kv.second.is<std::string>()) def.slots |= slotMask(kv.second.as<std::string>());
+        }
+        ModMachines::registerModule(qualifyName(modEnv, item), def);
     });
     lua.set_function("registerItemRefill", [qualifyName](sol::this_environment env, const std::string &item, const std::string &resource, sol::optional<int> perPoint) {
         sol::environment &modEnv = env;

@@ -391,6 +391,8 @@ void ServerPlayer::tick()
 {
 	gameMode->tick();
 
+	if (Player::s_hsArmorTick) Player::s_hsArmorTick(this);
+
 	// Hellish Sight: jetpack fuel (the item's durability) drains while rising in the air
 	if (!abilities.flying && !onGround && y > yo + 0.02 && hsJetpackUsable())
 	{

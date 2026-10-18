@@ -3454,15 +3454,26 @@ bool Player::isIgnoringTileTriggers()
 	return isSpectator() || LivingEntity::isIgnoringTileTriggers();
 }
 // Hellish Sight: mod wearables
+void (*Player::s_hsArmorTick)(Player *player) = nullptr;
+
+bool Player::hsHasModule(shared_ptr<ItemInstance> item, const wchar_t *module)
+{
+	if (item == nullptr || item->tag == nullptr || !item->tag->contains(L"HSModules")) return false;
+	if (item->isDamageableItem() && item->getDamageValue() >= item->getMaxDamage() - 1) return false;	// out of energy
+	return item->tag->getCompound(L"HSModules")->getInt(module) > 0;
+}
+
 bool Player::hsCanBreatheUnderwater()
 {
 	shared_ptr<ItemInstance> helmet = inventory->getArmor(3);
+	if (hsHasModule(helmet, L"electrolytic_breathing")) return true;
 	return helmet != nullptr && (hsItemRoles(helmet->id) & HSRole_GasMask) && (!helmet->isDamageableItem() || helmet->getDamageValue() < helmet->getMaxDamage());
 }
 
 bool Player::hsJetpackUsable()
 {
 	shared_ptr<ItemInstance> chest = inventory->getArmor(2);
+	if (hsHasModule(chest, L"jetpack_unit")) return true;
 	if (chest == nullptr || !(hsItemRoles(chest->id) & HSRole_Jetpack)) return false;
 	return !chest->isDamageableItem() || chest->getDamageValue() < chest->getMaxDamage() - 1;
 }

@@ -4,6 +4,7 @@
 #include "../../../Minecraft.World/net.minecraft.world.inventory.h"
 #include "../../Minecraft.h"
 #include "UIScene_FurnaceMenu.h"
+#include "Client/ModMachine.h"
 
 UIScene_FurnaceMenu::UIScene_FurnaceMenu(int iPad, void *_initData, UILayer *parentLayer) : UIScene_AbstractContainerMenu(iPad, parentLayer)
 {
@@ -66,7 +67,124 @@ void UIScene_FurnaceMenu::tick()
 {
 	m_progressFurnaceFire.setProgress( m_furnace->getLitProgress( 12 ) );
 	m_progressFurnaceArrow.setProgress( m_furnace->getBurnProgress( 24 ) );
+	HS_UpdateMachineScreen();
 	UIScene_AbstractContainerMenu::tick();
+}
+
+namespace
+{
+	std::wstring hsNum(long long v)
+	{
+		wchar_t buf[32];
+		if (v >= 1000000000LL) swprintf(buf, 32, L"%.2fG", v / 1e9);
+		else if (v >= 1000000LL) swprintf(buf, 32, L"%.2fM", v / 1e6);
+		else if (v >= 10000LL) swprintf(buf, 32, L"%.1fk", v / 1e3);
+		else swprintf(buf, 32, L"%lld", v);
+		return buf;
+	}
+}
+
+// Hellish Sight: the furnace screen doubles as the screen of every mod machine. The
+// server fills FurnaceTileEntity::hsData (see ModMachine.h); here it becomes a side
+// panel of Mekanism-style gauges plus three status lines.
+void UIScene_FurnaceMenu::HS_UpdateMachineScreen()
+{
+	const int *d = m_furnace->hsData;
+	if (d[HSD_KIND] <= 0) return;
+	const int kind = d[HSD_KIND] - 1;
+
+	std::string spec;
+	auto addBar = [&](long long value, long long max, int color, int barKind) {
+		if (max <= 0) return;
+		const int frac = static_cast<int>((std::min)(1000LL, value * 1000 / max));
+		char buf[64];
+		sprintf_s(buf, "%d,%d,%d", frac, color, barKind);
+		if (!spec.empty()) spec += ";";
+		spec += buf;
+	};
+
+	const long long energy = hsGetBig(d, HSD_ENERGY), energyCap = hsGetBig(d, HSD_ENERGY_CAP);
+	const long long tankCap = hsGetBig(d, HSD_TANK_CAP);
+	const long long heat = hsGetBig(d, HSD_HEAT);
+	const int heatMax = d[HSD_HEAT_MAX] * 10;
+
+	std::wstring line1, line2, line3;
+	if (energyCap > 0)
+	{
+		addBar(energy, energyCap, 0x3CC83C, 0);
+		line1 = L"Energia: " + hsNum(energy) + L" / " + hsNum(energyCap) + L" FE";
+	}
+	int tanksShown = 0;
+	for (int t = 0; t < 4; t++)
+	{
+		const int base = HSD_TANK0 + t * 4;
+		const int chem = d[base] - 1;
+		const long long amount = hsGetBig(d, base + 1);
+		std::wstring name;
+		int color = 0x4060FF;
+		if (chem < 0 || amount <= 0 || !ModMachines::chemicalByIndex(chem, name, color))
+		{
+			// an empty tank still shows for tanks / pipes so the player sees the capacity
+			if (t == 0 && (kind == MachineKind_Tank) && tankCap > 0) addBar(0, tankCap, 0x4060FF, 1);
+			continue;
+		}
+		addBar(amount, tankCap, color, 1);
+		std::wstring part = name + L" " + hsNum(amount) + L"/" + hsNum(tankCap) + L" mB";
+		std::wstring &target = tanksShown < 2 ? line2 : line3;
+		if (!target.empty()) target += L" | ";
+		target += part;
+		tanksShown++;
+	}
+	if (heatMax > 0)
+	{
+		addBar((std::max)(0LL, heat - 300), (std::max)(1, heatMax - 300), heat > heatMax * 0.6 ? 0xFF3C1E : 0xFF9628, 2);
+		std::wstring h = L"Temperatura: " + std::to_wstring(heat) + L" K";
+		if (kind == MachineKind_Fission)
+		{
+			h += L" | Dano " + std::to_wstring(d[HSD_DAMAGE]) + L"% | " + ((d[HSD_EXTRA] & 0x4000) ? L"LIGADO " : L"desligado ") + std::to_wstring(d[HSD_EXTRA] & 0x3FFF) + L" mB/t";
+		}
+		if (line1.empty()) line1 = h;
+		else if (line3.empty()) line3 = h;
+		else line3 += L" | " + h;
+	}
+
+	// structure / misc info goes to the last free line
+	std::wstring info;
+	if (d[HSD_FORMED] == 1) info = (kind == MachineKind_Teleporter) ? L"Moldura do teleporter incompleta" : L"Estrutura incompleta";
+	else if (d[HSD_FORMED] == 2 && kind != MachineKind_Teleporter) info = L"Estrutura formada (" + std::to_wstring(d[HSD_MB_VOLUME]) + L" blocos)";
+	if (kind == MachineKind_Fusion) info += std::wstring(info.empty() ? L"" : L" | ") + (d[HSD_EXTRA] ? L"Plasma aceso" : L"Plasma apagado");
+	if (kind == MachineKind_Miner) info += std::wstring(info.empty() ? L"" : L" | ") + L"Varredura " + std::to_wstring(d[HSD_EXTRA]) + L"%";
+	if (kind == MachineKind_Teleporter || kind == MachineKind_Entangloporter || (kind >= MachineKind_QioDrive && kind <= MachineKind_QioExporter))
+		info += std::wstring(info.empty() ? L"" : L" | ") + L"Frequ\u00EAncia " + std::to_wstring(d[HSD_FREQ]);
+	const int up = d[HSD_UPGRADES];
+	if (up != 0)
+	{
+		info += std::wstring(info.empty() ? L"" : L" | ") + L"Upgrades V" + std::to_wstring(up & 0xF) + L" E" + std::to_wstring((up >> 4) & 0xF) + L" S" + std::to_wstring((up >> 8) & 0xF);
+		if ((up >> 12) & 1) info += L" F";
+	}
+	if (!info.empty())
+	{
+		if (line2.empty()) line2 = info;
+		else if (line3.empty()) line3 = info;
+		else line3 += L" | " + info;
+	}
+
+	if (spec != m_hsLastSpec)
+	{
+		m_hsLastSpec = spec;
+		IggyDataValue result;
+		IggyDataValue value[1];
+		std::wstring w(spec.begin(), spec.end());
+		IggyStringUTF16 str;
+		str.string = (IggyUTF16*)w.c_str();
+		str.length = static_cast<int>(w.length());
+		value[0].type = IGGY_DATATYPE_string_UTF16;
+		value[0].string16 = str;
+		IggyPlayerCallMethodRS(getMovie(), &result, IggyPlayerRootPath(getMovie()), m_funcSetMachinePanel, 1, value);
+	}
+	if (line1 != m_hsLastIngredient) { m_hsLastIngredient = line1; m_labelIngredient.setLabel(line1.empty() ? app.GetString(IDS_INGREDIENT) : line1.c_str()); }
+	if (line2 != m_hsLastFuel) { m_hsLastFuel = line2; m_labelFuel.setLabel(line2.empty() ? app.GetString(IDS_FUEL) : line2.c_str()); }
+	if (line3 != m_hsLastInventory) { m_hsLastInventory = line3; m_labelInventory.setLabel(line3.empty() ? app.GetString(IDS_INVENTORY) : line3.c_str()); }
 }
 
 int UIScene_FurnaceMenu::getSectionColumns(ESceneSection eSection)

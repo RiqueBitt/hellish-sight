@@ -318,6 +318,11 @@ int BlockRegistry::registerMachine(const std::wstring& path, const std::string& 
 	def.kind = kind == "generator" ? MachineKind_Generator : kind == "storage" ? MachineKind_Storage : kind == "cable" ? MachineKind_Cable
 		: kind == "tank" ? MachineKind_Tank : kind == "pipe" ? MachineKind_Pipe : kind == "transporter" ? MachineKind_Transporter
 		: kind == "pump" ? MachineKind_Pump : kind == "miner" ? MachineKind_Miner : kind == "teleporter" ? MachineKind_Teleporter
+		: kind == "heater" ? MachineKind_Heater : kind == "conductor" ? MachineKind_Conductor : kind == "boiler" ? MachineKind_Boiler
+		: kind == "fission" ? MachineKind_Fission : kind == "fusion" ? MachineKind_Fusion : kind == "seismic" ? MachineKind_Seismic
+		: kind == "qio_drive" ? MachineKind_QioDrive : kind == "qio_dashboard" ? MachineKind_QioDashboard
+		: kind == "qio_importer" ? MachineKind_QioImporter : kind == "qio_exporter" ? MachineKind_QioExporter
+		: kind == "entangloporter" ? MachineKind_Entangloporter : kind == "modification_station" ? MachineKind_ModStation
 		: MachineKind_Processor;
 	def.energyCapacity = table.get_or("energyCapacity", 0);
 	def.energyPerTick = table.get_or("energyPerTick", 0);
@@ -328,6 +333,12 @@ int BlockRegistry::registerMachine(const std::wstring& path, const std::string& 
 	def.parallel = (std::max)(1, table.get_or("parallel", 1));
 	def.radius = table.get_or("radius", 8);
 	def.upgrades = table.get_or("upgrades", true);
+	def.heatCapacity = table.get_or("heatCapacity", 1000);
+	def.heatPerTick = table.get_or("heatPerTick", 0);
+	def.conductance = table.get_or("conductance", 0.2f);
+	def.maxTemperature = table.get_or("maxTemperature", 1200);
+	def.ignitionEnergy = table.get_or("ignitionEnergy", 0LL);
+	def.burnRateMax = table.get_or("burnRateMax", 0);
 
 	// names without a namespace belong to this mod
 	auto qualify = [&](const std::string &n) -> std::string {
@@ -345,6 +356,7 @@ int BlockRegistry::registerMachine(const std::wstring& path, const std::string& 
 		return c;
 	};
 	def.fuelChem = chemAmount(table["fuelChem"]);
+	def.portalFrame = qualify(table.get_or<std::string>("portalFrame", ""));
 	def.exhaustChem = chemAmount(table["exhaustChem"]);
 
 	sol::optional<sol::table> mbt = table["multiblock"];

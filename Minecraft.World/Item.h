@@ -740,6 +740,9 @@ public:
 
 protected:
 	Item *setMaxDamage(int maxDamage);
+public:
+	Item *hsSetMaxDamage(int maxDamage) { return setMaxDamage(maxDamage); }	// Hellish Sight: mod items
+protected:
 
 public:
 	bool canBeDepleted();

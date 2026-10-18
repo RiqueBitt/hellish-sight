@@ -111,6 +111,16 @@ struct ModMachineDef
 	int radius = 8;				// miner
 	bool upgrades = true;
 	ModMultiblockDef multiblock;
+
+	// heat (resistive / fuelwood heaters, conductors, boilers, fission reactors)
+	int heatCapacity = 1000;		// heat units per K (multiblocks: per interior block)
+	int heatPerTick = 0;			// heaters: heat produced per tick (fuelwood) - resistive heaters convert FE 1:1
+	float conductance = 0.2f;		// fraction of the temperature difference moved per tick
+	int maxTemperature = 1200;		// fission: damage above this (K)
+	long long ignitionEnergy = 0;	// fusion: FE consumed to ignite
+	int burnRateMax = 0;			// fission: mB/t per fuel assembly
+	std::string portalFrame;		// teleporter: frame block ("modId:id")
+	int portalFrameId = 0;
 };
 
 enum ModMachineKind
@@ -118,13 +128,61 @@ enum ModMachineKind
 	MachineKind_Processor = 0, MachineKind_Generator, MachineKind_Storage, MachineKind_Cable,
 	MachineKind_Tank, MachineKind_Pipe, MachineKind_Transporter, MachineKind_Pump,
 	MachineKind_Miner, MachineKind_Teleporter,
+	MachineKind_Heater, MachineKind_Conductor, MachineKind_Boiler, MachineKind_Fission, MachineKind_Fusion,
+	MachineKind_Seismic, MachineKind_QioDrive, MachineKind_QioDashboard, MachineKind_QioImporter,
+	MachineKind_QioExporter, MachineKind_Entangloporter, MachineKind_ModStation,
 };
 
 enum ModMachineToolRole
 {
 	MachineTool_None = 0, MachineTool_Configurator, MachineTool_UpgradeSpeed, MachineTool_UpgradeEnergy,
-	MachineTool_UpgradeMuffling,
+	MachineTool_UpgradeMuffling, MachineTool_UpgradeFilter, MachineTool_SeismicReader, MachineTool_PortableTeleporter,
 };
+
+// MekaSuit / tool modules (installed with the Modification Station, stored in the item's
+// "HSModules" tag as name -> level)
+enum ModArmorSlot { ArmorSlot_Helmet = 1, ArmorSlot_Chest = 2, ArmorSlot_Legs = 4, ArmorSlot_Boots = 8, ArmorSlot_Tool = 16 };
+struct ModModuleDef
+{
+	std::string name;		// "gravitational_modulating", "vision_enhancement", ...
+	int slots = 0;			// ModArmorSlot mask
+	int maxLevel = 1;
+};
+
+// Hellish Sight: layout of FurnaceTileEntity::hsData (machine screen). Values are shorts,
+// big numbers are split into three 15-bit chunks.
+enum ModMachineScreenData
+{
+	HSD_KIND = 0,			// machine kind + 1 (0 = not a mod machine)
+	HSD_ENERGY = 1,			// 3 chunks
+	HSD_ENERGY_CAP = 4,		// 3 chunks
+	HSD_TANK_CAP = 7,		// 3 chunks
+	HSD_TANK0 = 10,			// per tank: chemical index + 1, then 3 chunks of mB (4 tanks)
+	HSD_HEAT = 26,			// 3 chunks (temperature in K)
+	HSD_HEAT_MAX = 29,		// max temperature / 10
+	HSD_UPGRADES = 30,		// speed | energy << 4 | muffling << 8 | filter << 12
+	HSD_FORMED = 31,		// 0 no structure, 1 incomplete, 2 formed
+	HSD_FREQ = 32,
+	HSD_DAMAGE = 33,		// reactor damage %
+	HSD_PROGRESS = 34,		// 0..100
+	HSD_EJECT = 35,
+	HSD_MB_VOLUME = 36,
+	HSD_EXTRA = 37,			// miner: % scanned, reactor: burn rate...
+	HSD_COUNT = 38,
+};
+
+inline void hsPutBig(int *data, int at, long long v)
+{
+	if (v < 0) v = 0;
+	data[at] = static_cast<int>(v & 0x7FFF);
+	data[at + 1] = static_cast<int>((v >> 15) & 0x7FFF);
+	data[at + 2] = static_cast<int>((v >> 30) & 0x7FFF);
+}
+
+inline long long hsGetBig(const int *data, int at)
+{
+	return (static_cast<long long>(data[at] & 0x7FFF)) | (static_cast<long long>(data[at + 1] & 0x7FFF) << 15) | (static_cast<long long>(data[at + 2] & 0x7FFF) << 30);
+}
 
 struct ModItemRefill
 {
@@ -144,12 +202,28 @@ namespace ModMachines
 	// chemicals / fluids
 	void registerChemical(const std::string &fullId, const std::wstring &name, int color, bool gas);
 	std::wstring chemicalName(const std::string &fullId);
+	int chemicalIndex(const std::string &fullId);		// stable index (same on client and server), -1 if unknown
+	bool chemicalByIndex(int index, std::wstring &name, int &color);
 
 	// tools and rechargeable items (by item name "modId:id")
 	void registerTool(const std::string &itemName, int role);
 	int toolRole(int itemId);
 	void registerRefill(const std::string &itemName, const std::string &resource, int perPoint);
 	const ModItemRefill *refillFor(int itemId);
+
+	// QIO drives, MekaSuit pieces / modules
+	void registerQioDrive(const std::string &itemName, int capacity);
+	int qioDriveCapacity(int itemId);
+	void registerModule(const std::string &itemName, const ModModuleDef &def);
+	const ModModuleDef *moduleFor(int itemId);
+	void registerSuitPiece(const std::string &itemName, int slot);
+	int suitPieceSlot(int itemId);
+	int moduleLevel(shared_ptr<ItemInstance> item, const std::string &module);
+
+	bool teleporterFrame(Level *level, int x, int y, int z, ModMachineDef *d, int &axis, int &offset);
+	// item use (portable teleporter) and armour tick (MekaSuit modules)
+	bool onItemUse(ItemInstance *item, Level *level, shared_ptr<Player> player);
+	void armorTick(Player *player);
 }
 
 class ModMachineTileEntity : public FurnaceTileEntity
@@ -159,7 +233,7 @@ public:
 
 	enum { TANK_IN0 = 0, TANK_IN1, TANK_OUT0, TANK_OUT1, TANK_COUNT };
 	enum { FACE_DEFAULT = 0, FACE_INPUT, FACE_OUTPUT, FACE_DISABLED, FACE_MODE_COUNT };
-	enum { UPG_SPEED = 0, UPG_ENERGY, UPG_MUFFLING, UPG_COUNT };
+	enum { UPG_SPEED = 0, UPG_ENERGY, UPG_MUFFLING, UPG_FILTER, UPG_COUNT };
 	static const int MAX_UPGRADES = 8;
 
 	ModMachineTileEntity() {}
@@ -173,6 +247,8 @@ public:
 	virtual bool hasCustomName();
 	virtual bool canPlaceItem(int slot, shared_ptr<ItemInstance> item);
 	virtual shared_ptr<TileEntity> clone();
+	virtual void hsUpdateData();
+	void hsUpdateDataExtra(ModMachineDef *d);	// heat / reactor / miner extras
 
 	ModMachineDef *def();
 
@@ -202,6 +278,43 @@ private:
 	void tickMiner(ModMachineDef *d);
 	void tickTeleporter(ModMachineDef *d);
 	void scanStructure(ModMachineDef *d);
+	// advanced kinds (ModMachineAdvanced.cpp)
+	void tickHeater(ModMachineDef *d);
+	void tickConductor(ModMachineDef *d);
+	void tickBoiler(ModMachineDef *d);
+	void tickFission(ModMachineDef *d);
+	void tickFusion(ModMachineDef *d);
+	void tickSeismic(ModMachineDef *d);
+	void tickQio(ModMachineDef *d);
+	void tickEntangloporter(ModMachineDef *d);
+	void tickModStation(ModMachineDef *d);
+	bool scanTeleporterFrame(int &ax, int &ox);
+	bool interactAdvanced(shared_ptr<Player> player, int face, shared_ptr<ItemInstance> held, int role);
+	void conductHeat(ModMachineTileEntity *other);
+	void boilCoolant(int maxMb, int heatPerMb, int inTank, const char *inChem, int outTank, const char *outChem);
+	void seismicReport(shared_ptr<Player> player);
+	void openQioDashboard(shared_ptr<Player> player);
+	void saveAdvanced(CompoundTag *base);
+	void loadAdvanced(CompoundTag *base);
+public:
+	bool hasHeat();
+	double heatCapacityNow();
+	void addHeat(double h) { m_temp += h / heatCapacityNow(); }
+	double temperature() const { return m_temp; }
+	int frequency() const { return m_frequency; }
+	bool teleporterReady();			// formed portal with enough energy
+	void teleporterInterior(int &x0, int &y0, int &z0, int &ax);	// bottom-left interior block + axis
+	int entangleEnergyIn(int amount);
+private:
+	double m_temp = 300.0;			// K
+	int m_damage = 0;				// fission: 0..10000
+	bool m_enabled = false;			// fission / fusion on
+	bool m_ignited = false;			// fusion
+	int m_burnRate = 1;				// fission mB/t
+	std::vector<int> m_heatSources;	// boiler: x, y, z of heaters touching the structure
+	int m_portalAxis = -1, m_portalOffset = 0;	// teleporter frame
+	int m_mbMin[3] = { 0, 0, 0 }, m_mbMax[3] = { 0, 0, 0 };	// structure bounds
+	int m_meltdownWarned = 0;
 
 	void pushEnergy(int face, int amount);
 	int pushChem(int tank, int face, int amount);
@@ -230,7 +343,7 @@ private:
 	ModChemAmount m_tanks[TANK_COUNT];
 	unsigned char m_faceMode[6] = { 0, 0, 0, 0, 0, 0 };
 	bool m_eject = true;
-	int m_upgrades[UPG_COUNT] = { 0, 0, 0 };
+	int m_upgrades[UPG_COUNT] = { 0, 0, 0, 0 };
 	int m_frequency = 0;				// teleporter
 	bool m_minerAll = false;			// miner: every block instead of ores only
 	int m_minerCursor = 0;
