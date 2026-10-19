@@ -16,6 +16,8 @@
 #include <cstdio>
 #include <string>
 #include <thread>
+#include <mutex>
+#include <shellapi.h>
 
 namespace HSJavaServer
 {
@@ -30,6 +32,16 @@ namespace
 	int g_pad = 0;
 	std::wstring g_target;
 	std::wstring g_error;
+	// Microsoft (premium) login through the proxy: device code read from proxy.log
+	std::string g_host;
+	int g_port = 25565;
+	bool g_premium = false;
+	std::mutex g_loginLock;
+	std::string g_loginCode, g_loginUrl;
+	std::atomic<bool> g_loginPending(false);	// a code arrived and was not shown yet
+	std::atomic<bool> g_loggedIn(false);
+	std::string g_loginName;
+	std::atomic<bool> g_authFailed(false);
 	bool g_wasInGame = false;
 	DWORD g_joinTick = 0;
 
@@ -117,7 +129,7 @@ namespace
 		return true;
 	}
 
-	bool writeConfig(const std::wstring &dir, const std::string &host, int port)
+	bool writeConfig(const std::wstring &dir, const std::string &host, int port, bool premium)
 	{
 		FILE *f = nullptr;
 		if (_wfopen_s(&f, (dir + L"\\config.yml").c_str(), L"w") != 0 || !f) return false;
@@ -129,7 +141,7 @@ namespace
 			"  listen-port: %d\n"
 			"  player-prefix: \"\"\n"
 			"auth:\n"
-			"  online-mode: false\n"
+			"  online-mode: %s\n"
 			"forwarding:\n"
 			"  mode: NONE\n"
 			"  velocity-secret: \"\"\n"
@@ -155,7 +167,7 @@ namespace
 			"via:\n"
 			"  enabled: true\n"
 			"  target-version: \"auto\"\n",
-			host.c_str(), port, kListenPort, host.c_str(), port);
+			host.c_str(), port, kListenPort, premium ? "true" : "false", host.c_str(), port);
 		fclose(f);
 		return true;
 	}
@@ -185,6 +197,41 @@ namespace
 		return ok;
 	}
 
+	std::string trimLine(std::string v)
+	{
+		while (!v.empty() && (v.back() == '\r' || v.back() == '\n' || v.back() == ' ')) v.pop_back();
+		while (!v.empty() && v.front() == ' ') v.erase(v.begin());
+		return v;
+	}
+
+	// reads the proxy output for the Microsoft device code and the login result
+	void scanLog(const std::wstring &path)
+	{
+		HANDLE h = CreateFileW(path.c_str(), GENERIC_READ, FILE_SHARE_READ | FILE_SHARE_WRITE | FILE_SHARE_DELETE, nullptr, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, nullptr);
+		if (h == INVALID_HANDLE_VALUE) return;
+		std::string text;
+		char buf[8192];
+		DWORD got = 0;
+		while (ReadFile(h, buf, sizeof(buf), &got, nullptr) && got > 0 && text.size() < 4000000) text.append(buf, got);
+		CloseHandle(h);
+		std::string code, url, name;
+		size_t p;
+		if ((p = text.rfind("Code:")) != std::string::npos) code = trimLine(text.substr(p + 5, text.find('\n', p) - p - 5));
+		if ((p = text.rfind("Or: ")) != std::string::npos) url = trimLine(text.substr(p + 4, text.find('\n', p) - p - 4));
+		else if ((p = text.rfind("Visit: ")) != std::string::npos) url = trimLine(text.substr(p + 7, text.find('\n', p) - p - 7));
+		if ((p = text.rfind("Logged in as ")) != std::string::npos) name = trimLine(text.substr(p + 13, text.find('\n', p) - p - 13));
+		std::lock_guard<std::mutex> lock(g_loginLock);
+		if (!code.empty() && code != g_loginCode)
+		{
+			g_loginCode = code;
+			g_loginUrl = url;
+			g_loginPending = true;
+		}
+		if (!name.empty()) { g_loginName = name; g_loggedIn = true; }
+		if (text.find("Failed to auth") != std::string::npos || text.find("Login failed") != std::string::npos)
+			g_authFailed = true;
+	}
+
 	bool startProxy(const std::string &host, int port)
 	{
 		const std::wstring dir = exeDir() + L"\\javaproxy";
@@ -195,7 +242,7 @@ namespace
 			g_error = L"A pasta javaproxy (proxy Reunion + Java) n\u00E3o foi encontrada ao lado do jogo. Baixe a vers\u00E3o completa do Hellish Sight.";
 			return false;
 		}
-		if (!writeConfig(dir, host, port))
+		if (!writeConfig(dir, host, port, g_premium))
 		{
 			g_error = L"N\u00E3o foi poss\u00EDvel escrever javaproxy\\config.yml.";
 			return false;
@@ -237,11 +284,26 @@ namespace
 		g_process = pi.hProcess;
 
 		g_state = 1;
-		g_waiter = std::thread([]() {
+		g_loggedIn = false;
+		g_loginPending = false;
+		{
+			std::lock_guard<std::mutex> lock(g_loginLock);
+			g_loginCode.clear(); g_loginUrl.clear(); g_loginName.clear();
+		}
+		g_authFailed = false;
+		{
+		}
+		const std::wstring logPath = dir + L"\\proxy.log";
+		g_waiter = std::thread([logPath]() {
 			const DWORD start = GetTickCount();
-			while (GetTickCount() - start < 30000)
+			bool listening = false;
+			// the proxy needs ~20 s to load ViaVersion; a Microsoft login waits for the player
+			while (GetTickCount() - start < (g_premium ? 600000u : 120000u))
 			{
-				if (portOpen()) { g_state = 2; return; }
+				if (!listening) listening = portOpen();
+				if (g_premium) scanLog(logPath);
+				if (g_authFailed.load()) break;
+				if (listening && (!g_premium || g_loggedIn.load())) { g_state = 2; return; }
 				if (g_process && WaitForSingleObject(g_process, 0) == WAIT_OBJECT_0) break;	// java exited
 				Sleep(250);
 			}
@@ -290,6 +352,17 @@ namespace
 		}
 	}
 
+	int choiceReturned(void *, int, const C4JStorage::EMessageResult result)
+	{
+		if (result == C4JStorage::EMessage_ResultFourthOption || result == C4JStorage::EMessage_Cancelled) return 0;
+		g_premium = (result != C4JStorage::EMessage_ResultDecline);
+		if (result == C4JStorage::EMessage_ResultThirdOption)
+			DeleteFileW((exeDir() + L"\\javaproxy\\saves\\account.bin").c_str());	// next login asks again
+		if (!startProxy(g_host, g_port)) showMessage(L"Servidores Java", g_error);
+		else if (g_premium) showMessage(L"Servidores Java", L"Iniciando o proxy e a conta Microsoft... Se for o primeiro login, um c\u00F3digo vai aparecer aqui em alguns segundos.");
+		return 0;
+	}
+
 	int keyboardReturned(LPVOID, const bool accepted)
 	{
 		if (!accepted) return 0;
@@ -306,11 +379,17 @@ namespace
 		}
 		saveLastAddress(address);
 		g_target = address;
+		g_host = host;
+		g_port = port;
 		g_error.clear();
-		if (!startProxy(host, port))
-		{
-			showMessage(L"Servidores Java", g_error);
-		}
+		UINT opts[4];
+		opts[0] = dynString(3, L"Conta original (Microsoft)");
+		opts[1] = dynString(4, L"Modo pirata (offline)");
+		opts[2] = dynString(5, L"Trocar conta Microsoft");
+		opts[3] = dynString(2, L"Cancelar");
+		ui.RequestAlertMessage(dynString(0, L"Servidores Java"),
+			dynString(1, L"Como entrar em " + address + L"?\n\nServidores originais (online-mode, como a maioria dos servidores p\u00FAblicos) pedem login com a sua conta Microsoft do Minecraft Java. Servidores piratas aceitam o modo offline."),
+			opts, 4, g_pad, &choiceReturned, nullptr, nullptr);
 		return 0;
 	}
 }
@@ -339,7 +418,23 @@ void Tick()
 		if (g_waiter.joinable()) g_waiter.join();
 		g_state = 0;
 		if (st == 2) joinProxy();
-		else showMessage(L"Servidores Java", L"O proxy n\u00E3o respondeu. Veja javaproxy\\proxy.log (o servidor precisa aceitar contas sem login da Microsoft, online-mode=false).");
+		else if (g_authFailed.load()) showMessage(L"Servidores Java", L"O login da conta Microsoft falhou ou expirou. Tente de novo (Trocar conta Microsoft).");
+		else showMessage(L"Servidores Java", L"O proxy n\u00E3o respondeu. Veja javaproxy\\proxy.log. Em servidores originais use 'Conta original (Microsoft)'.");
+	}
+	if (g_loginPending.exchange(false))
+	{
+		std::string code, url;
+		{
+			std::lock_guard<std::mutex> lock(g_loginLock);
+			code = g_loginCode;
+			url = g_loginUrl;
+		}
+		const std::wstring wcode(code.begin(), code.end()), wurl(url.begin(), url.end());
+		if (!wurl.empty() && wurl.compare(0, 8, L"https://") == 0)
+			ShellExecuteW(nullptr, L"open", wurl.c_str(), nullptr, nullptr, SW_SHOWNORMAL);
+		showMessage(L"Login da conta Microsoft",
+			L"O navegador foi aberto. Entre com a conta do Minecraft Java e confirme o c\u00F3digo:\n\n" + wcode +
+			L"\n\n(ou acesse microsoft.com/link e digite o c\u00F3digo). O jogo conecta sozinho quando o login terminar; ele fica salvo para as pr\u00F3ximas vezes.");
 	}
 
 	// leave the console-protocol mode once the proxy session is over
