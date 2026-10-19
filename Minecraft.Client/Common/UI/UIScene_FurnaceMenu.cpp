@@ -4,6 +4,7 @@
 #include "../../../Minecraft.World/net.minecraft.world.inventory.h"
 #include "../../Minecraft.h"
 #include "UIScene_FurnaceMenu.h"
+#include "UISplitScreenHelpers.h"
 #include "Client/ModMachineScreen.h"
 #ifdef _WINDOWS64
 #include "Client/MachineGui/MachineGui.h"
@@ -220,6 +221,18 @@ void UIScene_FurnaceMenu::HS_UpdateMachineScreen()
 		value[0].string16 = str;
 		IggyPlayerCallMethodRS(getMovie(), &result, IggyPlayerRootPath(getMovie()), m_funcSetMachinePanel, 1, value);
 	}
+#ifdef _WINDOWS64
+	if (HSMachineGui::available())
+	{
+		// Mekanism-style screen: energy / heat / tanks are in the side bars (with tooltips), so the
+		// slot captions stay empty and the extra lines go under "Inventory"
+		std::wstring extra = line2;
+		if (!line3.empty()) extra += (extra.empty() ? L"" : L" | ") + line3;
+		line1 = L" ";
+		line2 = L" ";
+		line3 = extra;
+	}
+#endif
 	if (line1 != m_hsLastIngredient) { m_hsLastIngredient = line1; m_labelIngredient.setLabel(line1.empty() ? app.GetString(IDS_INGREDIENT) : line1.c_str()); }
 	if (line2 != m_hsLastFuel) { m_hsLastFuel = line2; m_labelFuel.setLabel(line2.empty() ? app.GetString(IDS_FUEL) : line2.c_str()); }
 	if (line3 != m_hsLastInventory) { m_hsLastInventory = line3; m_labelInventory.setLabel(line3.empty() ? app.GetString(IDS_INVENTORY) : line3.c_str()); }
@@ -446,7 +459,12 @@ void UIScene_FurnaceMenu::render(S32 width, S32 height, C4JRender::eViewportType
 				slots.push_back({ (pos.x + mainX) * sx, (pos.y + mainY) * sy, (pos.x + size.x + mainX) * sx, (pos.y + size.y + mainY) * sy });
 			}
 		}
-		HSMachineGui::renderBackground(width, height, panel, slots, outputSlot);
+		F32 vpX, vpY, vpW, vpH;
+		GetViewportRect(ui.getScreenWidth(), ui.getScreenHeight(), viewport, vpX, vpY, vpW, vpH);
+		S32 fitW, fitH, fitX, fitY;
+		Fit16x9(vpW, vpH, fitW, fitH, fitX, fitY);
+		HSMachineGui::renderBackground(width, height, static_cast<int>(vpX) + fitX, static_cast<int>(vpY) + fitY,
+			static_cast<int>(ui.getScreenWidth()), static_cast<int>(ui.getScreenHeight()), panel, slots, outputSlot);
 	}
 #endif
 	UIScene_AbstractContainerMenu::render(width, height, viewport);

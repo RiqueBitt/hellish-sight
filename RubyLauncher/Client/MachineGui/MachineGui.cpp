@@ -15,6 +15,8 @@
 #include <cstring>
 #include <map>
 
+void gdraw_D3D11_setViewport_4J();	// Iggy viewport (Windows64/Iggy/gdraw)
+
 namespace HSMachineGui
 {
 	namespace
@@ -257,16 +259,20 @@ namespace HSMachineGui
 
 namespace HSMachineGui
 {
-	void renderBackground(int screenW, int screenH, const Rect &panel, const std::vector<Rect> &slots, int outputSlot)
+	void renderBackground(int screenW, int screenH, int originX, int originY, int fullW, int fullH, const Rect &panel, const std::vector<Rect> &slots, int outputSlot)
 	{
 		if (!available() || screenW <= 0 || screenH <= 0) return;
+		if (fullW <= 0 || fullH <= 0) { fullW = screenW; fullH = screenH; originX = originY = 0; }
 		ui.setupCustomDrawGameState();
+		// before the scene's own draw the Iggy viewport is still the previous layer's, so draw with the
+		// full-window viewport and place the 16:9 scene area explicitly
+		RenderManager.StateSetViewport(C4JRender::VIEWPORT_TYPE_FULLSCREEN);
 		glMatrixMode(GL_PROJECTION);
 		glLoadIdentity();
-		glOrtho(0, static_cast<float>(screenW), static_cast<float>(screenH), 0, 1000, 3000);
+		glOrtho(0, static_cast<float>(fullW), static_cast<float>(fullH), 0, 1000, 3000);
 		glMatrixMode(GL_MODELVIEW);
 		glLoadIdentity();
-		glTranslatef(0, 0, -2000);
+		glTranslatef(static_cast<float>(originX), static_cast<float>(originY), -2000);
 		const float scale = static_cast<float>((std::max)(1, (screenH + 180) / 360));
 		glScalef(scale, scale, 1.0f);
 		glDisable(GL_DEPTH_TEST);
@@ -288,5 +294,6 @@ namespace HSMachineGui
 		}
 		glColor4f(1, 1, 1, 1);
 		ui.endCustomDrawGameState();
+		gdraw_D3D11_setViewport_4J();
 	}
 }
