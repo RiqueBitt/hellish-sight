@@ -15,6 +15,8 @@
 #include "Client/PcInput/PcInput.h"
 
 #include <shellapi.h>
+
+void gdraw_D3D11_setViewport_4J();	// Iggy viewport (Windows64/Iggy/gdraw)
 #include <algorithm>
 #include <cmath>
 #include <vector>
@@ -507,8 +509,11 @@ namespace HSMainMenu
 		glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 		glDisable(GL_CULL_FACE);
 
-		// darken the panorama, stronger at the bottom and on the left where the menu is
+		// darken the panorama. The UI viewport is 16:9 inside the window while the panorama fills
+		// the whole window, so the overlay is drawn with the full-window viewport (no light borders)
+		RenderManager.StateSetViewport(C4JRender::VIEWPORT_TYPE_FULLSCREEN);
 		P().gradient(0, 0, s.sw, s.sh, 0x40000000, 0x98000000);
+		gdraw_D3D11_setViewport_4J();
 		drawEmbers();
 
 		std::wstring hint;
