@@ -83,6 +83,10 @@ def recolour_xml(xml, shapes=True):
         nr, ng, nb = map_text_colour(r, g, b)
         return 'color=&quot;#%02x%02x%02x&quot;' % (nr, ng, nb)
     xml = re.sub(r'color=&quot;#([0-9A-Fa-f]{6})&quot;', html_colour, xml)
+    # the brightening transform of the selected tabs (x0.66 + 87) would wash the dark panels out:
+    # warm ember tint instead
+    xml = xml.replace('blueAddTerm="87" blueMultTerm="168" greenAddTerm="87" greenMultTerm="168" hasAddTerms="true" hasMultTerms="true" nbits="10" redAddTerm="87" redMultTerm="168"',
+                      'blueAddTerm="0" blueMultTerm="256" greenAddTerm="18" greenMultTerm="256" hasAddTerms="true" hasMultTerms="true" nbits="10" redAddTerm="70" redMultTerm="256"')
     return xml
 
 # ---------------------------------------------------------------------------------------------
@@ -95,7 +99,10 @@ def vgrad(draw, box, top, bottom):
         c = tuple(int(top[i] + (bottom[i] - top[i]) * t) for i in range(3))
         draw.line([(x0, y), (x1 - 1, y)], fill=c + (255,))
 
-def button(w, h, style, p=3):
+P = 3
+
+def button(w, h, style, p=None):
+    p = p or P
     im = Image.new('RGBA', (w, h), (0, 0, 0, 0))
     d = ImageDraw.Draw(im)
     if style == 'norm':
@@ -112,7 +119,8 @@ def button(w, h, style, p=3):
         d.rectangle([cx, cy, cx + p - 1, cy + p - 1], fill=(0, 0, 0, 0))
     return im
 
-def frame(w, h, colour, p=3, alpha=255):
+def frame(w, h, colour, p=None, alpha=255):
+    p = p or P
     im = Image.new('RGBA', (w, h), (0, 0, 0, 0))
     d = ImageDraw.Draw(im)
     for i in range(p):
@@ -121,7 +129,8 @@ def frame(w, h, colour, p=3, alpha=255):
         d.rectangle([cx, cy, cx + p - 1, cy + p - 1], fill=(0, 0, 0, 0))
     return im
 
-def flat(w, h, fill, border=None, p=3, alpha=255):
+def flat(w, h, fill, border=None, p=None, alpha=255):
+    p = p or P
     im = Image.new('RGBA', (w, h), fill + (alpha,))
     if border:
         d = ImageDraw.Draw(im)
@@ -193,6 +202,10 @@ def graphics_bitmaps(names):
             put(cid, flat(w, h, (18, 20, 26), (46, 50, 62)))
         elif n == 'Slider_Graphic.png':
             put(cid, button(w, h, 'over'))
+        elif n == 'Slider_Track_TintInactive.png':
+            put(cid, flat(w, h, (22, 25, 31), (46, 50, 62)))
+        elif n == 'Slider_Track_TintActive.png':
+            put(cid, flat(w, h, (34, 26, 22), ORANGE))
         elif n == 'SliderBackgroundHighlight.png':
             put(cid, flat(w, h, ORANGE, alpha=70))
         elif n == 'FJ_Tickbox_Background.png':
@@ -217,7 +230,18 @@ def graphics_bitmaps(names):
                    'SkinSelect_BottomBar_Selected.png', 'SkinSelectSmallHighlight.png', 'Craft_Scroll_up.png', 'Craft_Scroll_Down.png',
                    'scrollUp.png', 'scrollDown.png', 'scrollLeft.png', 'scrollRight.png'):
             put(cid, recolour_image(path))
+        elif any(k in n for k in ('Tab', 'Panel', 'recessed', 'Recessed', '9Grid')) or re.fullmatch(r'\d+\.png', base):
+            if mostly_grey(path): put(cid, recolour_image(path))
     return out
+
+def mostly_grey(path):
+    im = Image.open(path).convert('RGBA')
+    if im.width < 24 or im.height < 24: return False
+    px = [p for p in im.getdata() if p[3] > 128]
+    if not px: return False
+    grey = sum(1 for p in px if abs(p[0] - p[1]) < 16 and abs(p[1] - p[2]) < 16)
+    lum = sum(p[0] + p[1] + p[2] for p in px) / len(px) / 3
+    return grey > 0.9 * len(px) and lum > 90
 
 # ---------------------------------------------------------------------------------------------
 def process(name, bitmaps=False, shapes=True):
@@ -249,9 +273,12 @@ def process(name, bitmaps=False, shapes=True):
         print(name, 'bitmaps replaced:', len(repl))
     print('themed', name)
 
-process('skinHDGraphics.swf', bitmaps=True)
-process('skinHDGraphicsInGame.swf', bitmaps=True)
-process('skinHDGraphicsLabels.swf')
-process('skinHD.swf')
-process('skinHDInGame.swf')
+# 1080p scenes (HD skins) and 720p / 480p scenes (non-HD skins)
+for prefix, px in (('skinHD', 3), ('skin', 2)):
+    P = px
+    process(prefix + 'Graphics.swf', bitmaps=True)
+    process(prefix + 'GraphicsInGame.swf', bitmaps=True)
+    process(prefix + 'GraphicsLabels.swf')
+    process(prefix + '.swf')
+    process(prefix + 'InGame.swf')
 shutil.rmtree(WORK, ignore_errors=True)
